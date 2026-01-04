@@ -14,13 +14,13 @@ const manrope = Manrope({
 });
 
 export const metadata = {
-  title: "Gestao Financeira",
-  description: "Controle financeiro offline-first",
+  title: "FinanceFlow",
+  description: "Controle financeiro offline-first para casal",
   manifest: "/manifest.json"
 };
 
 export const viewport = {
-  themeColor: "#0f3d3e",
+  themeColor: "#22c55e",
   colorScheme: "light"
 };
 

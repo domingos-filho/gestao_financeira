@@ -7,13 +7,19 @@ export default function EditTransactionPage({
   params: { walletId: string; id: string };
 }) {
   return (
-    <Card className="border-border/60 bg-card/85">
-      <CardHeader>
-        <CardTitle>Editar transacao</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <TransactionForm walletId={params.walletId} transactionId={params.id} />
-      </CardContent>
-    </Card>
+    <div className="grid gap-6 animate-rise">
+      <div>
+        <h2 className="text-2xl font-semibold">Editar transacao</h2>
+        <p className="text-sm text-muted-foreground">Atualize os detalhes da transacao.</p>
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Detalhes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TransactionForm walletId={params.walletId} transactionId={params.id} />
+        </CardContent>
+      </Card>
+    </div>
   );
 }

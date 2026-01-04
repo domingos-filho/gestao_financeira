@@ -41,34 +41,43 @@ export default function WalletSettingsPage({ params }: { params: { walletId: str
   }
 
   return (
-    <Card className="border-border/60 bg-card/85">
-      <CardHeader>
-        <CardTitle>Configuracao da carteira</CardTitle>
-        <CardDescription>Adicionar membros e definir papeis.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label>Email</Label>
-          <Input value={email} onChange={(event) => setEmail(event.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label>Papel</Label>
-          <Select value={role} onValueChange={(value) => setRole(value as WalletRole)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent>
-              {roles.map((item) => (
-                <SelectItem key={item} value={item}>
-                  {item}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {message && <p className="text-sm text-muted-foreground">{message}</p>}
-        <Button onClick={handleAddMember}>Adicionar membro</Button>
-      </CardContent>
-    </Card>
+    <div className="grid gap-6 animate-rise">
+      <div>
+        <h2 className="text-2xl font-semibold">Gerenciamento de Usuarios</h2>
+        <p className="text-sm text-muted-foreground">Controle quem tem acesso ao sistema</p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Adicionar Novo Usuario</CardTitle>
+          <CardDescription>Apenas usuarios cadastrados poderao acessar o sistema</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input value={email} onChange={(event) => setEmail(event.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Papel</Label>
+              <Select value={role} onValueChange={(value) => setRole(value as WalletRole)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {message && <p className="text-sm text-muted-foreground">{message}</p>}
+          <Button onClick={handleAddMember}>Adicionar</Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

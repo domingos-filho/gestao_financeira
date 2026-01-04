@@ -3,16 +3,16 @@
 @tailwind utilities;
 
 :root {
-  --color-bg: #f6f1e8;
-  --color-fg: #1f1a17;
-  --color-card: #fffaf3;
-  --color-primary: #0f3d3e;
-  --color-primary-fg: #fdf7ee;
-  --color-accent: #e3b04b;
-  --color-accent-fg: #2b2113;
-  --color-muted: #efe6d7;
-  --color-muted-fg: #6f6559;
-  --color-border: #e7dccb;
+  --color-bg: #f8fafc;
+  --color-fg: #0f172a;
+  --color-card: #ffffff;
+  --color-primary: #22c55e;
+  --color-primary-fg: #ffffff;
+  --color-accent: #2563eb;
+  --color-accent-fg: #ffffff;
+  --color-muted: #f1f5f9;
+  --color-muted-fg: #64748b;
+  --color-border: #e2e8f0;
 }
 
 * {
@@ -24,9 +24,8 @@ body {
   color: var(--color-fg);
   font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   background:
-    radial-gradient(1200px circle at 100% -10%, rgba(227, 176, 75, 0.18), transparent 55%),
-    radial-gradient(900px circle at -10% 10%, rgba(15, 61, 62, 0.18), transparent 55%),
-    linear-gradient(135deg, #f6f1e8 0%, #f1e7d7 45%, #f6f1e8 100%);
+    radial-gradient(1200px circle at 100% -20%, rgba(34, 197, 94, 0.08), transparent 55%),
+    linear-gradient(180deg, #f8fafc 0%, #ffffff 45%, #f8fafc 100%);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -35,7 +34,7 @@ h1, h2, h3, h4 {
 }
 
 ::selection {
-  background: rgba(15, 61, 62, 0.2);
+  background: rgba(34, 197, 94, 0.2);
 }
 
 @keyframes rise {

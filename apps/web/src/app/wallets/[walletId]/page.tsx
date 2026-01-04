@@ -4,9 +4,12 @@ import { useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import Link from "next/link";
 import { TransactionType } from "@gf/shared";
+import { ArrowDownRight, ArrowUpRight, List, Plus, Repeat, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { db } from "@/lib/db";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { QuickTransactionForm } from "@/components/quick-transaction-form";
 
 function formatBRL(amountCents: number) {
   return (amountCents / 100).toLocaleString("pt-BR", {
@@ -61,64 +64,187 @@ export default function WalletDashboard({ params }: { params: { walletId: string
     };
   }, [transactions]);
 
+  const previousSummary = useMemo(() => {
+    if (!transactions) {
+      return { income: 0, expense: 0 };
+    }
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const end = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let income = 0;
+    let expense = 0;
+    for (const tx of transactions) {
+      const occurred = new Date(tx.occurredAt);
+      if (occurred >= start && occurred < end) {
+        if (tx.type === TransactionType.INCOME) income += tx.amountCents;
+        if (tx.type === TransactionType.EXPENSE) expense += tx.amountCents;
+      }
+    }
+    return { income, expense };
+  }, [transactions]);
+
+  const incomeDelta =
+    previousSummary.income > 0
+      ? ((monthSummary.income - previousSummary.income) / previousSummary.income) * 100
+      : null;
+  const expenseDelta =
+    previousSummary.expense > 0
+      ? ((monthSummary.expense - previousSummary.expense) / previousSummary.expense) * 100
+      : null;
+
+  const budgetTarget = monthSummary.income;
+  const budgetUsed = monthSummary.expense;
+  const budgetPct = budgetTarget ? Math.min(100, Math.round((budgetUsed / budgetTarget) * 100)) : 0;
+
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-border/60 bg-card/85">
+    <div className="grid gap-6 animate-rise">
+      <div>
+        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">Visao geral das suas financas pessoais</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
           <CardHeader className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Receitas do mes</p>
-            <CardTitle className="text-2xl">{formatBRL(monthSummary.income)}</CardTitle>
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>Receitas</span>
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
+            </div>
+            <CardTitle className="text-xl text-emerald-600">{formatBRL(monthSummary.income)}</CardTitle>
+            <CardDescription
+              className={
+                incomeDelta === null ? "text-muted-foreground" : incomeDelta >= 0 ? "text-emerald-600" : "text-red-600"
+              }
+            >
+              {incomeDelta === null ? "Sem comparacao" : `${incomeDelta.toFixed(1)}% em relacao ao mes passado`}
+            </CardDescription>
           </CardHeader>
         </Card>
-        <Card className="border-border/60 bg-card/85">
+        <Card>
           <CardHeader className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Despesas do mes</p>
-            <CardTitle className="text-2xl">{formatBRL(monthSummary.expense)}</CardTitle>
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>Despesas</span>
+              <TrendingDown className="h-4 w-4 text-red-500" />
+            </div>
+            <CardTitle className="text-xl text-red-600">{formatBRL(monthSummary.expense)}</CardTitle>
+            <CardDescription
+              className={
+                expenseDelta === null ? "text-muted-foreground" : expenseDelta <= 0 ? "text-emerald-600" : "text-red-600"
+              }
+            >
+              {expenseDelta === null ? "Sem comparacao" : `${expenseDelta.toFixed(1)}% em relacao ao mes passado`}
+            </CardDescription>
           </CardHeader>
         </Card>
-        <Card className="border-border/60 bg-card/85">
+        <Card>
           <CardHeader className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Saldo do mes</p>
-            <CardTitle className="text-2xl">{formatBRL(monthSummary.net)}</CardTitle>
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>Saldo</span>
+              <Wallet className="h-4 w-4 text-primary" />
+            </div>
+            <CardTitle className="text-xl">{formatBRL(monthSummary.net)}</CardTitle>
+            <CardDescription>Diferenca entre receitas e despesas</CardDescription>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="space-y-2">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>Orcamento</span>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                {budgetPct}%
+              </span>
+            </div>
+            <CardTitle className="text-xl">{formatBRL(budgetUsed)}</CardTitle>
+            <CardDescription>{formatBRL(budgetTarget)} planejado</CardDescription>
+            <div className="h-2 w-full rounded-full bg-muted">
+              <div className="h-2 rounded-full bg-primary" style={{ width: `${budgetPct}%` }} />
+            </div>
           </CardHeader>
         </Card>
       </div>
 
-      <Card className="border-border/60 bg-card/85">
-        <CardHeader>
-          <CardTitle>Movimentos recentes</CardTitle>
-          <CardDescription>Ultimos registros deste mes.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {monthSummary.recent.length === 0 && <p className="text-sm text-muted-foreground">Sem transacoes.</p>}
-          <div className="divide-y divide-border/70">
-            {monthSummary.recent.map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between py-3">
-                <div>
-                  <p className="font-medium">{tx.description || "Sem descricao"}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(tx.occurredAt).toLocaleDateString()}</p>
-                </div>
-                <span
-                  className={
-                    tx.type === TransactionType.EXPENSE
-                      ? "text-red-600"
-                      : tx.type === TransactionType.TRANSFER
-                      ? "text-blue-600"
-                      : "text-emerald-600"
-                  }
-                >
-                  {formatBRL(tx.amountCents)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Nova Transacao</CardTitle>
+              <Plus className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <CardDescription>Registro rapido para o dia a dia</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <QuickTransactionForm walletId={walletId} />
+          </CardContent>
+        </Card>
 
-      <div>
-        <Button asChild>
-          <Link href={`/wallets/${walletId}/transactions`}>Ver todas as transacoes</Link>
-        </Button>
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Transacoes Recentes</CardTitle>
+              <List className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <CardDescription>Ultimos registros deste mes</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {monthSummary.recent.length === 0 && <p className="text-sm text-muted-foreground">Sem transacoes.</p>}
+            {monthSummary.recent.map((tx) => {
+              const Icon =
+                tx.type === TransactionType.EXPENSE
+                  ? ArrowDownRight
+                  : tx.type === TransactionType.TRANSFER
+                  ? Repeat
+                  : ArrowUpRight;
+              const color =
+                tx.type === TransactionType.EXPENSE
+                  ? "text-red-600"
+                  : tx.type === TransactionType.TRANSFER
+                  ? "text-blue-600"
+                  : "text-emerald-600";
+              const badge =
+                tx.type === TransactionType.EXPENSE
+                  ? "bg-red-50 text-red-600"
+                  : tx.type === TransactionType.TRANSFER
+                  ? "bg-blue-50 text-blue-600"
+                  : "bg-emerald-50 text-emerald-600";
+
+              return (
+                <div
+                  key={tx.id}
+                  className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={`flex h-10 w-10 items-center justify-center rounded-full ${badge}`}>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="font-medium">{tx.description || "Sem descricao"}</p>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge}`}
+                        >
+                          {tx.type === TransactionType.EXPENSE
+                            ? "Despesa"
+                            : tx.type === TransactionType.TRANSFER
+                            ? "Transferencia"
+                            : "Receita"}
+                        </span>
+                        <span>{new Date(tx.occurredAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span className={cn("text-sm font-semibold", color)}>{formatBRL(tx.amountCents)}</span>
+                </div>
+              );
+            })}
+
+            <div>
+              <Button asChild variant="outline">
+                <Link href={`/wallets/${walletId}/transactions`}>Ver todas as transacoes</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import { RefreshCw } from "lucide-react";
 import { useSyncEngine } from "@/lib/sync-engine";
 import { Button } from "@/components/ui/button";
 
-export function SyncIndicator({ walletId }: { walletId: string }) {
+export function SyncIndicator({ walletId, compact = false }: { walletId: string; compact?: boolean }) {
   const { status, lastSyncAt, runSync } = useSyncEngine(walletId);
   const [online, setOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
 
@@ -26,9 +26,20 @@ export function SyncIndicator({ walletId }: { walletId: string }) {
     return online ? "Online" : "Offline";
   }, [status, online]);
 
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span
+          className={`h-2 w-2 rounded-full ${status === "error" ? "bg-red-500" : online ? "bg-emerald-500" : "bg-amber-500"}`}
+        />
+        {label}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-      <span className="inline-flex items-center gap-2 rounded-full bg-muted/70 px-3 py-1">
+      <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1">
         <span
           className={`h-2 w-2 rounded-full ${status === "error" ? "bg-red-500" : online ? "bg-emerald-500" : "bg-amber-500"}`}
         />

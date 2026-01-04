@@ -2,41 +2,35 @@ import { cn } from "@/lib/utils";
 
 type BrandMarkProps = {
   className?: string;
-  variant?: "solid" | "soft";
+  variant?: "solid" | "outline";
 };
 
 export function BrandMark({ className, variant = "solid" }: BrandMarkProps) {
   const palette =
-    variant === "soft"
+    variant === "outline"
       ? {
-          bg: "var(--color-card)",
-          ring: "var(--color-primary)",
-          accent: "var(--color-accent)",
-          heart: "var(--color-primary)"
+          bg: "#ffffff",
+          border: "#22c55e",
+          mark: "#22c55e"
         }
       : {
-          bg: "var(--color-primary)",
-          ring: "var(--color-primary-fg)",
-          accent: "var(--color-accent)",
-          heart: "var(--color-primary-fg)"
+          bg: "#22c55e",
+          border: "#22c55e",
+          mark: "#ffffff"
         };
 
   return (
     <svg
       viewBox="0 0 64 64"
       role="img"
-      aria-label="Gestao Financeira"
-      className={cn("h-12 w-12", className)}
+      aria-label="FinanceFlow"
+      className={cn("h-10 w-10", className)}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <rect width="64" height="64" rx="18" fill={palette.bg} />
-      <circle cx="32" cy="32" r="22" fill="none" stroke={palette.ring} strokeWidth="3.5" />
-      <circle cx="25" cy="32" r="10.5" fill="none" stroke={palette.accent} strokeWidth="3.5" />
-      <circle cx="39" cy="32" r="10.5" fill="none" stroke={palette.accent} strokeWidth="3.5" />
-      <path
-        d="M32 40c-6-4-10-8-10-13a6.5 6.5 0 0 1 10-5a6.5 6.5 0 0 1 10 5c0 5-4 9-10 13z"
-        fill={palette.heart}
-      />
+      <rect width="64" height="64" rx="16" fill={palette.bg} stroke={palette.border} strokeWidth="2" />
+      <rect x="25" y="16" width="8" height="32" rx="4" fill={palette.mark} />
+      <rect x="25" y="16" width="18" height="8" rx="4" fill={palette.mark} />
+      <rect x="25" y="30" width="14" height="8" rx="4" fill={palette.mark} />
     </svg>
   );
 }
