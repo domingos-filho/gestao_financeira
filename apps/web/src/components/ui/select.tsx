@@ -19,6 +19,7 @@ const SelectTrigger = React.forwardRef<
       "flex h-10 w-full items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30",
       className
     )}
+    type="button"
     {...props}
   >
     {children}
