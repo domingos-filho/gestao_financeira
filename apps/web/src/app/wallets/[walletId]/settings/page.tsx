@@ -125,7 +125,7 @@ export default function WalletSettingsPage({ params }: { params: { walletId: str
                 <Label>Email</Label>
                 <Input value={accessEmail} onChange={(event) => setAccessEmail(event.target.value)} />
               </div>
-              <Button onClick={handleGrantAccess}>Liberar acesso</Button>
+              <Button onClick={() => handleGrantAccess()}>Liberar acesso</Button>
             </div>
             {accessMessage && <p className="text-sm text-muted-foreground">{accessMessage}</p>}
 
