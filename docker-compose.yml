@@ -48,6 +48,8 @@ services:
 
   proxy:
     image: caddy:2-alpine
+    profiles:
+      - proxy
     restart: unless-stopped
     depends_on:
       - web

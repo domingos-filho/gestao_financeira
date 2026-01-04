@@ -125,9 +125,9 @@ API_PORT=3001
 WEB_PORT=4000
 ```
 
-3) Garanta DNS apontando os subdominios para o IP da VPS e portas 80/443 liberadas.
+3) Garanta DNS apontando os subdominios para o IP da VPS.
 
-4) Suba os containers:
+4) Suba os containers no EasyPanel (sem o proxy local):
 
 ```
 docker compose up --build -d
@@ -138,4 +138,14 @@ docker compose up --build -d
 - Web: `https://seudominio.com` (ou `http://IP:WEB_PORT`)
 - API: `https://api.seudominio.com` (ou `http://IP:API_PORT`)
 
-Observacao: o `proxy` (Caddy) em `Caddyfile` gera TLS automaticamente para os dominios informados.
+Observacao: no EasyPanel, o TLS e o proxy reverso ja sao gerenciados pela plataforma.
+
+## Proxy local (opcional, fora do EasyPanel)
+
+Se quiser subir direto na VPS sem EasyPanel e usar o Caddy do repo:
+
+```
+docker compose --profile proxy up --build -d
+```
+
+Isso usa o `Caddyfile` e expõe 80/443 no host.
