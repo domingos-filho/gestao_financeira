@@ -1,0 +1,17 @@
+export enum TransactionType {
+  INCOME = "INCOME",
+  EXPENSE = "EXPENSE",
+  TRANSFER = "TRANSFER"
+}
+
+export enum WalletRole {
+  ADMIN = "ADMIN",
+  EDITOR = "EDITOR",
+  VIEWER = "VIEWER"
+}
+
+export enum SyncEventType {
+  TRANSACTION_CREATED = "TRANSACTION_CREATED",
+  TRANSACTION_UPDATED = "TRANSACTION_UPDATED",
+  TRANSACTION_DELETED = "TRANSACTION_DELETED"
+}

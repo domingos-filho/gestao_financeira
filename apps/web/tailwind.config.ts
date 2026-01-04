@@ -1,0 +1,26 @@
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  darkMode: ["class"],
+  content: ["./src/**/*.{ts,tsx}"] ,
+  theme: {
+    extend: {
+      colors: {
+        background: "var(--color-bg)",
+        foreground: "var(--color-fg)",
+        card: "var(--color-card)",
+        primary: "var(--color-primary)",
+        primaryForeground: "var(--color-primary-fg)",
+        accent: "var(--color-accent)",
+        muted: "var(--color-muted)",
+        border: "var(--color-border)"
+      },
+      borderRadius: {
+        xl: "1.25rem"
+      }
+    }
+  },
+  plugins: []
+};
+
+export default config;
