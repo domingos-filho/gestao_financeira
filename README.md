@@ -53,10 +53,10 @@ npm -w apps/api run start:dev
 npm -w apps/web run dev
 ```
 
-## Executar com Docker
+## Executar com Docker (local)
 
 ```
-docker-compose up --build
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 ```
 
 ## Checklist de producao
@@ -95,11 +95,12 @@ docker-compose up --build
 
 ## Deploy (EasyPanel)
 
-- Use o `docker-compose.yml` na raiz
-- Configure as variaveis do `api` e o `NEXT_PUBLIC_API_URL` do `web`
-- O banco usa volume persistente `pgdata`
+- Use apenas o `docker-compose.yml` (sem publicar portas no host)
+- Configure as variaveis do `api` e o `NEXT_PUBLIC_API_URL` (build-time) do `web`
+- O dominio deve apontar para as portas internas: web `3000`, api `3001`
+- Remova qualquer mapeamento de porta (ex.: `3000:3000`) no servico
 
-## Deploy em VPS via GitHub + Docker Compose
+## Deploy em VPS via GitHub + Docker Compose (sem EasyPanel)
 
 1) No servidor, clone o repositorio:
 
@@ -121,16 +122,17 @@ REFRESH_TOKEN_EXPIRES_IN=7d
 WEB_DOMAIN=appfinanceiro.domingos-automacoes.shop
 API_DOMAIN=api.domingos-automacoes.shop
 NEXT_PUBLIC_API_URL=https://api.domingos-automacoes.shop
+# API_PORT/WEB_PORT sao usados apenas no docker-compose.local.yml
 API_PORT=3001
 WEB_PORT=4000
 ```
 
 3) Garanta DNS apontando os subdominios para o IP da VPS.
 
-4) Suba os containers no EasyPanel (sem o proxy local):
+4) Suba os containers com portas no host:
 
 ```
-docker compose up --build -d
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 ```
 
 5) Acesse:
@@ -148,4 +150,4 @@ Se quiser subir direto na VPS sem EasyPanel e usar o Caddy do repo:
 docker compose --profile proxy up --build -d
 ```
 
-Isso usa o `Caddyfile` e expõe 80/443 no host.
+Isso usa o `Caddyfile` e expose 80/443 no host.

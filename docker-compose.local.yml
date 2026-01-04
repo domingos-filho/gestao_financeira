@@ -1,0 +1,8 @@
+services:
+  api:
+    ports:
+      - "${API_PORT:-3001}:3001"
+
+  web:
+    ports:
+      - "${WEB_PORT:-4000}:3000"
