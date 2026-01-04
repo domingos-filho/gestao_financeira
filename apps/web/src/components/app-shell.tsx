@@ -103,7 +103,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
     [walletId, pathname]
   );
 
-  const initials = user?.email ? user.email[0].toUpperCase() : "U";
+  const initials = (user?.email?.[0] ?? "U").toUpperCase();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
