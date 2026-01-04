@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { useSyncEngine } from "@/lib/sync-engine";
+import { parseDate } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 
 export function SyncIndicator({ walletId, compact = false }: { walletId: string; compact?: boolean }) {
@@ -45,7 +46,15 @@ export function SyncIndicator({ walletId, compact = false }: { walletId: string;
         />
         {label}
       </span>
-      {lastSyncAt && <span>Ultimo sync: {new Date(lastSyncAt).toLocaleTimeString()}</span>}
+      {lastSyncAt && (
+        <span>
+          Ultimo sync:{" "}
+          {(() => {
+            const parsed = parseDate(lastSyncAt);
+            return parsed ? parsed.toLocaleTimeString() : "-";
+          })()}
+        </span>
+      )}
       <Button variant="ghost" size="sm" onClick={runSync} type="button">
         <RefreshCw className="h-3.5 w-3.5" />
       </Button>

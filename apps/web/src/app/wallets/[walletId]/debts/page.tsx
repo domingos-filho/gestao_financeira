@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useAuth } from "@/lib/auth";
-import { db, DebtStatus } from "@/lib/db";
+import { db, safeDexie, DebtStatus } from "@/lib/db";
 import { syncDebts } from "@/lib/debts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,10 @@ function formatBRL(amountCents: number) {
 export default function DebtsPage({ params }: { params: { walletId: string } }) {
   const { walletId } = params;
   const { authFetch } = useAuth();
-  const debts = useLiveQuery(() => db.debts_local.where("walletId").equals(walletId).toArray(), [walletId]);
+  const debts = useLiveQuery(
+    () => safeDexie(() => db.debts_local.where("walletId").equals(walletId).toArray(), []),
+    [walletId]
+  );
 
   const [name, setName] = useState("");
   const [principal, setPrincipal] = useState("");

@@ -7,7 +7,7 @@ import { createLocalTransaction } from "@/lib/sync";
 import { getDeviceId } from "@/lib/device";
 import { getWalletAccounts } from "@/lib/wallet-cache";
 import { useAuth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { db, safeDexie } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +21,7 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
   const { user } = useAuth();
   const accounts = useMemo(() => getWalletAccounts(walletId), [walletId]);
   const categories = useLiveQuery(
-    () => db.categories_local.where("walletId").equals(walletId).toArray(),
+    () => safeDexie(() => db.categories_local.where("walletId").equals(walletId).toArray(), []),
     [walletId]
   );
   const noneCategoryValue = "__none__";

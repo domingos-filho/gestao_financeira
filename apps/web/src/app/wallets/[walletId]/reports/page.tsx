@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { TransactionType } from "@gf/shared";
-import { db } from "@/lib/db";
+import { db, safeDexie } from "@/lib/db";
 import { BarPairChart, Gauge, LineChart, MultiLineChart, PieChart } from "@/components/report-charts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -101,15 +101,25 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
 
   const transactions = useLiveQuery(
     () =>
-      db.transactions_local
-        .where("walletId")
-        .equals(walletId)
-        .and((tx) => !tx.deletedAt)
-        .toArray(),
+      safeDexie(
+        () =>
+          db.transactions_local
+            .where("walletId")
+            .equals(walletId)
+            .and((tx) => !tx.deletedAt)
+            .toArray(),
+        []
+      ),
     [walletId]
   );
-  const categories = useLiveQuery(() => db.categories_local.where("walletId").equals(walletId).toArray(), [walletId]);
-  const debts = useLiveQuery(() => db.debts_local.where("walletId").equals(walletId).toArray(), [walletId]);
+  const categories = useLiveQuery(
+    () => safeDexie(() => db.categories_local.where("walletId").equals(walletId).toArray(), []),
+    [walletId]
+  );
+  const debts = useLiveQuery(
+    () => safeDexie(() => db.debts_local.where("walletId").equals(walletId).toArray(), []),
+    [walletId]
+  );
 
   const buckets = useMemo(() => buildBuckets(period), [period]);
 

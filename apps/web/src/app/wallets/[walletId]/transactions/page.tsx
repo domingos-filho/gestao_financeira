@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { TransactionType } from "@gf/shared";
 import { ArrowDownRight, ArrowUpRight, Repeat } from "lucide-react";
-import { db } from "@/lib/db";
+import { db, safeDexie } from "@/lib/db";
 import { formatDate } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,15 +22,19 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
 
   const transactions = useLiveQuery(
     () =>
-      db.transactions_local
-        .where("walletId")
-        .equals(walletId)
-        .and((tx) => !tx.deletedAt)
-        .toArray(),
+      safeDexie(
+        () =>
+          db.transactions_local
+            .where("walletId")
+            .equals(walletId)
+            .and((tx) => !tx.deletedAt)
+            .toArray(),
+        []
+      ),
     [walletId]
   );
   const categories = useLiveQuery(
-    () => db.categories_local.where("walletId").equals(walletId).toArray(),
+    () => safeDexie(() => db.categories_local.where("walletId").equals(walletId).toArray(), []),
     [walletId]
   );
 

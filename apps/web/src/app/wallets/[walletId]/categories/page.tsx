@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useAuth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { db, safeDexie } from "@/lib/db";
 import { syncCategories } from "@/lib/categories";
 import { formatDate } from "@/lib/date";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
   const { walletId } = params;
   const { authFetch } = useAuth();
   const categories = useLiveQuery(
-    () => db.categories_local.where("walletId").equals(walletId).toArray(),
+    () => safeDexie(() => db.categories_local.where("walletId").equals(walletId).toArray(), []),
     [walletId]
   );
 

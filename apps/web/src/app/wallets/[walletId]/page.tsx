@@ -5,7 +5,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import Link from "next/link";
 import { TransactionType } from "@gf/shared";
 import { ArrowDownRight, ArrowUpRight, List, Plus, Repeat, TrendingDown, TrendingUp, Wallet } from "lucide-react";
-import { db } from "@/lib/db";
+import { db, safeDexie } from "@/lib/db";
 import { formatDate, parseDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +23,11 @@ export default function WalletDashboard({ params }: { params: { walletId: string
   const { walletId } = params;
 
   const transactions = useLiveQuery(
-    () => db.transactions_local.where("walletId").equals(walletId).and((tx) => !tx.deletedAt).toArray(),
+    () =>
+      safeDexie(
+        () => db.transactions_local.where("walletId").equals(walletId).and((tx) => !tx.deletedAt).toArray(),
+        []
+      ),
     [walletId]
   );
 

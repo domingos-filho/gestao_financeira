@@ -81,6 +81,15 @@ class FinanceDB extends Dexie {
 
 export const db = new FinanceDB();
 
+export async function safeDexie<T>(work: () => Promise<T>, fallback: T) {
+  try {
+    return await work();
+  } catch (error) {
+    console.error("Dexie error", error);
+    return fallback;
+  }
+}
+
 export async function getMetadata(key: string) {
   const entry = await db.sync_metadata.get(key);
   return entry?.value ?? null;

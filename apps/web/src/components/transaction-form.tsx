@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
 import { TransactionType } from "@gf/shared";
-import { db } from "@/lib/db";
+import { db, safeDexie } from "@/lib/db";
 import { createLocalTransaction, deleteLocalTransaction, updateLocalTransaction } from "@/lib/sync";
 import { getDeviceId } from "@/lib/device";
 import { getWalletAccounts } from "@/lib/wallet-cache";
@@ -35,12 +35,13 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
   const noneCategoryValue = "__none__";
 
   const existing = useLiveQuery(
-    () => (transactionId ? db.transactions_local.get(transactionId) : undefined),
+    () =>
+      transactionId ? safeDexie(() => db.transactions_local.get(transactionId), undefined) : undefined,
     [transactionId]
   );
 
   const categories = useLiveQuery(
-    () => db.categories_local.where("walletId").equals(walletId).toArray(),
+    () => safeDexie(() => db.categories_local.where("walletId").equals(walletId).toArray(), []),
     [walletId]
   );
 
