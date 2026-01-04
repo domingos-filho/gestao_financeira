@@ -5,6 +5,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { syncCategories } from "@/lib/categories";
+import { formatDate } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -132,7 +133,7 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
                 <>
                   <div>
                     <p className="font-medium">{category.name}</p>
-                    <p className="text-xs text-muted-foreground">Atualizado em {new Date(category.updatedAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground">Atualizado em {formatDate(category.updatedAt)}</p>
                   </div>
                   <Button
                     variant="outline"

@@ -6,6 +6,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { TransactionType } from "@gf/shared";
 import { ArrowDownRight, ArrowUpRight, Repeat } from "lucide-react";
 import { db } from "@/lib/db";
+import { formatDate } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -37,7 +38,7 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
     return new Map((categories ?? []).map((category) => [category.id, category.name]));
   }, [categories]);
 
-  const sorted = (transactions ?? []).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+  const sorted = (transactions ?? []).sort((a, b) => (b.occurredAt ?? "").localeCompare(a.occurredAt ?? ""));
 
   return (
     <div className="grid gap-6 animate-rise">
@@ -84,7 +85,7 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
                 <div>
                   <p className="font-medium">{tx.description || "Sem descricao"}</p>
                   <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{new Date(tx.occurredAt).toLocaleDateString()}</span>
+                    <span>{formatDate(tx.occurredAt)}</span>
                     <span className="rounded-full border border-border px-2 py-0.5 text-[10px]">
                       {tx.categoryId ? categoryMap.get(tx.categoryId) ?? "Categoria" : "Sem categoria"}
                     </span>

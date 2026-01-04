@@ -6,6 +6,7 @@ import Link from "next/link";
 import { TransactionType } from "@gf/shared";
 import { ArrowDownRight, ArrowUpRight, List, Plus, Repeat, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { db } from "@/lib/db";
+import { formatDate, parseDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,8 +46,8 @@ export default function WalletDashboard({ params }: { params: { walletId: string
     let income = 0;
     let expense = 0;
     const filtered = transactions.filter((tx) => {
-      const occurred = new Date(tx.occurredAt);
-      return occurred >= start && occurred < end;
+      const occurred = parseDate(tx.occurredAt);
+      return occurred ? occurred >= start && occurred < end : false;
     });
 
     for (const tx of filtered) {
@@ -54,7 +55,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
       if (tx.type === TransactionType.EXPENSE) expense += tx.amountCents;
     }
 
-    const recent = [...filtered].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)).slice(0, 5);
+    const recent = [...filtered].sort((a, b) => (b.occurredAt ?? "").localeCompare(a.occurredAt ?? "")).slice(0, 5);
 
     return {
       income,
@@ -75,8 +76,8 @@ export default function WalletDashboard({ params }: { params: { walletId: string
     let income = 0;
     let expense = 0;
     for (const tx of transactions) {
-      const occurred = new Date(tx.occurredAt);
-      if (occurred >= start && occurred < end) {
+      const occurred = parseDate(tx.occurredAt);
+      if (occurred && occurred >= start && occurred < end) {
         if (tx.type === TransactionType.INCOME) income += tx.amountCents;
         if (tx.type === TransactionType.EXPENSE) expense += tx.amountCents;
       }
@@ -229,7 +230,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
                             ? "Transferencia"
                             : "Receita"}
                         </span>
-                        <span>{new Date(tx.occurredAt).toLocaleDateString()}</span>
+                        <span>{formatDate(tx.occurredAt)}</span>
                       </div>
                     </div>
                   </div>
