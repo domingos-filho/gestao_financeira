@@ -1,17 +1,4 @@
-import { SyncEventType, TransactionType } from "./enums";
-
-export type TransactionPayload = {
-  id: string;
-  walletId: string;
-  accountId: string;
-  type: TransactionType;
-  amountCents: number;
-  occurredAt: string;
-  description: string;
-  categoryId?: string | null;
-  counterpartyAccountId?: string | null;
-  deletedAt?: string | null;
-};
+import { SyncEventType } from "./enums";
 
 export type SyncEventPayload = {
   eventId: string;
