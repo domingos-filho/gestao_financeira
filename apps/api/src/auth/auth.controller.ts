@@ -13,19 +13,19 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Post("register")
-  @Throttle(10, 60)
+  @Throttle({ default: { limit: 10, ttl: 60 } })
   register(@Body() dto: AuthRegisterDto) {
     return this.auth.register(dto.email, dto.password, dto.deviceId);
   }
 
   @Post("login")
-  @Throttle(10, 60)
+  @Throttle({ default: { limit: 10, ttl: 60 } })
   login(@Body() dto: AuthLoginDto) {
     return this.auth.login(dto.email, dto.password, dto.deviceId);
   }
 
   @Post("refresh")
-  @Throttle(20, 60)
+  @Throttle({ default: { limit: 20, ttl: 60 } })
   refresh(@Body() dto: AuthRefreshDto) {
     return this.auth.refresh(dto.refreshToken, dto.deviceId);
   }

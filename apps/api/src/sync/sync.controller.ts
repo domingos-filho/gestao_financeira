@@ -16,7 +16,7 @@ export class SyncController {
   constructor(private readonly sync: SyncService) {}
 
   @Post("push")
-  @Throttle(30, 60)
+  @Throttle({ default: { limit: 30, ttl: 60 } })
   @WalletRoles(WalletRole.EDITOR)
   @UseGuards(JwtAuthGuard, WalletRoleGuard)
   push(@CurrentUser() user: { userId: string }, @Body() dto: SyncPushDto) {
@@ -35,7 +35,7 @@ export class SyncController {
   }
 
   @Get("pull")
-  @Throttle(60, 60)
+  @Throttle({ default: { limit: 60, ttl: 60 } })
   @WalletRoles(WalletRole.VIEWER)
   @UseGuards(JwtAuthGuard, WalletRoleGuard)
   pull(@Query() query: SyncPullQueryDto) {
