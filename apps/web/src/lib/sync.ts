@@ -187,7 +187,9 @@ export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncPar
       throw new Error("Push failed");
     }
 
-    await Promise.all(\n      pending.map((event) => db.sync_events_local.update(event.eventId, { status: \"ACKED\" }))\n    );
+    await Promise.all(
+      pending.map((event) => db.sync_events_local.update(event.eventId, { status: "ACKED" }))
+    );
   }
 
   const lastSeq = await getLastSeq(walletId);
