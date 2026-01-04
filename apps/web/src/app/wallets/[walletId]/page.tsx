@@ -23,9 +23,16 @@ export default function WalletDashboard({ params }: { params: { walletId: string
     [walletId]
   );
 
-  const monthSummary = useMemo(() => {
+  type Summary = {
+    income: number;
+    expense: number;
+    net: number;
+    recent: NonNullable<typeof transactions>;
+  };
+
+  const monthSummary = useMemo<Summary>(() => {
     if (!transactions) {
-      return { income: 0, expense: 0, net: 0, recent: [] as typeof transactions };
+      return { income: 0, expense: 0, net: 0, recent: [] };
     }
 
     const now = new Date();
