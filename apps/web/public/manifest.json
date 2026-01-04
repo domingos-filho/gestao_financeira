@@ -3,8 +3,8 @@
   "short_name": "Gestao",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f7f3ee",
-  "theme_color": "#1c6e6d",
+  "background_color": "#f6f1e8",
+  "theme_color": "#0f3d3e",
   "icons": [
     {
       "src": "/icons/icon-192.svg",

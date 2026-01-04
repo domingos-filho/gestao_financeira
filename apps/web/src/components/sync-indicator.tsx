@@ -27,8 +27,8 @@ export function SyncIndicator({ walletId }: { walletId: string }) {
   }, [status, online]);
 
   return (
-    <div className="flex items-center gap-3 text-xs text-gray-600">
-      <span className="inline-flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+      <span className="inline-flex items-center gap-2 rounded-full bg-muted/70 px-3 py-1">
         <span
           className={`h-2 w-2 rounded-full ${status === "error" ? "bg-red-500" : online ? "bg-emerald-500" : "bg-amber-500"}`}
         />

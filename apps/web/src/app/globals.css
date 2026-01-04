@@ -3,14 +3,16 @@
 @tailwind utilities;
 
 :root {
-  --color-bg: #f7f3ee;
-  --color-fg: #1f2937;
-  --color-card: #fffdf8;
-  --color-primary: #1c6e6d;
-  --color-primary-fg: #f7f3ee;
-  --color-accent: #f1b974;
-  --color-muted: #e6dfd3;
-  --color-border: #e5d9ca;
+  --color-bg: #f6f1e8;
+  --color-fg: #1f1a17;
+  --color-card: #fffaf3;
+  --color-primary: #0f3d3e;
+  --color-primary-fg: #fdf7ee;
+  --color-accent: #e3b04b;
+  --color-accent-fg: #2b2113;
+  --color-muted: #efe6d7;
+  --color-muted-fg: #6f6559;
+  --color-border: #e7dccb;
 }
 
 * {
@@ -21,8 +23,11 @@ body {
   min-height: 100vh;
   color: var(--color-fg);
   font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
-  background: radial-gradient(circle at top, rgba(241, 185, 116, 0.18), transparent 60%),
-    linear-gradient(135deg, #f7f3ee 0%, #f0e7db 45%, #f7f3ee 100%);
+  background:
+    radial-gradient(1200px circle at 100% -10%, rgba(227, 176, 75, 0.18), transparent 55%),
+    radial-gradient(900px circle at -10% 10%, rgba(15, 61, 62, 0.18), transparent 55%),
+    linear-gradient(135deg, #f6f1e8 0%, #f1e7d7 45%, #f6f1e8 100%);
+  -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4 {
@@ -30,5 +35,52 @@ h1, h2, h3, h4 {
 }
 
 ::selection {
-  background: rgba(28, 110, 109, 0.2);
+  background: rgba(15, 61, 62, 0.2);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.6s ease both;
+}
+
+.animate-fade {
+  animation: fade-in 0.8s ease both;
+}
+
+.animate-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.animate-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animate-delay-300 {
+  animation-delay: 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .animate-fade {
+    animation: none !important;
+  }
 }

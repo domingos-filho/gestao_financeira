@@ -14,7 +14,7 @@ export default function HomePage() {
   }, [loading, user, router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center text-sm text-gray-600">
+    <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
       Carregando...
     </div>
   );

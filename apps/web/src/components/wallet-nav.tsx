@@ -14,7 +14,7 @@ export function WalletNav({ walletId }: { walletId: string }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-4 text-sm">
+    <nav className="flex flex-wrap gap-2 rounded-full bg-muted/70 p-1 text-sm">
       {navItems.map((item) => {
         const href = `/wallets/${walletId}${item.path}`;
         const active = pathname === href;
@@ -24,7 +24,9 @@ export function WalletNav({ walletId }: { walletId: string }) {
             href={href}
             className={cn(
               "rounded-full px-4 py-2 transition-colors",
-              active ? "bg-primary text-primaryForeground" : "hover:bg-muted"
+              active
+                ? "bg-primary text-primaryForeground shadow-sm"
+                : "text-muted-foreground hover:bg-card/80"
             )}
           >
             {item.label}

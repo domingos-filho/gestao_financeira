@@ -134,7 +134,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
   };
 
   if (accounts.length === 0) {
-    return <p className="text-sm text-gray-600">Nenhuma conta disponivel para esta carteira.</p>;
+    return <p className="text-sm text-muted-foreground">Nenhuma conta disponivel para esta carteira.</p>;
   }
 
   const transferTargets = accounts.filter((account) => account.id !== accountId);
@@ -204,7 +204,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
             </SelectContent>
           </Select>
           {transferTargets.length === 0 && (
-            <p className="text-xs text-gray-500">Crie outra conta para permitir transferencias.</p>
+            <p className="text-xs text-muted-foreground">Crie outra conta para permitir transferencias.</p>
           )}
         </div>
       )}

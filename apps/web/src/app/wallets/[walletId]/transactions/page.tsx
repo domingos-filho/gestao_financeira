@@ -32,27 +32,30 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
   return (
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-semibold">Transacoes</h2>
+        <div>
+          <h2 className="text-xl font-semibold">Transacoes</h2>
+          <p className="text-sm text-muted-foreground">Historico completo da carteira.</p>
+        </div>
         <Button asChild>
           <Link href={`/wallets/${walletId}/transactions/new`}>Nova transacao</Link>
         </Button>
       </div>
 
-      <Card>
+      <Card className="border-border/60 bg-card/85">
         <CardHeader>
           <CardTitle>Lista completa</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {sorted.length === 0 && <p className="text-sm text-gray-600">Sem transacoes locais.</p>}
+          {sorted.length === 0 && <p className="text-sm text-muted-foreground">Sem transacoes locais.</p>}
           {sorted.map((tx) => (
             <Link
               key={tx.id}
               href={`/wallets/${walletId}/transactions/${tx.id}/edit`}
-              className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 hover:shadow-sm"
+              className="flex items-center justify-between rounded-xl border border-border/70 bg-card/90 px-4 py-3 transition hover:-translate-y-0.5 hover:shadow-sm"
             >
               <div>
                 <p className="font-medium">{tx.description || "Sem descricao"}</p>
-                <p className="text-xs text-gray-500">{new Date(tx.occurredAt).toLocaleDateString()}</p>
+                <p className="text-xs text-muted-foreground">{new Date(tx.occurredAt).toLocaleDateString()}</p>
               </div>
               <span
                 className={

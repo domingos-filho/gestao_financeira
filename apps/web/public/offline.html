@@ -1,19 +1,56 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Offline</title>
     <style>
-      body { font-family: Arial, sans-serif; background: #f7f3ee; color: #1f2937; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-      .card { background: #fffdf8; padding: 24px 28px; border-radius: 16px; border: 1px solid #e6dfd3; max-width: 420px; text-align: center; }
+      body {
+        font-family: "Manrope", "Segoe UI", system-ui, sans-serif;
+        background: #f6f1e8;
+        color: #1f1a17;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .card {
+        background: #fffaf3;
+        padding: 28px 32px;
+        border-radius: 20px;
+        border: 1px solid #e7dccb;
+        max-width: 420px;
+        text-align: center;
+        box-shadow: 0 18px 40px -30px rgba(15, 61, 62, 0.4);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: #efe6d7;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: #6f6559;
+        margin-bottom: 16px;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #e3b04b;
+      }
       h1 { margin: 0 0 8px; font-size: 22px; }
-      p { margin: 0; font-size: 14px; }
+      p { margin: 0; font-size: 14px; color: #6f6559; }
     </style>
   </head>
   <body>
     <div class="card">
-      <h1>Offline</h1>
+      <span class="badge"><span class="dot"></span>Offline</span>
+      <h1>Voce esta offline</h1>
       <p>Sem conexao. Suas transacoes ainda podem ser registradas localmente.</p>
     </div>
   </body>

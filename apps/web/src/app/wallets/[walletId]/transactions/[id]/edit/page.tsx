@@ -7,7 +7,7 @@ export default function EditTransactionPage({
   params: { walletId: string; id: string };
 }) {
   return (
-    <Card>
+    <Card className="border-border/60 bg-card/85">
       <CardHeader>
         <CardTitle>Editar transacao</CardTitle>
       </CardHeader>

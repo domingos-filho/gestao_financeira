@@ -12,7 +12,9 @@ const config: Config = {
         primary: "var(--color-primary)",
         primaryForeground: "var(--color-primary-fg)",
         accent: "var(--color-accent)",
+        "accent-foreground": "var(--color-accent-fg)",
         muted: "var(--color-muted)",
+        "muted-foreground": "var(--color-muted-fg)",
         border: "var(--color-border)"
       },
       borderRadius: {

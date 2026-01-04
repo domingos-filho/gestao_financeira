@@ -37,11 +37,11 @@ export default function WalletSettingsPage({ params }: { params: { walletId: str
   };
 
   if (currentRole !== WalletRole.ADMIN) {
-    return <p className="text-sm text-gray-600">Apenas administradores podem gerenciar membros.</p>;
+    return <p className="text-sm text-muted-foreground">Apenas administradores podem gerenciar membros.</p>;
   }
 
   return (
-    <Card>
+    <Card className="border-border/60 bg-card/85">
       <CardHeader>
         <CardTitle>Configuracao da carteira</CardTitle>
         <CardDescription>Adicionar membros e definir papeis.</CardDescription>
@@ -66,7 +66,7 @@ export default function WalletSettingsPage({ params }: { params: { walletId: str
             </SelectContent>
           </Select>
         </div>
-        {message && <p className="text-sm text-gray-600">{message}</p>}
+        {message && <p className="text-sm text-muted-foreground">{message}</p>}
         <Button onClick={handleAddMember}>Adicionar membro</Button>
       </CardContent>
     </Card>

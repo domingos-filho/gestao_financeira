@@ -64,52 +64,54 @@ export default function WalletDashboard({ params }: { params: { walletId: string
   return (
     <div className="grid gap-6">
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardDescription>Receitas do mes</CardDescription>
-            <CardTitle>{formatBRL(monthSummary.income)}</CardTitle>
+        <Card className="border-border/60 bg-card/85">
+          <CardHeader className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Receitas do mes</p>
+            <CardTitle className="text-2xl">{formatBRL(monthSummary.income)}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Despesas do mes</CardDescription>
-            <CardTitle>{formatBRL(monthSummary.expense)}</CardTitle>
+        <Card className="border-border/60 bg-card/85">
+          <CardHeader className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Despesas do mes</p>
+            <CardTitle className="text-2xl">{formatBRL(monthSummary.expense)}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Saldo do mes</CardDescription>
-            <CardTitle>{formatBRL(monthSummary.net)}</CardTitle>
+        <Card className="border-border/60 bg-card/85">
+          <CardHeader className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Saldo do mes</p>
+            <CardTitle className="text-2xl">{formatBRL(monthSummary.net)}</CardTitle>
           </CardHeader>
         </Card>
       </div>
 
-      <Card>
+      <Card className="border-border/60 bg-card/85">
         <CardHeader>
           <CardTitle>Movimentos recentes</CardTitle>
           <CardDescription>Ultimos registros deste mes.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {monthSummary.recent.length === 0 && <p className="text-sm text-gray-600">Sem transacoes.</p>}
-          {monthSummary.recent.map((tx) => (
-            <div key={tx.id} className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">{tx.description || "Sem descricao"}</p>
-                <p className="text-xs text-gray-500">{new Date(tx.occurredAt).toLocaleDateString()}</p>
+          {monthSummary.recent.length === 0 && <p className="text-sm text-muted-foreground">Sem transacoes.</p>}
+          <div className="divide-y divide-border/70">
+            {monthSummary.recent.map((tx) => (
+              <div key={tx.id} className="flex items-center justify-between py-3">
+                <div>
+                  <p className="font-medium">{tx.description || "Sem descricao"}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(tx.occurredAt).toLocaleDateString()}</p>
+                </div>
+                <span
+                  className={
+                    tx.type === TransactionType.EXPENSE
+                      ? "text-red-600"
+                      : tx.type === TransactionType.TRANSFER
+                      ? "text-blue-600"
+                      : "text-emerald-600"
+                  }
+                >
+                  {formatBRL(tx.amountCents)}
+                </span>
               </div>
-              <span
-                className={
-                  tx.type === TransactionType.EXPENSE
-                    ? "text-red-600"
-                    : tx.type === TransactionType.TRANSFER
-                    ? "text-blue-600"
-                    : "text-emerald-600"
-                }
-              >
-                {formatBRL(tx.amountCents)}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </CardContent>
       </Card>
 

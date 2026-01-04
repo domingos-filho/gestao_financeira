@@ -16,8 +16,12 @@ const manrope = Manrope({
 export const metadata = {
   title: "Gestao Financeira",
   description: "Controle financeiro offline-first",
-  manifest: "/manifest.json",
-  themeColor: "#1c6e6d"
+  manifest: "/manifest.json"
+};
+
+export const viewport = {
+  themeColor: "#0f3d3e",
+  colorScheme: "light"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
