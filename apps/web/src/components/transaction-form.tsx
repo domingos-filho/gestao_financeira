@@ -32,6 +32,7 @@ function toIsoDate(value: string) {
 export function TransactionForm({ walletId, transactionId }: { walletId: string; transactionId?: string }) {
   const router = useRouter();
   const { user } = useAuth();
+  const noneCategoryValue = "__none__";
 
   const existing = useLiveQuery(
     () => (transactionId ? db.transactions_local.get(transactionId) : undefined),
@@ -232,12 +233,15 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
 
       <div className="space-y-2">
         <Label>Categoria</Label>
-        <Select value={categoryId ?? ""} onValueChange={(value) => setCategoryId(value || null)}>
+        <Select
+          value={categoryId ?? noneCategoryValue}
+          onValueChange={(value) => setCategoryId(value === noneCategoryValue ? null : value)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Sem categoria" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Sem categoria</SelectItem>
+            <SelectItem value={noneCategoryValue}>Sem categoria</SelectItem>
             {(categories ?? []).map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}

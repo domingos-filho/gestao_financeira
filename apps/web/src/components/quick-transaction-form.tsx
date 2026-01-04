@@ -24,6 +24,7 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
     () => db.categories_local.where("walletId").equals(walletId).toArray(),
     [walletId]
   );
+  const noneCategoryValue = "__none__";
 
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [type, setType] = useState<TransactionType>(TransactionType.INCOME);
@@ -149,12 +150,15 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
 
       <div className="space-y-2">
         <Label>Categoria</Label>
-        <Select value={categoryId ?? ""} onValueChange={(value) => setCategoryId(value || null)}>
+        <Select
+          value={categoryId ?? noneCategoryValue}
+          onValueChange={(value) => setCategoryId(value === noneCategoryValue ? null : value)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Sem categoria" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Sem categoria</SelectItem>
+            <SelectItem value={noneCategoryValue}>Sem categoria</SelectItem>
             {(categories ?? []).map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}
