@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const roles = [WalletRole.ADMIN, WalletRole.EDITOR, WalletRole.VIEWER];
 
@@ -171,17 +172,18 @@ export default function WalletSettingsPage({ params }: { params: { walletId: str
               </div>
               <div className="space-y-2">
                 <Label>Papel</Label>
-                <select
-                  value={role}
-                  onChange={(event) => setRole(event.target.value as WalletRole)}
-                  className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                >
-                  {roles.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
+                <Select value={role} onValueChange={(value) => setRole(value as WalletRole)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             {message && <p className="text-sm text-muted-foreground">{message}</p>}
