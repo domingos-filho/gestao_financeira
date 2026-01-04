@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from "@nestjs/common";
+import { Injectable, UnauthorizedException, ConflictException, ForbiddenException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcrypt";
@@ -41,19 +41,46 @@ export class AuthService {
     return this.config.get<string>("REFRESH_TOKEN_EXPIRES_IN") ?? REFRESH_TOKEN_TTL;
   }
 
+  private get adminEmail() {
+    return (this.config.get<string>("ADMIN_EMAIL") ?? "fadomingosf@gmail.com").toLowerCase();
+  }
+
+  private normalizeEmail(email: string) {
+    return email.trim().toLowerCase();
+  }
+
+  private async assertAccessAllowed(email: string) {
+    if (email === this.adminEmail) {
+      return;
+    }
+
+    const access = await this.users.getAccess(email);
+    if (!access || access.status !== "ALLOWED") {
+      throw new ForbiddenException({
+        code: "ACCESS_DENIED",
+        adminEmail: this.adminEmail,
+        message: "Access denied"
+      });
+    }
+  }
+
   async register(email: string, password: string, deviceId: string) {
-    const existing = await this.users.findByEmail(email);
+    const normalized = this.normalizeEmail(email);
+    await this.assertAccessAllowed(normalized);
+    const existing = await this.users.findByEmail(normalized);
     if (existing) {
       throw new ConflictException("Email already registered");
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await this.users.createUser(email, passwordHash);
+    const user = await this.users.createUser(normalized, passwordHash);
     return this.issueTokens(user.id, user.email, deviceId);
   }
 
   async login(email: string, password: string, deviceId: string) {
-    const user = await this.users.findByEmail(email);
+    const normalized = this.normalizeEmail(email);
+    await this.assertAccessAllowed(normalized);
+    const user = await this.users.findByEmail(normalized);
     if (!user) {
       throw new UnauthorizedException("Invalid credentials");
     }

@@ -52,7 +52,8 @@ export class WalletsService {
   }
 
   async addMember(walletId: string, email: string, role: WalletRole) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const normalized = email.trim().toLowerCase();
+    const user = await this.prisma.user.findUnique({ where: { email: normalized } });
     if (!user) {
       throw new NotFoundException("User not found");
     }

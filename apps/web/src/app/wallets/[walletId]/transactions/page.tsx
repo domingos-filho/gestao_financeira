@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { TransactionType } from "@gf/shared";
 import { ArrowDownRight, ArrowUpRight, Repeat } from "lucide-react";
@@ -27,6 +28,14 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
         .toArray(),
     [walletId]
   );
+  const categories = useLiveQuery(
+    () => db.categories_local.where("walletId").equals(walletId).toArray(),
+    [walletId]
+  );
+
+  const categoryMap = useMemo(() => {
+    return new Map((categories ?? []).map((category) => [category.id, category.name]));
+  }, [categories]);
 
   const sorted = (transactions ?? []).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
 
@@ -74,7 +83,12 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
                 </span>
                 <div>
                   <p className="font-medium">{tx.description || "Sem descricao"}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(tx.occurredAt).toLocaleDateString()}</p>
+                  <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{new Date(tx.occurredAt).toLocaleDateString()}</span>
+                    <span className="rounded-full border border-border px-2 py-0.5 text-[10px]">
+                      {tx.categoryId ? categoryMap.get(tx.categoryId) ?? "Categoria" : "Sem categoria"}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-3 text-sm">

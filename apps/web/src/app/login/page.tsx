@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth";
+import { AccessDeniedError, useAuth } from "@/lib/auth";
 import { BrandMark } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [accessDenied, setAccessDenied] = useState<string | null>(null);
+  const fallbackAdmin = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -29,12 +31,41 @@ export default function LoginPage() {
         await register(email, password);
       }
       router.replace("/wallets");
-    } catch {
+    } catch (err) {
+      if (err instanceof AccessDeniedError) {
+        setAccessDenied(err.adminEmail ?? fallbackAdmin);
+        return;
+      }
       setError("Falha ao autenticar. Verifique os dados.");
     } finally {
       setLoading(false);
     }
   };
+
+  if (accessDenied) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md animate-rise">
+          <CardHeader className="space-y-3">
+            <div className="flex items-center gap-3">
+              <BrandMark />
+              <div>
+                <CardTitle className="text-xl text-primary">FinanceFlow</CardTitle>
+                <CardDescription>Acesso restrito</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            <p>Seu usuario nao tem permissao para acessar este aplicativo.</p>
+            <p>Entre em contato com o administrador: <strong className="text-foreground">{accessDenied}</strong></p>
+            <Button type="button" className="w-full" onClick={() => setAccessDenied(null)}>
+              Voltar
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

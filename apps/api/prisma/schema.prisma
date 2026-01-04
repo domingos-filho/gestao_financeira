@@ -21,6 +21,17 @@ enum TransactionType {
   TRANSFER
 }
 
+enum AccessStatus {
+  ALLOWED
+  REVOKED
+}
+
+enum DebtStatus {
+  ACTIVE
+  PAID
+  CANCELED
+}
+
 enum SyncEventType {
   TRANSACTION_CREATED
   TRANSACTION_UPDATED
@@ -53,6 +64,7 @@ model Wallet {
   accounts    Account[]
   categories  Category[]
   transactions Transaction[]
+  debts       Debt[]
   syncEvents  SyncEvent[]
 }
 
@@ -142,4 +154,29 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId, deviceId])
+}
+
+model AccessGrant {
+  email     String        @id
+  status    AccessStatus  @default(ALLOWED)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+}
+
+model Debt {
+  id                   String     @id @default(uuid())
+  walletId             String     @map("wallet_id")
+  name                 String
+  principalCents       Int        @map("principal_cents")
+  interestRate         Float?     @map("interest_rate")
+  monthlyPaymentCents  Int?       @map("monthly_payment_cents")
+  startedAt            DateTime   @map("started_at")
+  dueAt                DateTime?  @map("due_at")
+  status               DebtStatus @default(ACTIVE)
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
+
+  wallet               Wallet     @relation(fields: [walletId], references: [id])
+
+  @@index([walletId])
 }

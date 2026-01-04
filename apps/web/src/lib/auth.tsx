@@ -25,6 +25,26 @@ type AuthContextValue = AuthState & {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+export class AccessDeniedError extends Error {
+  adminEmail?: string;
+  constructor(adminEmail?: string) {
+    super("ACCESS_DENIED");
+    this.adminEmail = adminEmail;
+  }
+}
+
+async function parseErrorPayload(response: Response) {
+  try {
+    return (await response.json()) as {
+      code?: string;
+      adminEmail?: string;
+      message?: unknown;
+    };
+  } catch {
+    return null;
+  }
+}
+
 function loadStoredAuth(): Omit<AuthState, "loading"> {
   if (typeof window === "undefined") {
     return { user: null, accessToken: null, refreshToken: null };
@@ -101,7 +121,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!res.ok) {
-      throw new Error("Login failed");
+      const payload = await parseErrorPayload(res);
+      const code = payload?.code ?? (payload?.message as { code?: string } | undefined)?.code;
+      const adminEmail =
+        payload?.adminEmail ?? (payload?.message as { adminEmail?: string } | undefined)?.adminEmail;
+      if (res.status === 403 && code === "ACCESS_DENIED") {
+        throw new AccessDeniedError(adminEmail);
+      }
+      throw new Error(typeof payload?.message === "string" ? payload.message : "Login failed");
     }
 
     const data = (await res.json()) as { user: AuthUser; accessToken: string; refreshToken: string };
@@ -117,7 +144,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!res.ok) {
-      throw new Error("Register failed");
+      const payload = await parseErrorPayload(res);
+      const code = payload?.code ?? (payload?.message as { code?: string } | undefined)?.code;
+      const adminEmail =
+        payload?.adminEmail ?? (payload?.message as { adminEmail?: string } | undefined)?.adminEmail;
+      if (res.status === 403 && code === "ACCESS_DENIED") {
+        throw new AccessDeniedError(adminEmail);
+      }
+      throw new Error(typeof payload?.message === "string" ? payload.message : "Register failed");
     }
 
     const data = (await res.json()) as { user: AuthUser; accessToken: string; refreshToken: string };

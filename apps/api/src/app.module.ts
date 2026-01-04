@@ -7,6 +7,8 @@ import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
 import { WalletsModule } from "./wallets/wallets.module";
 import { SyncModule } from "./sync/sync.module";
+import { CategoriesModule } from "./categories/categories.module";
+import { DebtsModule } from "./debts/debts.module";
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { SyncModule } from "./sync/sync.module";
     UsersModule,
     AuthModule,
     WalletsModule,
+    CategoriesModule,
+    DebtsModule,
     SyncModule
   ],
   providers: [

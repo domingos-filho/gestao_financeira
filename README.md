@@ -33,6 +33,7 @@ JWT_SECRET=change_me_access
 REFRESH_TOKEN_SECRET=change_me_refresh
 JWT_EXPIRES_IN=15m
 REFRESH_TOKEN_EXPIRES_IN=7d
+ADMIN_EMAIL=fadomingosf@gmail.com
 PORT=3001
 ```
 
@@ -40,6 +41,7 @@ No frontend, opcionalmente defina:
 
 ```
 NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_ADMIN_EMAIL=fadomingosf@gmail.com
 ```
 
 ## Executar localmente (sem Docker)
@@ -90,6 +92,15 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 - POST /wallets
 - GET /wallets
 - POST /wallets/:id/members
+- GET /wallets/:id/categories
+- POST /wallets/:id/categories
+- PATCH /wallets/:id/categories/:categoryId
+- GET /wallets/:id/debts
+- POST /wallets/:id/debts
+- PATCH /wallets/:id/debts/:debtId
+- GET /users/access (admin)
+- POST /users/access (admin)
+- DELETE /users/access/:email (admin)
 - POST /sync/push
 - GET /sync/pull?walletId=...&sinceSeq=...
 
@@ -119,9 +130,11 @@ JWT_SECRET=segredo_forte_access
 REFRESH_TOKEN_SECRET=segredo_forte_refresh
 JWT_EXPIRES_IN=15m
 REFRESH_TOKEN_EXPIRES_IN=7d
+ADMIN_EMAIL=fadomingosf@gmail.com
 WEB_DOMAIN=appfinanceiro.domingos-automacoes.shop
 API_DOMAIN=api.domingos-automacoes.shop
 NEXT_PUBLIC_API_URL=https://api.domingos-automacoes.shop
+NEXT_PUBLIC_ADMIN_EMAIL=fadomingosf@gmail.com
 # API_PORT/WEB_PORT sao usados apenas no docker-compose.local.yml
 API_PORT=3001
 WEB_PORT=4000

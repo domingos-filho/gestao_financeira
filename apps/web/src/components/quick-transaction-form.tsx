@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { TransactionType } from "@gf/shared";
 import { createLocalTransaction } from "@/lib/sync";
 import { getDeviceId } from "@/lib/device";
 import { getWalletAccounts } from "@/lib/wallet-cache";
 import { useAuth } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,11 +20,16 @@ type QuickTransactionFormProps = {
 export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
   const { user } = useAuth();
   const accounts = useMemo(() => getWalletAccounts(walletId), [walletId]);
+  const categories = useLiveQuery(
+    () => db.categories_local.where("walletId").equals(walletId).toArray(),
+    [walletId]
+  );
 
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [type, setType] = useState<TransactionType>(TransactionType.INCOME);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,6 +37,12 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
       setAccountId(accounts[0].id);
     }
   }, [accountId, accounts]);
+
+  useEffect(() => {
+    if (!categoryId && categories && categories[0]) {
+      setCategoryId(categories[0].id);
+    }
+  }, [categoryId, categories]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -59,6 +72,7 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
         amountCents,
         occurredAt: new Date().toISOString(),
         description,
+        categoryId: categoryId ?? null,
         counterpartyAccountId: null,
         userId: user.id,
         deviceId: getDeviceId()
@@ -127,6 +141,23 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
             {accounts.map((account) => (
               <SelectItem key={account.id} value={account.id}>
                 {account.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Categoria</Label>
+        <Select value={categoryId ?? ""} onValueChange={(value) => setCategoryId(value || null)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Sem categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Sem categoria</SelectItem>
+            {(categories ?? []).map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
               </SelectItem>
             ))}
           </SelectContent>

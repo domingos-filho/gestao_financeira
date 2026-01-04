@@ -15,6 +15,28 @@ export type TransactionLocal = {
   updatedAt: string;
 };
 
+export type CategoryLocal = {
+  id: string;
+  walletId: string;
+  name: string;
+  updatedAt: string;
+};
+
+export type DebtStatus = "ACTIVE" | "PAID" | "CANCELED";
+
+export type DebtLocal = {
+  id: string;
+  walletId: string;
+  name: string;
+  principalCents: number;
+  interestRate: number | null;
+  monthlyPaymentCents: number | null;
+  startedAt: string;
+  dueAt?: string | null;
+  status: DebtStatus;
+  updatedAt: string;
+};
+
 export type SyncEventStatus = "PENDING" | "ACKED";
 
 export type SyncEventLocal = {
@@ -35,6 +57,8 @@ export type SyncMetadata = {
 
 class FinanceDB extends Dexie {
   transactions_local!: Table<TransactionLocal, string>;
+  categories_local!: Table<CategoryLocal, string>;
+  debts_local!: Table<DebtLocal, string>;
   sync_events_local!: Table<SyncEventLocal, string>;
   sync_metadata!: Table<SyncMetadata, string>;
 
@@ -42,6 +66,13 @@ class FinanceDB extends Dexie {
     super("gestao_financeira");
     this.version(1).stores({
       transactions_local: "id, walletId, occurredAt, deletedAt",
+      sync_events_local: "eventId, walletId, status, createdAt",
+      sync_metadata: "key"
+    });
+    this.version(2).stores({
+      transactions_local: "id, walletId, occurredAt, deletedAt",
+      categories_local: "id, walletId, updatedAt",
+      debts_local: "id, walletId, status, startedAt",
       sync_events_local: "eventId, walletId, status, createdAt",
       sync_metadata: "key"
     });

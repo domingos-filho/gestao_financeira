@@ -15,6 +15,8 @@ import {
   Users
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { syncCategories } from "@/lib/categories";
+import { syncDebts } from "@/lib/debts";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand-logo";
 import { SyncIndicator } from "@/components/sync-indicator";
@@ -37,9 +39,21 @@ const navItems: NavItem[] = [
     icon: ArrowLeftRight,
     href: (walletId) => (walletId ? `/wallets/${walletId}/transactions` : undefined)
   },
-  { label: "Dividas", icon: CreditCard, disabled: true },
-  { label: "Categorias", icon: Folder, disabled: true },
-  { label: "Relatorios", icon: BarChart3, disabled: true },
+  {
+    label: "Dividas",
+    icon: CreditCard,
+    href: (walletId) => (walletId ? `/wallets/${walletId}/debts` : undefined)
+  },
+  {
+    label: "Categorias",
+    icon: Folder,
+    href: (walletId) => (walletId ? `/wallets/${walletId}/categories` : undefined)
+  },
+  {
+    label: "Relatorios",
+    icon: BarChart3,
+    href: (walletId) => (walletId ? `/wallets/${walletId}/reports` : undefined)
+  },
   {
     label: "Usuarios",
     icon: Users,
@@ -54,7 +68,7 @@ type AppShellProps = {
 
 export function AppShell({ children, walletId }: AppShellProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, authFetch } = useAuth();
   const [online, setOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
 
   useEffect(() => {
@@ -68,11 +82,18 @@ export function AppShell({ children, walletId }: AppShellProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!walletId || !user || !navigator.onLine) {
+      return;
+    }
+    syncCategories(walletId, authFetch).catch(() => null);
+    syncDebts(walletId, authFetch).catch(() => null);
+  }, [walletId, user, authFetch]);
+
   const nav = useMemo(
     () =>
       navItems.map((item) => {
         const href = item.href ? item.href(walletId) : undefined;
-        const active = Boolean(href && pathname === href);
         const active = Boolean(
           href &&
             (pathname === href || (href !== "/wallets" && pathname.startsWith(`${href}/`)))

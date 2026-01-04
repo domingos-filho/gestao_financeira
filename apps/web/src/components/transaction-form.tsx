@@ -38,6 +38,11 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     [transactionId]
   );
 
+  const categories = useLiveQuery(
+    () => db.categories_local.where("walletId").equals(walletId).toArray(),
+    [walletId]
+  );
+
   const accounts = useMemo(() => getWalletAccounts(walletId), [walletId]);
 
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
@@ -46,6 +51,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
   const [occurredAt, setOccurredAt] = useState(() => new Date().toLocaleDateString("en-CA"));
   const [description, setDescription] = useState("");
   const [counterpartyAccountId, setCounterpartyAccountId] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -56,6 +62,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     setOccurredAt(existing.occurredAt.slice(0, 10));
     setDescription(existing.description);
     setCounterpartyAccountId(existing.counterpartyAccountId ?? null);
+    setCategoryId(existing.categoryId ?? null);
   }, [existing]);
 
   useEffect(() => {
@@ -63,6 +70,12 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
       setAccountId(accounts[0].id);
     }
   }, [accountId, accounts]);
+
+  useEffect(() => {
+    if (!categoryId && categories && categories[0]) {
+      setCategoryId(categories[0].id);
+    }
+  }, [categoryId, categories]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -95,6 +108,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
         amountCents,
         occurredAt: occurredAtIso,
         description,
+        categoryId: categoryId ?? null,
         counterpartyAccountId: type === TransactionType.TRANSFER ? counterpartyAccountId : null,
         userId: user.id,
         deviceId
@@ -107,6 +121,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
         amountCents,
         occurredAt: occurredAtIso,
         description,
+        categoryId: categoryId ?? null,
         counterpartyAccountId: type === TransactionType.TRANSFER ? counterpartyAccountId : null,
         userId: user.id,
         deviceId
@@ -126,6 +141,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
       amountCents: existing.amountCents,
       occurredAt: existing.occurredAt,
       description: existing.description,
+      categoryId: existing.categoryId ?? null,
       counterpartyAccountId: existing.counterpartyAccountId ?? null,
       userId: user.id,
       deviceId: getDeviceId()
@@ -212,6 +228,23 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
       <div className="space-y-2">
         <Label>Descricao</Label>
         <Textarea value={description} onChange={(event) => setDescription(event.target.value)} required />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Categoria</Label>
+        <Select value={categoryId ?? ""} onValueChange={(value) => setCategoryId(value || null)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Sem categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Sem categoria</SelectItem>
+            {(categories ?? []).map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

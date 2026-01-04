@@ -31,7 +31,11 @@ export class WalletRoleGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const walletId = request.params?.id || request.body?.walletId || request.query?.walletId;
+    const walletId =
+      request.params?.id ||
+      request.params?.walletId ||
+      request.body?.walletId ||
+      request.query?.walletId;
 
     if (!walletId) {
       throw new BadRequestException("walletId is required");
