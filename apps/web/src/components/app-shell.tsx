@@ -24,7 +24,7 @@ import { SyncIndicator } from "@/components/sync-indicator";
 type NavItem = {
   label: string;
   icon: ComponentType<{ className?: string }>;
-  href?: (walletId?: string) => string;
+  href?: (walletId?: string) => string | undefined;
   disabled?: boolean;
 };
 
