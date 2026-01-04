@@ -41,6 +41,8 @@ services:
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.domingos-automacoes.shop}
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
     depends_on:
       - api
     healthcheck:
