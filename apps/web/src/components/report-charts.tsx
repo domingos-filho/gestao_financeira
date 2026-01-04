@@ -78,12 +78,15 @@ export function MultiLineChart({ series }: { series: Series[] }) {
 }
 
 export function BarPairChart({ income, expense }: { income: number[]; expense: number[] }) {
-  const max = Math.max(1, ...income, ...expense);
+  const length = Math.max(income.length, expense.length);
+  const incomeSeries = Array.from({ length }, (_, index) => income[index] ?? 0);
+  const expenseSeries = Array.from({ length }, (_, index) => expense[index] ?? 0);
+  const max = Math.max(1, ...incomeSeries, ...expenseSeries);
   return (
     <div className="flex h-24 items-end gap-2">
-      {income.map((value, index) => {
+      {incomeSeries.map((value, index) => {
         const incomeHeight = Math.round((value / max) * 100);
-        const expenseHeight = Math.round((expense[index] / max) * 100);
+        const expenseHeight = Math.round(((expenseSeries[index] ?? 0) / max) * 100);
         return (
           <div key={`bar-${index}`} className="flex h-full w-full flex-1 items-end gap-1">
             <div className="flex w-1/2 items-end">
