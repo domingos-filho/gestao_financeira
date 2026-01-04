@@ -118,9 +118,9 @@ JWT_SECRET=segredo_forte_access
 REFRESH_TOKEN_SECRET=segredo_forte_refresh
 JWT_EXPIRES_IN=15m
 REFRESH_TOKEN_EXPIRES_IN=7d
-WEB_DOMAIN=appfinanceiro.dominios-automacoes.shop
-API_DOMAIN=api.dominios-automacoes.shop
-NEXT_PUBLIC_API_URL=https://api.dominios-automacoes.shop
+WEB_DOMAIN=appfinanceiro.domingos-automacoes.shop
+API_DOMAIN=api.domingos-automacoes.shop
+NEXT_PUBLIC_API_URL=https://api.domingos-automacoes.shop
 API_PORT=3001
 WEB_PORT=4000
 ```
