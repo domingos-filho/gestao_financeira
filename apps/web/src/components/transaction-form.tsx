@@ -59,7 +59,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
   }, [existing]);
 
   useEffect(() => {
-    if (!accountId && accounts.length > 0) {
+    if (!accountId && accounts.length > 0 && accounts[0]) {
       setAccountId(accounts[0].id);
     }
   }, [accountId, accounts]);
