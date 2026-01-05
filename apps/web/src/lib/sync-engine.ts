@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./auth";
 import { getDeviceId } from "./device";
 import { getLastSyncAt, syncNow } from "./sync";
@@ -11,9 +11,29 @@ export function useSyncEngine(walletId?: string) {
   const { user, authFetch } = useAuth();
   const [status, setStatus] = useState<SyncStatus>("idle");
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+  const syncingRef = useRef(false);
+  const walletRef = useRef(walletId);
+  const userRef = useRef(user);
+  const authFetchRef = useRef(authFetch);
+
+  useEffect(() => {
+    walletRef.current = walletId;
+  }, [walletId]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  useEffect(() => {
+    authFetchRef.current = authFetch;
+  }, [authFetch]);
 
   const runSync = useCallback(async () => {
-    if (!walletId || !user) {
+    const activeWalletId = walletRef.current;
+    const activeUser = userRef.current;
+    const activeAuthFetch = authFetchRef.current;
+
+    if (!activeWalletId || !activeUser) {
       return;
     }
 
@@ -21,24 +41,30 @@ export function useSyncEngine(walletId?: string) {
       return;
     }
 
-    setStatus("syncing");
+    if (syncingRef.current) {
+      return;
+    }
+    syncingRef.current = true;
+    setStatus((prev) => (prev === "syncing" ? prev : "syncing"));
     try {
       await syncNow({
-        walletId,
-        userId: user.id,
+        walletId: activeWalletId,
+        userId: activeUser.id,
         deviceId: getDeviceId(),
-        authFetch
+        authFetch: activeAuthFetch
       });
-      const latest = await getLastSyncAt(walletId);
+      const latest = await getLastSyncAt(activeWalletId);
       setLastSyncAt(latest);
       setStatus("idle");
     } catch {
       setStatus("error");
+    } finally {
+      syncingRef.current = false;
     }
-  }, [walletId, user, authFetch]);
+  }, []);
 
   useEffect(() => {
-    if (!walletId || !user) {
+    if (!walletId || !user?.id) {
       return;
     }
 
@@ -52,7 +78,7 @@ export function useSyncEngine(walletId?: string) {
       window.clearInterval(interval);
       window.removeEventListener("online", handleOnline);
     };
-  }, [walletId, user, runSync]);
+  }, [walletId, user?.id, runSync]);
 
   return { status, lastSyncAt, runSync };
 }
