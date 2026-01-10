@@ -60,6 +60,16 @@ export class UsersService {
     }));
   }
 
+  listWalletOptions() {
+    return this.prisma.wallet.findMany({
+      select: {
+        id: true,
+        name: true
+      },
+      orderBy: { createdAt: "desc" }
+    });
+  }
+
   async createManagedUser(params: {
     name: string;
     email: string;

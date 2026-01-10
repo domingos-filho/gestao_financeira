@@ -53,8 +53,7 @@ export default function UsersPage() {
   const loadData = async () => {
     setDataLoading(true);
     try {
-      const [usersRes, walletsRes] = await Promise.all([authFetch("/users"), authFetch("/wallets/admin")]);
-
+      const usersRes = await authFetch("/users");
       if (usersRes.ok) {
         const data = (await usersRes.json()) as ManagedUser[];
         setUsers(data);
@@ -62,6 +61,7 @@ export default function UsersPage() {
         setMessage("Nao foi possivel carregar usuarios.");
       }
 
+      const walletsRes = await authFetch("/users/wallet-options");
       if (walletsRes.ok) {
         const data = (await walletsRes.json()) as Array<{ id: string; name: string }>;
         setWallets(data.map((wallet) => ({ id: wallet.id, name: wallet.name })));
