@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
 import { TransactionType } from "@gf/shared";
 import { db, safeDexie } from "@/lib/db";
 import { createLocalTransaction, deleteLocalTransaction, updateLocalTransaction } from "@/lib/sync";
 import { getDeviceId } from "@/lib/device";
-import { getWalletAccounts } from "@/lib/wallet-cache";
+import { useWalletAccounts } from "@/lib/wallets";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +45,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     [walletId]
   );
 
-  const accounts = useMemo(() => getWalletAccounts(walletId), [walletId]);
+  const { accounts, isLoading: accountsLoading } = useWalletAccounts(walletId);
 
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [type, setType] = useState<TransactionType>(TransactionType.EXPENSE);
@@ -150,6 +150,10 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     });
     router.push(`/wallets/${walletId}/transactions`);
   };
+
+  if (accountsLoading) {
+    return <p className="text-sm text-muted-foreground">Carregando contas...</p>;
+  }
 
   if (accounts.length === 0) {
     return <p className="text-sm text-muted-foreground">Nenhuma conta disponivel para esta carteira.</p>;

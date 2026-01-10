@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { TransactionType } from "@gf/shared";
 import { createLocalTransaction } from "@/lib/sync";
 import { getDeviceId } from "@/lib/device";
-import { getWalletAccounts } from "@/lib/wallet-cache";
+import { useWalletAccounts } from "@/lib/wallets";
 import { useAuth } from "@/lib/auth";
 import { db, safeDexie } from "@/lib/db";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ type QuickTransactionFormProps = {
 
 export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
   const { user } = useAuth();
-  const accounts = useMemo(() => getWalletAccounts(walletId), [walletId]);
+  const { accounts, isLoading: accountsLoading } = useWalletAccounts(walletId);
   const categories = useLiveQuery(
     () => safeDexie(() => db.categories_local.where("walletId").equals(walletId).toArray(), []),
     [walletId]
@@ -85,6 +85,10 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
       setError("Nao foi possivel salvar.");
     }
   };
+
+  if (accountsLoading) {
+    return <p className="text-sm text-muted-foreground">Carregando contas...</p>;
+  }
 
   if (accounts.length === 0) {
     return <p className="text-sm text-muted-foreground">Nenhuma conta disponivel para esta carteira.</p>;
