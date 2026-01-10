@@ -256,7 +256,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
         </Select>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit">Salvar</Button>

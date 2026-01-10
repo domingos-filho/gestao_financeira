@@ -54,7 +54,9 @@ export default function WalletsPage() {
           )}
 
           {walletsQuery.isLoading && <p className="text-sm text-muted-foreground">Carregando...</p>}
-          {walletsQuery.error && <p className="text-sm text-red-600">Nao foi possivel atualizar as carteiras.</p>}
+          {walletsQuery.error && (
+            <p className="text-sm text-[var(--color-danger)]">Nao foi possivel atualizar as carteiras.</p>
+          )}
         </div>
       </AppShell>
     </RequireAuth>

@@ -215,22 +215,4 @@ export class UsersService {
       where: { email: this.normalizeEmail(email) }
     });
   }
-
-  grantAccess(email: string) {
-    const normalized = this.normalizeEmail(email);
-    return this.prisma.accessGrant.upsert({
-      where: { email: normalized },
-      create: { email: normalized, status: "ALLOWED" },
-      update: { status: "ALLOWED" }
-    });
-  }
-
-  revokeAccess(email: string) {
-    const normalized = this.normalizeEmail(email);
-    return this.prisma.accessGrant.upsert({
-      where: { email: normalized },
-      create: { email: normalized, status: "REVOKED" },
-      update: { status: "REVOKED" }
-    });
-  }
 }

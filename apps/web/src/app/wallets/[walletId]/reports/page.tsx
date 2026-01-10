@@ -221,7 +221,9 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
     const topExpenseSeries = expenseRows.slice(0, 3).map((entry, index) => ({
       label: entry.key,
       values: buildTrend(entry.key, TransactionType.EXPENSE),
-      className: ["text-emerald-500", "text-blue-500", "text-purple-500"][index] ?? "text-emerald-500"
+      className:
+        ["text-[var(--color-success)]", "text-[var(--color-info)]", "text-[var(--color-purple)]"][index] ??
+        "text-[var(--color-success)]"
     }));
 
     return { range, expenseRows, incomeRows, topExpenseSeries };
@@ -332,11 +334,17 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
     return Math.max(0, Math.min(100, total));
   }, [profitInsights, debtInsights]);
 
-  const categoryPalette = ["text-emerald-500", "text-blue-500", "text-purple-500", "text-amber-500", "text-rose-500"];
+  const categoryPalette = [
+    "text-[var(--color-success)]",
+    "text-[var(--color-info)]",
+    "text-[var(--color-purple)]",
+    "text-[var(--color-warning)]",
+    "text-[var(--color-danger)]"
+  ];
   const categoryPie = categoryInsights.expenseRows.map((entry, index) => ({
     label: entry.key,
     value: entry.total,
-    className: categoryPalette[index] ?? "text-emerald-500"
+    className: categoryPalette[index] ?? "text-[var(--color-success)]"
   }));
 
   const categoryLabel = (key: string) => {
@@ -386,7 +394,7 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
               expense={cashFlow.series.map((item) => item.expense)}
             />
             <div className="text-xs text-muted-foreground">Linha de tendencia (saldo liquido)</div>
-            <LineChart values={cashFlow.series.map((item) => item.net)} className="text-emerald-500" />
+            <LineChart values={cashFlow.series.map((item) => item.net)} className="text-[var(--color-success)]" />
           </div>
         </CardContent>
       </Card>
@@ -454,7 +462,7 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
             </div>
           </div>
           <div className="space-y-3 lg:col-span-2">
-            <LineChart values={debtInsights.series} className="text-amber-500" />
+            <LineChart values={debtInsights.series} className="text-[var(--color-warning)]" />
             <p className="text-xs text-muted-foreground">Projecao de quitacao (12 meses)</p>
           </div>
         </CardContent>

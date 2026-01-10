@@ -90,10 +90,10 @@ export function BarPairChart({ income, expense }: { income: number[]; expense: n
         return (
           <div key={`bar-${index}`} className="flex h-full w-full flex-1 items-end gap-1">
             <div className="flex w-1/2 items-end">
-              <div className="w-full rounded-full bg-emerald-500/80" style={{ height: `${incomeHeight}%` }} />
+              <div className="w-full rounded-full bg-[var(--color-success-strong)]" style={{ height: `${incomeHeight}%` }} />
             </div>
             <div className="flex w-1/2 items-end">
-              <div className="w-full rounded-full bg-red-500/70" style={{ height: `${expenseHeight}%` }} />
+              <div className="w-full rounded-full bg-[var(--color-danger-strong)]" style={{ height: `${expenseHeight}%` }} />
             </div>
           </div>
         );
@@ -170,7 +170,7 @@ export function Gauge({ value }: { value: number }) {
         cy="50"
         fill="transparent"
         stroke="currentColor"
-        className="text-emerald-500"
+        className="text-[var(--color-success)]"
         strokeWidth="10"
         strokeDasharray={dashArray}
         strokeDashoffset={half}
