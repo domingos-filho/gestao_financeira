@@ -22,6 +22,8 @@ type NavItem = {
   adminOnly?: boolean;
 };
 
+type ResolvedNavItem = Omit<NavItem, "href"> & { href: string; active: boolean };
+
 const navItems: NavItem[] = [
   {
     label: "Dashboard",
@@ -94,16 +96,20 @@ export function AppShell({ children, walletId }: AppShellProps) {
     syncDebts(walletId, authFetch).catch(() => null);
   }, [walletId, user, authFetch]);
 
-  const nav = useMemo(
+  const nav = useMemo<ResolvedNavItem[]>(
     () =>
-      navItems.filter((item) => !item.adminOnly || isAdmin).map((item) => {
-        const href = item.href ? item.href(walletId) : undefined;
-        const active = Boolean(
-          href &&
-            (pathname === href || (href !== "/wallets" && pathname.startsWith(`${href}/`)))
-        );
-        return { ...item, href, active };
-      }),
+      navItems
+        .filter((item) => !item.adminOnly || isAdmin)
+        .map((item) => {
+          const href = item.href ? item.href(walletId) : undefined;
+          if (!href || item.disabled) {
+            return null;
+          }
+          const active =
+            pathname === href || (href !== "/wallets" && pathname.startsWith(`${href}/`));
+          return { ...item, href, active };
+        })
+        .filter((item): item is ResolvedNavItem => item !== null),
     [walletId, pathname, isAdmin]
   );
 
@@ -122,21 +128,10 @@ export function AppShell({ children, walletId }: AppShellProps) {
             {nav.map((item) => {
               const Icon = item.icon;
               const iconElement = item.iconSrc ? (
-                <img src={item.iconSrc} alt="" aria-hidden="true" className="h-6 w-6" />
+                <img src={item.iconSrc} alt="" aria-hidden="true" className="h-9 w-9" />
               ) : Icon ? (
-                <Icon className="h-6 w-6" />
+                <Icon className="h-9 w-9" />
               ) : null;
-              if (item.disabled || !item.href) {
-                return (
-                  <div
-                    key={item.label}
-                    className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground opacity-60"
-                  >
-                    {iconElement}
-                    {item.label}
-                  </div>
-                );
-              }
 
               return (
                 <Link
@@ -200,21 +195,10 @@ export function AppShell({ children, walletId }: AppShellProps) {
               {nav.map((item) => {
                 const Icon = item.icon;
                 const iconElement = item.iconSrc ? (
-                  <img src={item.iconSrc} alt="" aria-hidden="true" className="h-6 w-6" />
+                  <img src={item.iconSrc} alt="" aria-hidden="true" className="h-9 w-9" />
                 ) : Icon ? (
-                  <Icon className="h-6 w-6" />
+                  <Icon className="h-9 w-9" />
                 ) : null;
-                if (item.disabled || !item.href) {
-                  return (
-                    <div
-                      key={item.label}
-                      className="flex cursor-not-allowed items-center gap-2 rounded-full px-3 py-2 text-muted-foreground opacity-60"
-                    >
-                      {iconElement}
-                      {item.label}
-                    </div>
-                  );
-                }
                 return (
                   <Link
                     key={item.label}

@@ -1,5 +1,4 @@
-import { RequireAuth } from "@/components/require-auth";
-import { AppShell } from "@/components/app-shell";
+import { WalletAccessGate } from "@/components/wallet-access-gate";
 
 export default function WalletLayout({
   children,
@@ -8,9 +7,5 @@ export default function WalletLayout({
   children: React.ReactNode;
   params: { walletId: string };
 }) {
-  return (
-    <RequireAuth>
-      <AppShell walletId={params.walletId}>{children}</AppShell>
-    </RequireAuth>
-  );
+  return <WalletAccessGate walletId={params.walletId}>{children}</WalletAccessGate>;
 }

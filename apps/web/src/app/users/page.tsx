@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { AppShell } from "@/components/app-shell";
 import { RequireAuth } from "@/components/require-auth";
@@ -29,7 +30,8 @@ const roleOptions = [
 ];
 
 export default function UsersPage() {
-  const { authFetch, user } = useAuth();
+  const router = useRouter();
+  const { authFetch, user, loading } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [wallets, setWallets] = useState<WalletOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,6 +51,12 @@ export default function UsersPage() {
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdmin =
     user?.role === ROLE_ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
+
+  useEffect(() => {
+    if (!loading && user && !isAdmin) {
+      router.replace("/wallets");
+    }
+  }, [loading, user, isAdmin, router]);
 
   const loadData = async () => {
     setLoading(true);
@@ -196,6 +204,10 @@ export default function UsersPage() {
     loadData();
   };
 
+  if (user && !isAdmin) {
+    return null;
+  }
+
   return (
     <RequireAuth>
       <AppShell>
@@ -206,12 +218,6 @@ export default function UsersPage() {
               Cadastre usuarios, defina perfil e associe a carteira principal.
             </p>
           </div>
-
-          {!isAdmin && (
-            <p className="text-sm text-muted-foreground">
-              Apenas administradores podem gerenciar usuarios.
-            </p>
-          )}
 
           {isAdmin && (
             <>

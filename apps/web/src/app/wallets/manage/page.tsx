@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { UserRole } from "@gf/shared";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -10,13 +11,20 @@ import { RequireAuth } from "@/components/require-auth";
 import { AppShell } from "@/components/app-shell";
 
 export default function WalletManagementPage() {
-  const { authFetch, user } = useAuth();
+  const router = useRouter();
+  const { authFetch, user, loading } = useAuth();
   const [wallets, setWallets] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdmin =
     user?.role === UserRole.ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
+
+  useEffect(() => {
+    if (!loading && user && !isAdmin) {
+      router.replace("/wallets");
+    }
+  }, [loading, user, isAdmin, router]);
 
   const [name, setName] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
@@ -124,6 +132,10 @@ export default function WalletManagementPage() {
     setMessage("Carteira excluida.");
   };
 
+  if (user && !isAdmin) {
+    return null;
+  }
+
   return (
     <RequireAuth>
       <AppShell>
@@ -132,10 +144,6 @@ export default function WalletManagementPage() {
             <h1 className="text-2xl font-semibold">Gestao de Carteiras</h1>
             <p className="text-sm text-muted-foreground">Crie, edite ou remova carteiras do aplicativo.</p>
           </div>
-
-          {!isAdmin && (
-            <p className="text-sm text-muted-foreground">Apenas administradores podem gerenciar carteiras.</p>
-          )}
 
           {isAdmin && (
             <>
