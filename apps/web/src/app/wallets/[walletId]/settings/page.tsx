@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { WalletRole } from "@gf/shared";
 import { useAuth } from "@/lib/auth";
-import { getWalletRole } from "@/lib/wallet-cache";
+import { useWalletRole } from "@/lib/wallets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ export default function WalletSettingsPage({ params }: { params: { walletId: str
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdminEmail = user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
-  const currentRole = useMemo(() => getWalletRole(walletId), [walletId]);
+  const { role: currentRole, isLoading: roleLoading } = useWalletRole(walletId);
 
   useEffect(() => {
     if (!isAdminEmail) return;
@@ -101,6 +101,10 @@ export default function WalletSettingsPage({ params }: { params: { walletId: str
       setAccessMessage("Nao foi possivel remover.");
     }
   };
+
+  if (!isAdminEmail && roleLoading) {
+    return <p className="text-sm text-muted-foreground">Carregando permissoes...</p>;
+  }
 
   if (currentRole !== WalletRole.ADMIN && !isAdminEmail) {
     return <p className="text-sm text-muted-foreground">Apenas administradores podem gerenciar usuarios.</p>;

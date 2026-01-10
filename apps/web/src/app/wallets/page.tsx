@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
-import { loadWalletsCache, saveWalletsCache } from "@/lib/wallet-cache";
+import { useWallets } from "@/lib/wallets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,36 +12,11 @@ import { AppShell } from "@/components/app-shell";
 
 export default function WalletsPage() {
   const router = useRouter();
-  const { authFetch, logout, user } = useAuth();
+  const { authFetch, logout } = useAuth();
   const [name, setName] = useState("");
 
-  const walletsQuery = useQuery({
-    queryKey: ["wallets"],
-    queryFn: async () => {
-      const res = await authFetch("/wallets");
-      if (!res.ok) {
-        throw new Error("Failed to load wallets");
-      }
-      return (await res.json()) as Array<{ role: string; wallet: { id: string; name: string; accounts?: { id: string; name: string }[] } }>;
-    },
-    enabled: Boolean(user)
-  });
-
-  useEffect(() => {
-    if (walletsQuery.data) {
-      saveWalletsCache(walletsQuery.data);
-    }
-  }, [walletsQuery.data]);
-
-  const cachedWallets = useMemo(() => loadWalletsCache(), []);
-  const wallets = walletsQuery.data ?? cachedWallets.map((wallet) => ({
-    role: wallet.role,
-    wallet: {
-      id: wallet.id,
-      name: wallet.name,
-      accounts: wallet.accounts
-    }
-  }));
+  const walletsQuery = useWallets();
+  const wallets = walletsQuery.data ?? [];
 
   const handleCreate = async () => {
     if (!name.trim()) return;
