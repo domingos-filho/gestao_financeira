@@ -122,9 +122,9 @@ export function AppShell({ children, walletId }: AppShellProps) {
             {nav.map((item) => {
               const Icon = item.icon;
               const iconElement = item.iconSrc ? (
-                <img src={item.iconSrc} alt="" aria-hidden="true" className="h-4 w-4" />
+                <img src={item.iconSrc} alt="" aria-hidden="true" className="h-6 w-6" />
               ) : Icon ? (
-                <Icon className="h-4 w-4" />
+                <Icon className="h-6 w-6" />
               ) : null;
               if (item.disabled || !item.href) {
                 return (
@@ -200,9 +200,9 @@ export function AppShell({ children, walletId }: AppShellProps) {
               {nav.map((item) => {
                 const Icon = item.icon;
                 const iconElement = item.iconSrc ? (
-                  <img src={item.iconSrc} alt="" aria-hidden="true" className="h-4 w-4" />
+                  <img src={item.iconSrc} alt="" aria-hidden="true" className="h-6 w-6" />
                 ) : Icon ? (
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-6 w-6" />
                 ) : null;
                 if (item.disabled || !item.href) {
                   return (
