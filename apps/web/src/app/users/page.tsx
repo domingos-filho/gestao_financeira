@@ -66,7 +66,12 @@ export default function UsersPage() {
         const data = (await walletsRes.json()) as WalletOption[];
         setWallets(data);
         if (data.length > 0) {
-          setWalletId((current) => (current && data.some((item) => item.id === current) ? current : data[0].id));
+          setWalletId((current) => {
+            if (current && data.some((item) => item.id === current)) {
+              return current;
+            }
+            return data[0]?.id ?? "";
+          });
         }
       } else {
         const fallbackRes = await authFetch("/wallets");
@@ -75,9 +80,12 @@ export default function UsersPage() {
           const walletsData = data.map((entry) => entry.wallet);
           setWallets(walletsData);
           if (walletsData.length > 0) {
-            setWalletId((current) =>
-              current && walletsData.some((item) => item.id === current) ? current : walletsData[0].id
-            );
+            setWalletId((current) => {
+              if (current && walletsData.some((item) => item.id === current)) {
+                return current;
+              }
+              return walletsData[0]?.id ?? "";
+            });
           }
         } else {
           setMessage("Nao foi possivel carregar carteiras.");
