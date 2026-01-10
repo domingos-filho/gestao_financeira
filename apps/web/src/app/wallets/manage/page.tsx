@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserRole } from "@gf/shared";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +16,7 @@ export default function WalletManagementPage() {
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
-  const isAdmin =
-    user?.role === UserRole.ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
+  const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
   useEffect(() => {
     if (!authLoading && user && !isAdmin) {

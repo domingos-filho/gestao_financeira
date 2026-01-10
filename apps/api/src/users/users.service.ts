@@ -55,7 +55,7 @@ export class UsersService {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
+      role: user.email.toLowerCase() === this.adminEmail ? UserRole.ADMIN : UserRole.MEMBER,
       defaultWallet: user.defaultWallet ? { id: user.defaultWallet.id, name: user.defaultWallet.name } : null
     }));
   }
@@ -91,7 +91,7 @@ export class UsersService {
           name: trimmedName,
           email: normalized,
           passwordHash,
-          role: params.role,
+          role: UserRole.MEMBER,
           defaultWalletId: params.walletId
         }
       });
@@ -100,7 +100,7 @@ export class UsersService {
         data: {
           walletId: params.walletId,
           userId: user.id,
-          role: params.role === UserRole.ADMIN ? WalletRole.ADMIN : WalletRole.EDITOR
+          role: WalletRole.EDITOR
         }
       });
 
@@ -114,7 +114,7 @@ export class UsersService {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: UserRole.MEMBER,
         defaultWallet: { id: wallet.id, name: wallet.name }
       };
     });
@@ -158,8 +158,10 @@ export class UsersService {
         data.passwordHash = await bcrypt.hash(params.password, 12);
       }
 
-      if (params.role) {
-        data.role = params.role;
+      const isPrimaryAdmin = user.email.toLowerCase() === this.adminEmail;
+      const enforcedRole = isPrimaryAdmin ? UserRole.ADMIN : UserRole.MEMBER;
+      if (user.role !== enforcedRole) {
+        data.role = enforcedRole;
       }
 
       const targetWalletId = params.walletId ?? user.defaultWalletId ?? undefined;
@@ -172,8 +174,7 @@ export class UsersService {
       }
 
       if (targetWalletId) {
-        const desiredRole = params.role ?? user.role;
-        const walletRole = desiredRole === UserRole.ADMIN ? WalletRole.ADMIN : WalletRole.EDITOR;
+        const walletRole = enforcedRole === UserRole.ADMIN ? WalletRole.ADMIN : WalletRole.EDITOR;
         const existingMember = await tx.walletMember.findUnique({
           where: { walletId_userId: { walletId: targetWalletId, userId } }
         });

@@ -22,11 +22,6 @@ type ManagedUser = {
   defaultWallet: WalletOption | null;
 };
 
-const roleOptions = [
-  { value: UserRole.ADMIN, label: "Admin" },
-  { value: UserRole.MEMBER, label: "Membro" }
-];
-
 export default function UsersPage() {
   const router = useRouter();
   const { authFetch, user, loading: authLoading } = useAuth();
@@ -36,7 +31,6 @@ export default function UsersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editRole, setEditRole] = useState<UserRole>(UserRole.MEMBER);
   const [editWalletId, setEditWalletId] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -44,12 +38,10 @@ export default function UsersPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>(UserRole.MEMBER);
   const [walletId, setWalletId] = useState("");
 
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
-  const isAdmin =
-    user?.role === UserRole.ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
+  const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
   const adminEmailNormalized = useMemo(() => adminEmail.toLowerCase(), [adminEmail]);
 
   useEffect(() => {
@@ -139,7 +131,7 @@ export default function UsersPage() {
         name: trimmedName,
         email: trimmedEmail,
         password,
-        role,
+        role: UserRole.MEMBER,
         walletId
       })
     });
@@ -152,7 +144,6 @@ export default function UsersPage() {
     setName("");
     setEmail("");
     setPassword("");
-    setRole(UserRole.MEMBER);
     setMessage("Usuario criado.");
     loadData();
   };
@@ -160,7 +151,6 @@ export default function UsersPage() {
   const startEdit = (item: ManagedUser) => {
     setEditId(item.id);
     setEditName(item.name);
-    setEditRole(item.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.MEMBER);
     setEditWalletId(item.defaultWallet?.id ?? "");
     setEditPassword("");
   };
@@ -168,7 +158,6 @@ export default function UsersPage() {
   const cancelEdit = () => {
     setEditId(null);
     setEditName("");
-    setEditRole(UserRole.MEMBER);
     setEditWalletId("");
     setEditPassword("");
   };
@@ -183,12 +172,10 @@ export default function UsersPage() {
 
     const payload: {
       name?: string;
-      role?: UserRole;
       walletId?: string;
       password?: string;
     } = {
-      name: editName.trim(),
-      role: editRole
+      name: editName.trim()
     };
 
     if (editWalletId) {
@@ -273,18 +260,7 @@ export default function UsersPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Perfil</Label>
-                    <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {roleOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input value="Membro" readOnly />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label>Carteira principal</Label>
@@ -342,24 +318,9 @@ export default function UsersPage() {
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Perfil</Label>
-                            {isEditing ? (
-                              <Select value={editRole} onValueChange={(value) => setEditRole(value as UserRole)}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {roleOptions.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                      {option.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <p className="text-sm text-muted-foreground">
-                                {item.role === UserRole.ADMIN ? "Admin" : "Membro"}
-                              </p>
-                            )}
+                            <p className="text-sm text-muted-foreground">
+                              {item.role === UserRole.ADMIN ? "Admin" : "Membro"}
+                            </p>
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Carteira</Label>

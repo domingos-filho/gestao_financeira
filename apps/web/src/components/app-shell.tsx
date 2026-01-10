@@ -5,7 +5,6 @@ import type { ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, Folder, Search } from "lucide-react";
-import { UserRole } from "@gf/shared";
 import { useAuth } from "@/lib/auth";
 import { syncCategories } from "@/lib/categories";
 import { syncDebts } from "@/lib/debts";
@@ -74,8 +73,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
   const { user, authFetch } = useAuth();
   const [online, setOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
-  const isAdmin =
-    user?.role === UserRole.ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
+  const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
   useEffect(() => {
     const handleOnline = () => setOnline(true);

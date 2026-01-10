@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useWallets } from "@/lib/wallets";
@@ -10,10 +11,65 @@ import { AppShell } from "@/components/app-shell";
 
 export default function WalletsPage() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, authFetch, user } = useAuth();
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
+  const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
   const walletsQuery = useWallets();
-  const wallets = walletsQuery.data ?? [];
+  const [adminWallets, setAdminWallets] = useState<Array<{ id: string; name: string; accountsCount?: number }>>(
+    []
+  );
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminError, setAdminError] = useState(false);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    let active = true;
+    setAdminLoading(true);
+    setAdminError(false);
+    authFetch("/wallets/admin")
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error("Failed to load wallets");
+        }
+        const data = (await res.json()) as Array<{ id: string; name: string; accountsCount?: number }>;
+        if (active) {
+          setAdminWallets(data);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setAdminError(true);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setAdminLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isAdmin, authFetch]);
+
+  const displayWallets = useMemo(() => {
+    if (isAdmin) {
+      return adminWallets.map((wallet) => ({
+        id: wallet.id,
+        name: wallet.name,
+        accountsCount: wallet.accountsCount ?? 0
+      }));
+    }
+    return (walletsQuery.data ?? []).map((entry) => ({
+      id: entry.wallet.id,
+      name: entry.wallet.name,
+      accountsCount: entry.wallet.accounts?.length ?? 0
+    }));
+  }, [isAdmin, adminWallets, walletsQuery.data]);
+
+  const isLoading = isAdmin ? adminLoading : walletsQuery.isLoading;
+  const hasError = isAdmin ? adminError : Boolean(walletsQuery.error);
 
   return (
     <RequireAuth>
@@ -29,23 +85,22 @@ export default function WalletsPage() {
             </Button>
           </div>
 
-          {wallets.length === 0 ? (
+          {displayWallets.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma carteira disponivel.</p>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
-              {wallets.map((entry) => (
+              {displayWallets.map((wallet) => (
                 <Card
-                  key={entry.wallet.id}
+                  key={wallet.id}
                   className="cursor-pointer transition hover:-translate-y-0.5 hover:shadow-sm"
-                  onClick={() => router.push(`/wallets/${entry.wallet.id}`)}
+                  onClick={() => router.push(`/wallets/${wallet.id}`)}
                 >
                   <CardHeader>
-                    <CardTitle>{entry.wallet.name}</CardTitle>
-                    <CardDescription>Papel: {entry.role}</CardDescription>
+                    <CardTitle>{wallet.name}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">
-                      {entry.wallet.accounts?.length ?? 0} conta(s)
+                      {wallet.accountsCount} conta(s)
                     </p>
                   </CardContent>
                 </Card>
@@ -53,8 +108,8 @@ export default function WalletsPage() {
             </div>
           )}
 
-          {walletsQuery.isLoading && <p className="text-sm text-muted-foreground">Carregando...</p>}
-          {walletsQuery.error && (
+          {isLoading && <p className="text-sm text-muted-foreground">Carregando...</p>}
+          {hasError && (
             <p className="text-sm text-[var(--color-danger)]">Nao foi possivel atualizar as carteiras.</p>
           )}
         </div>
