@@ -51,7 +51,6 @@ export default function UsersPage() {
   const isAdmin =
     user?.role === UserRole.ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
   const adminEmailNormalized = useMemo(() => adminEmail.toLowerCase(), [adminEmail]);
-  const walletKey = useMemo(() => wallets.map((wallet) => wallet.id).join("|"), [wallets]);
 
   useEffect(() => {
     if (!authLoading && user && !isAdmin) {
@@ -289,11 +288,7 @@ export default function UsersPage() {
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label>Carteira principal</Label>
-                    <Select
-                      key={`create-${walletKey}`}
-                      value={walletId || undefined}
-                      onValueChange={(value) => setWalletId(value)}
-                    >
+                    <Select value={walletId} onValueChange={(value) => setWalletId(value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione uma carteira" />
                       </SelectTrigger>
@@ -369,11 +364,7 @@ export default function UsersPage() {
                           <div className="space-y-2">
                             <Label className="text-xs">Carteira</Label>
                             {isEditing ? (
-                              <Select
-                                key={`edit-${editId ?? "none"}-${walletKey}`}
-                                value={editWalletId || undefined}
-                                onValueChange={(value) => setEditWalletId(value)}
-                              >
+                              <Select value={editWalletId} onValueChange={(value) => setEditWalletId(value)}>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione" />
                                 </SelectTrigger>

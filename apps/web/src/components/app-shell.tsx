@@ -54,7 +54,7 @@ const navItems: NavItem[] = [
   },
   {
     label: "Categorias",
-    icon: Folder,
+    iconSrc: "/icons/categoria.png",
     href: (walletId) => (walletId ? `/wallets/${walletId}/categories` : undefined)
   },
   {
@@ -120,8 +120,8 @@ export function AppShell({ children, walletId }: AppShellProps) {
       <div className="flex min-h-screen">
         <aside className="hidden w-64 flex-col border-r border-border bg-card px-5 py-6 md:flex">
           <Link href="/wallets" className="flex items-center gap-3 text-lg font-semibold text-primary">
-            <BrandMark variant="outline" />
-            FinanceFlow
+            <BrandMark className="h-10 w-auto" />
+            <span className="sr-only">UniConta</span>
           </Link>
 
           <nav className="mt-8 flex flex-1 flex-col gap-1 text-sm">
@@ -170,9 +170,8 @@ export function AppShell({ children, walletId }: AppShellProps) {
         <div className="flex flex-1 flex-col">
           <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
             <div className="flex items-center gap-3">
-              <BrandMark variant="outline" className="md:hidden" />
-              <span className="text-lg font-semibold text-primary md:hidden">FinanceFlow</span>
-              <span className="hidden text-lg font-semibold text-primary md:inline">FinanceFlow</span>
+              <BrandMark className="h-8 w-auto" />
+              <span className="sr-only">UniConta</span>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <button type="button" className="rounded-full p-2 hover:bg-muted" aria-label="Pesquisar">

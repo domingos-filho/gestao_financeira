@@ -14,8 +14,8 @@ const manrope = Manrope({
 });
 
 export const metadata = {
-  title: "FinanceFlow",
-  description: "Controle financeiro offline-first para casal",
+  title: "UniConta",
+  description: "Gestao financeira compartilhada",
   manifest: "/manifest.json"
 };
 
