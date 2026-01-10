@@ -1,34 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useWallets } from "@/lib/wallets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { RequireAuth } from "@/components/require-auth";
 import { AppShell } from "@/components/app-shell";
 
 export default function WalletsPage() {
   const router = useRouter();
-  const { authFetch, logout } = useAuth();
-  const [name, setName] = useState("");
+  const { logout } = useAuth();
 
   const walletsQuery = useWallets();
   const wallets = walletsQuery.data ?? [];
-
-  const handleCreate = async () => {
-    if (!name.trim()) return;
-    const res = await authFetch("/wallets", {
-      method: "POST",
-      body: JSON.stringify({ name })
-    });
-    if (res.ok) {
-      setName("");
-      walletsQuery.refetch();
-    }
-  };
 
   return (
     <RequireAuth>
@@ -44,23 +29,10 @@ export default function WalletsPage() {
             </Button>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Criar nova carteira</CardTitle>
-                <CardDescription>Uma conta compartilhada para o casal.</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3 sm:flex-row">
-                <Input
-                  placeholder="Nome da carteira"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                />
-                <Button onClick={handleCreate}>Criar</Button>
-              </CardContent>
-            </Card>
-
-            <div className="grid gap-4">
+          {wallets.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma carteira disponivel.</p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
               {wallets.map((entry) => (
                 <Card
                   key={entry.wallet.id}
@@ -79,7 +51,7 @@ export default function WalletsPage() {
                 </Card>
               ))}
             </div>
-          </div>
+          )}
 
           {walletsQuery.isLoading && <p className="text-sm text-muted-foreground">Carregando...</p>}
           {walletsQuery.error && <p className="text-sm text-red-600">Nao foi possivel atualizar as carteiras.</p>}

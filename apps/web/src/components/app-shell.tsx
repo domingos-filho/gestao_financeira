@@ -12,7 +12,8 @@ import {
   LayoutGrid,
   Search,
   ArrowLeftRight,
-  Users
+  Users,
+  Wallet
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { syncCategories } from "@/lib/categories";
@@ -26,6 +27,7 @@ type NavItem = {
   icon: ComponentType<{ className?: string }>;
   href?: (walletId?: string) => string | undefined;
   disabled?: boolean;
+  adminOnly?: boolean;
 };
 
 const navItems: NavItem[] = [
@@ -33,6 +35,12 @@ const navItems: NavItem[] = [
     label: "Dashboard",
     icon: LayoutGrid,
     href: (walletId) => (walletId ? `/wallets/${walletId}` : "/wallets")
+  },
+  {
+    label: "Gestao de carteiras",
+    icon: Wallet,
+    href: () => "/wallets/manage",
+    adminOnly: true
   },
   {
     label: "Transacoes",
@@ -70,6 +78,8 @@ export function AppShell({ children, walletId }: AppShellProps) {
   const pathname = usePathname();
   const { user, authFetch } = useAuth();
   const [online, setOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
+  const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
   useEffect(() => {
     const handleOnline = () => setOnline(true);
@@ -92,7 +102,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
 
   const nav = useMemo(
     () =>
-      navItems.map((item) => {
+      navItems.filter((item) => !item.adminOnly || isAdmin).map((item) => {
         const href = item.href ? item.href(walletId) : undefined;
         const active = Boolean(
           href &&
@@ -100,7 +110,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
         );
         return { ...item, href, active };
       }),
-    [walletId, pathname]
+    [walletId, pathname, isAdmin]
   );
 
   const initials = (user?.email?.[0] ?? "U").toUpperCase();
