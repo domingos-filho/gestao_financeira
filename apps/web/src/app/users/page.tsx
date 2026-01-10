@@ -31,14 +31,14 @@ export default function UsersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editWalletId, setEditWalletId] = useState<string | undefined>(undefined);
+  const [editWalletId, setEditWalletId] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [walletId, setWalletId] = useState<string | undefined>(undefined);
+  const [walletId, setWalletId] = useState("");
 
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
@@ -61,22 +61,34 @@ export default function UsersPage() {
         setMessage("Nao foi possivel carregar usuarios.");
       }
 
-      const walletsRes = await authFetch("/users/wallet-options");
-      if (walletsRes.ok) {
-        const data = (await walletsRes.json()) as Array<{ id: string; name: string }>;
-        setWallets(data.map((wallet) => ({ id: wallet.id, name: wallet.name })));
-      } else {
-        const fallbackRes = await authFetch("/wallets");
-        if (fallbackRes.ok) {
-          const data = (await fallbackRes.json()) as Array<{ wallet: WalletOption }>;
-          const walletsData = data.map((entry) => ({
-            id: entry.wallet.id,
-            name: entry.wallet.name
-          }));
-          setWallets(walletsData);
-        } else {
-          setMessage("Nao foi possivel carregar carteiras.");
+      const walletSources = ["/wallets/admin", "/users/wallet-options", "/wallets"];
+      let walletsLoaded = false;
+
+      for (const path of walletSources) {
+        const res = await authFetch(path);
+        if (!res.ok) {
+          continue;
         }
+
+        if (path === "/wallets") {
+          const data = (await res.json()) as Array<{ wallet: WalletOption }>;
+          setWallets(
+            data.map((entry) => ({
+              id: entry.wallet.id,
+              name: entry.wallet.name
+            }))
+          );
+        } else {
+          const data = (await res.json()) as Array<{ id: string; name: string }>;
+          setWallets(data.map((wallet) => ({ id: wallet.id, name: wallet.name })));
+        }
+
+        walletsLoaded = true;
+        break;
+      }
+
+      if (!walletsLoaded) {
+        setMessage("Nao foi possivel carregar carteiras.");
       }
     } finally {
       setDataLoading(false);
@@ -90,9 +102,9 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (wallets.length === 0) {
-      setWalletId(undefined);
+      setWalletId("");
       if (editId) {
-        setEditWalletId(undefined);
+        setEditWalletId("");
       }
       return;
     }
@@ -101,7 +113,7 @@ export default function UsersPage() {
       if (current && wallets.some((item) => item.id === current)) {
         return current;
       }
-      return wallets[0]?.id;
+      return "";
     });
 
     if (editId) {
@@ -109,7 +121,7 @@ export default function UsersPage() {
         if (current && wallets.some((item) => item.id === current)) {
           return current;
         }
-        return wallets[0]?.id;
+        return wallets[0]?.id ?? "";
       });
     }
   }, [wallets, editId]);
@@ -154,14 +166,14 @@ export default function UsersPage() {
   const startEdit = (item: ManagedUser) => {
     setEditId(item.id);
     setEditName(item.name);
-    setEditWalletId(item.defaultWallet?.id);
+    setEditWalletId(item.defaultWallet?.id ?? "");
     setEditPassword("");
   };
 
   const cancelEdit = () => {
     setEditId(null);
     setEditName("");
-    setEditWalletId(undefined);
+    setEditWalletId("");
     setEditPassword("");
   };
 
@@ -269,7 +281,11 @@ export default function UsersPage() {
                     <Label>Carteira principal</Label>
                     <Select value={walletId} onValueChange={(value) => setWalletId(value)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma carteira" />
+                        {walletId ? (
+                          <SelectValue />
+                        ) : (
+                          <span className="text-muted-foreground">Selecione uma carteira</span>
+                        )}
                       </SelectTrigger>
                       <SelectContent>
                         {wallets.map((wallet) => (
@@ -277,6 +293,11 @@ export default function UsersPage() {
                             {wallet.name}
                           </SelectItem>
                         ))}
+                        {wallets.length === 0 && (
+                          <SelectItem value="__empty" disabled>
+                            Nenhuma carteira cadastrada
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     {wallets.length === 0 && (
@@ -330,7 +351,11 @@ export default function UsersPage() {
                             {isEditing ? (
                               <Select value={editWalletId} onValueChange={(value) => setEditWalletId(value)}>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Selecione" />
+                                  {editWalletId ? (
+                                    <SelectValue />
+                                  ) : (
+                                    <span className="text-muted-foreground">Selecione uma carteira</span>
+                                  )}
                                 </SelectTrigger>
                                 <SelectContent>
                                   {wallets.map((wallet) => (
@@ -338,6 +363,11 @@ export default function UsersPage() {
                                       {wallet.name}
                                     </SelectItem>
                                   ))}
+                                  {wallets.length === 0 && (
+                                    <SelectItem value="__empty" disabled>
+                                      Nenhuma carteira cadastrada
+                                    </SelectItem>
+                                  )}
                                 </SelectContent>
                               </Select>
                             ) : (
