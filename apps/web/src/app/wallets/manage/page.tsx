@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { UserRole } from "@gf/shared";
 import { useAuth } from "@/lib/auth";
-import { useWallets } from "@/lib/wallets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,16 +11,38 @@ import { AppShell } from "@/components/app-shell";
 
 export default function WalletManagementPage() {
   const { authFetch, user } = useAuth();
-  const walletsQuery = useWallets();
-  const wallets = walletsQuery.data ?? [];
+  const [wallets, setWallets] = useState<Array<{ id: string; name: string }>>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
-  const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
+  const isAdmin =
+    user?.role === UserRole.ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
   const [name, setName] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  const loadWallets = async () => {
+    setLoading(true);
+    setError(null);
+    const res = await authFetch("/wallets/admin");
+    if (!res.ok) {
+      setError("Nao foi possivel atualizar as carteiras.");
+      setLoading(false);
+      return;
+    }
+
+    const data = (await res.json()) as Array<{ id: string; name: string }>;
+    setWallets(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    loadWallets();
+  }, [isAdmin, authFetch]);
 
   const handleCreate = async () => {
     setMessage(null);
@@ -41,7 +63,7 @@ export default function WalletManagementPage() {
     }
 
     setName("");
-    walletsQuery.refetch();
+    loadWallets();
     setMessage("Carteira criada.");
   };
 
@@ -77,7 +99,7 @@ export default function WalletManagementPage() {
     }
 
     cancelEdit();
-    walletsQuery.refetch();
+    loadWallets();
     setMessage("Carteira atualizada.");
   };
 
@@ -98,7 +120,7 @@ export default function WalletManagementPage() {
       return;
     }
 
-    walletsQuery.refetch();
+    loadWallets();
     setMessage("Carteira excluida.");
   };
 
@@ -138,14 +160,12 @@ export default function WalletManagementPage() {
                   <CardDescription>Renomeie ou exclua carteiras existentes.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {walletsQuery.isLoading && (
-                    <p className="text-sm text-muted-foreground">Carregando...</p>
-                  )}
-                  {!walletsQuery.isLoading && wallets.length === 0 && (
+                  {loading && <p className="text-sm text-muted-foreground">Carregando...</p>}
+                  {!loading && wallets.length === 0 && (
                     <p className="text-sm text-muted-foreground">Nenhuma carteira cadastrada.</p>
                   )}
                   {wallets.map((entry) => {
-                    const wallet = entry.wallet;
+                    const wallet = entry;
                     const isEditing = editId === wallet.id;
                     const isBusy = busyId === wallet.id;
                     return (
@@ -185,9 +205,7 @@ export default function WalletManagementPage() {
                       </div>
                     );
                   })}
-                  {walletsQuery.error && (
-                    <p className="text-sm text-red-600">Nao foi possivel atualizar as carteiras.</p>
-                  )}
+                  {error && <p className="text-sm text-red-600">{error}</p>}
                 </CardContent>
               </Card>
             </>

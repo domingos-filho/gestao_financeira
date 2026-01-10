@@ -10,6 +10,11 @@ export enum WalletRole {
   VIEWER = "VIEWER"
 }
 
+export enum UserRole {
+  ADMIN = "ADMIN",
+  MEMBER = "MEMBER"
+}
+
 export enum SyncEventType {
   TRANSACTION_CREATED = "TRANSACTION_CREATED",
   TRANSACTION_UPDATED = "TRANSACTION_UPDATED",

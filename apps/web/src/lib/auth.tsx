@@ -1,12 +1,13 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { UserRole } from "@gf/shared";
 import { getDeviceId } from "./device";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const STORAGE_KEY = "gf.auth";
 
-type AuthUser = { id: string; email: string };
+type AuthUser = { id: string; email: string; name: string; role: UserRole; defaultWalletId?: string | null };
 
 type AuthState = {
   user: AuthUser | null;
@@ -16,8 +17,8 @@ type AuthState = {
 };
 
 type AuthContextValue = AuthState & {
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
+  register: (email: string, password: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   authFetch: (path: string, options?: RequestInit) => Promise<Response>;
@@ -56,9 +57,17 @@ function loadStoredAuth(): Omit<AuthState, "loading"> {
   }
 
   try {
-    const parsed = JSON.parse(raw) as { user: AuthUser; accessToken: string; refreshToken: string };
+    const parsed = JSON.parse(raw) as { user: Partial<AuthUser>; accessToken: string; refreshToken: string };
     return {
-      user: parsed.user ?? null,
+      user: parsed.user
+        ? {
+            id: parsed.user.id ?? "",
+            email: parsed.user.email ?? "",
+            name: parsed.user.name ?? "",
+            role: parsed.user.role ?? UserRole.MEMBER,
+            defaultWalletId: parsed.user.defaultWalletId ?? null
+          }
+        : null,
       accessToken: parsed.accessToken ?? null,
       refreshToken: parsed.refreshToken ?? null
     };
@@ -133,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = (await res.json()) as { user: AuthUser; accessToken: string; refreshToken: string };
     updateState({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
+    return data.user;
   }, [updateState]);
 
   const register = useCallback(async (email: string, password: string) => {
@@ -156,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = (await res.json()) as { user: AuthUser; accessToken: string; refreshToken: string };
     updateState({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
+    return data.user;
   }, [updateState]);
 
   const refresh = useCallback(async () => {

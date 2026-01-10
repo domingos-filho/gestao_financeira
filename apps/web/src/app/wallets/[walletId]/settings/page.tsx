@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WalletRole } from "@gf/shared";
+import { UserRole, WalletRole } from "@gf/shared";
 import { useAuth } from "@/lib/auth";
 import { useWalletRole } from "@/lib/wallets";
 import { Button } from "@/components/ui/button";
@@ -23,11 +23,12 @@ export default function WalletSettingsPage({ params }: { params: { walletId: str
   const [accessMessage, setAccessMessage] = useState<string | null>(null);
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdminEmail = user?.email?.toLowerCase() === adminEmail.toLowerCase();
+  const isAdminUser = user?.role === UserRole.ADMIN || isAdminEmail;
 
   const { role: currentRole, isLoading: roleLoading } = useWalletRole(walletId);
 
   useEffect(() => {
-    if (!isAdminEmail) return;
+    if (!isAdminUser) return;
     let active = true;
 
     const loadAccess = async () => {
@@ -44,7 +45,7 @@ export default function WalletSettingsPage({ params }: { params: { walletId: str
     return () => {
       active = false;
     };
-  }, [authFetch, isAdminEmail]);
+  }, [authFetch, isAdminUser]);
 
   const handleAddMember = async () => {
     setMessage(null);
@@ -102,22 +103,22 @@ export default function WalletSettingsPage({ params }: { params: { walletId: str
     }
   };
 
-  if (!isAdminEmail && roleLoading) {
+  if (!isAdminUser && roleLoading) {
     return <p className="text-sm text-muted-foreground">Carregando permissoes...</p>;
   }
 
-  if (currentRole !== WalletRole.ADMIN && !isAdminEmail) {
+  if (currentRole !== WalletRole.ADMIN && !isAdminUser) {
     return <p className="text-sm text-muted-foreground">Apenas administradores podem gerenciar usuarios.</p>;
   }
 
   return (
     <div className="grid gap-6 animate-rise">
       <div>
-        <h2 className="text-2xl font-semibold">Gerenciamento de Usuarios</h2>
-        <p className="text-sm text-muted-foreground">Controle acessos e membros da carteira</p>
+        <h2 className="text-2xl font-semibold">Membros da Carteira</h2>
+        <p className="text-sm text-muted-foreground">Controle acessos e membros desta carteira</p>
       </div>
 
-      {isAdminEmail && (
+      {isAdminUser && (
         <Card>
           <CardHeader>
             <CardTitle>Acesso ao Aplicativo</CardTitle>

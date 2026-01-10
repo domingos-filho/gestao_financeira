@@ -12,31 +12,47 @@ import { Label } from "@/components/ui/label";
 export default function LoginPage() {
   const router = useRouter();
   const { login, register } = useAuth();
-  const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [accessDenied, setAccessDenied] = useState<string | null>(null);
   const fallbackAdmin = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
+  const canRegisterAdmin = email.trim().toLowerCase() === fallbackAdmin.toLowerCase();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      if (mode === "login") {
-        await login(email, password);
-      } else {
-        await register(email, password);
-      }
-      router.replace("/wallets");
+      const nextUser = await login(email, password);
+      const target = nextUser.defaultWalletId ? `/wallets/${nextUser.defaultWalletId}` : "/wallets";
+      router.replace(target);
     } catch (err) {
       if (err instanceof AccessDeniedError) {
         setAccessDenied(err.adminEmail ?? fallbackAdmin);
         return;
       }
       setError("Falha ao autenticar. Verifique os dados.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdminRegister = async () => {
+    if (!canRegisterAdmin) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const nextUser = await register(email, password);
+      const target = nextUser.defaultWalletId ? `/wallets/${nextUser.defaultWalletId}` : "/wallets";
+      router.replace(target);
+    } catch (err) {
+      if (err instanceof AccessDeniedError) {
+        setAccessDenied(err.adminEmail ?? fallbackAdmin);
+        return;
+      }
+      setError("Falha ao registrar. Verifique os dados.");
     } finally {
       setLoading(false);
     }
@@ -80,23 +96,6 @@ export default function LoginPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant={mode === "login" ? "default" : "outline"}
-              onClick={() => setMode("login")}
-            >
-              Entrar
-            </Button>
-            <Button
-              type="button"
-              variant={mode === "register" ? "default" : "outline"}
-              onClick={() => setMode("register")}
-            >
-              Criar conta
-            </Button>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label>Email</Label>
@@ -106,10 +105,16 @@ export default function LoginPage() {
               <Label>Senha</Label>
               <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
             </div>
+            <p className="text-xs text-muted-foreground">Cadastro somente pelo administrador.</p>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Processando" : mode === "login" ? "Entrar" : "Registrar"}
+              {loading ? "Processando" : "Entrar"}
             </Button>
+            {canRegisterAdmin && (
+              <Button type="button" variant="outline" className="w-full" onClick={handleAdminRegister} disabled={loading}>
+                Registrar administrador
+              </Button>
+            )}
           </form>
         </CardContent>
       </Card>
