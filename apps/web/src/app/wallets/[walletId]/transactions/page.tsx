@@ -17,6 +17,14 @@ function formatBRL(amountCents: number) {
   });
 }
 
+function getOccurredTime(value?: string | Date | null) {
+  if (!value) {
+    return 0;
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+}
+
 export default function TransactionsPage({ params }: { params: { walletId: string } }) {
   const { walletId } = params;
 
@@ -42,7 +50,9 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
     return new Map((categories ?? []).map((category) => [category.id, category.name]));
   }, [categories]);
 
-  const sorted = (transactions ?? []).sort((a, b) => (b.occurredAt ?? "").localeCompare(a.occurredAt ?? ""));
+  const sorted = (transactions ?? []).sort(
+    (a, b) => getOccurredTime(b.occurredAt) - getOccurredTime(a.occurredAt)
+  );
 
   return (
     <div className="grid gap-6 animate-rise">
