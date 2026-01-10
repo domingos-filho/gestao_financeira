@@ -64,9 +64,9 @@ export default function LoginPage() {
         <Card className="w-full max-w-md animate-rise">
           <CardHeader className="space-y-3">
             <div className="flex items-center gap-3">
-              <BrandMark />
+              <BrandMark className="h-12 w-auto" />
               <div>
-                <CardTitle className="text-xl text-primary">FinanceFlow</CardTitle>
+                <CardTitle className="sr-only">UniConta</CardTitle>
                 <CardDescription>Acesso restrito</CardDescription>
               </div>
             </div>
@@ -88,9 +88,9 @@ export default function LoginPage() {
       <Card className="w-full max-w-md animate-rise">
         <CardHeader className="space-y-3">
           <div className="flex items-center gap-3">
-            <BrandMark />
+            <BrandMark className="h-12 w-auto" />
             <div>
-              <CardTitle className="text-xl text-primary">FinanceFlow</CardTitle>
+              <CardTitle className="sr-only">UniConta</CardTitle>
               <CardDescription>Controle financeiro para o casal.</CardDescription>
             </div>
           </div>
