@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { UserRole } from "@gf/shared";
 import { useAuth } from "@/lib/auth";
 import { AppShell } from "@/components/app-shell";
 import { RequireAuth } from "@/components/require-auth";
@@ -12,17 +11,21 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type WalletOption = { id: string; name: string };
+const ROLE_ADMIN = "ADMIN";
+const ROLE_MEMBER = "MEMBER";
+type UserRoleValue = typeof ROLE_ADMIN | typeof ROLE_MEMBER;
+
 type ManagedUser = {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: UserRoleValue;
   defaultWallet: WalletOption | null;
 };
 
 const roleOptions = [
-  { value: UserRole.ADMIN, label: "Admin" },
-  { value: UserRole.MEMBER, label: "Membro" }
+  { value: ROLE_ADMIN, label: "Admin" },
+  { value: ROLE_MEMBER, label: "Membro" }
 ];
 
 export default function UsersPage() {
@@ -33,27 +36,24 @@ export default function UsersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editRole, setEditRole] = useState<UserRole>(UserRole.MEMBER);
+  const [editRole, setEditRole] = useState<UserRoleValue>(ROLE_MEMBER);
   const [editWalletId, setEditWalletId] = useState("");
   const [editPassword, setEditPassword] = useState("");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>(UserRole.MEMBER);
+  const [role, setRole] = useState<UserRoleValue>(ROLE_MEMBER);
   const [walletId, setWalletId] = useState("");
 
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdmin =
-    user?.role === UserRole.ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
+    user?.role === ROLE_ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [usersRes, walletsRes] = await Promise.all([
-        authFetch("/users"),
-        authFetch("/wallets/admin")
-      ]);
+      const [usersRes, walletsRes] = await Promise.all([authFetch("/users"), authFetch("/wallets/admin")]);
 
       if (usersRes.ok) {
         const data = (await usersRes.json()) as ManagedUser[];
@@ -65,11 +65,23 @@ export default function UsersPage() {
       if (walletsRes.ok) {
         const data = (await walletsRes.json()) as WalletOption[];
         setWallets(data);
-        if (!walletId && data[0]) {
-          setWalletId(data[0].id);
+        if (data.length > 0) {
+          setWalletId((current) => (current && data.some((item) => item.id === current) ? current : data[0].id));
         }
       } else {
-        setMessage("Nao foi possivel carregar carteiras.");
+        const fallbackRes = await authFetch("/wallets");
+        if (fallbackRes.ok) {
+          const data = (await fallbackRes.json()) as Array<{ wallet: WalletOption }>;
+          const walletsData = data.map((entry) => entry.wallet);
+          setWallets(walletsData);
+          if (walletsData.length > 0) {
+            setWalletId((current) =>
+              current && walletsData.some((item) => item.id === current) ? current : walletsData[0].id
+            );
+          }
+        } else {
+          setMessage("Nao foi possivel carregar carteiras.");
+        }
       }
     } finally {
       setLoading(false);
@@ -114,7 +126,7 @@ export default function UsersPage() {
     setName("");
     setEmail("");
     setPassword("");
-    setRole(UserRole.MEMBER);
+    setRole(ROLE_MEMBER);
     setMessage("Usuario criado.");
     loadData();
   };
@@ -130,7 +142,7 @@ export default function UsersPage() {
   const cancelEdit = () => {
     setEditId(null);
     setEditName("");
-    setEditRole(UserRole.MEMBER);
+    setEditRole(ROLE_MEMBER);
     setEditWalletId("");
     setEditPassword("");
   };
@@ -145,7 +157,7 @@ export default function UsersPage() {
 
     const payload: {
       name?: string;
-      role?: UserRole;
+      role?: UserRoleValue;
       walletId?: string;
       password?: string;
     } = {
@@ -219,7 +231,7 @@ export default function UsersPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Perfil</Label>
-                    <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
+                    <Select value={role} onValueChange={(value) => setRole(value as UserRoleValue)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
@@ -285,7 +297,7 @@ export default function UsersPage() {
                           <div className="space-y-2">
                             <Label className="text-xs">Perfil</Label>
                             {isEditing ? (
-                              <Select value={editRole} onValueChange={(value) => setEditRole(value as UserRole)}>
+                              <Select value={editRole} onValueChange={(value) => setEditRole(value as UserRoleValue)}>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione" />
                                 </SelectTrigger>
@@ -299,7 +311,7 @@ export default function UsersPage() {
                               </Select>
                             ) : (
                               <p className="text-sm text-muted-foreground">
-                                {item.role === UserRole.ADMIN ? "Admin" : "Membro"}
+                                {item.role === ROLE_ADMIN ? "Admin" : "Membro"}
                               </p>
                             )}
                           </div>
