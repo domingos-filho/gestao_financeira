@@ -1,12 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
-import { WalletRoles } from "../common/decorators/wallet-role.decorator";
 import { AdminEmailGuard } from "../common/guards/admin-email.guard";
-import { WalletRoleGuard } from "../common/guards/wallet-role.guard";
-import { WalletRole } from "@gf/shared";
 import { CreateWalletDto } from "./dto/create-wallet.dto";
-import { AddMemberDto } from "./dto/add-member.dto";
 import { UpdateWalletDto } from "./dto/update-wallet.dto";
 import { WalletsService } from "./wallets.service";
 
@@ -30,13 +26,6 @@ export class WalletsController {
   @UseGuards(JwtAuthGuard, AdminEmailGuard)
   listAll() {
     return this.wallets.listAllWallets();
-  }
-
-  @Post(":id/members")
-  @WalletRoles(WalletRole.ADMIN)
-  @UseGuards(JwtAuthGuard, WalletRoleGuard)
-  addMember(@Param("id") walletId: string, @Body() dto: AddMemberDto) {
-    return this.wallets.addMember(walletId, dto.email, dto.role);
   }
 
   @Patch(":id")

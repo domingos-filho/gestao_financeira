@@ -114,12 +114,16 @@ export default function WalletDashboard({ params }: { params: { walletId: string
           <CardHeader className="space-y-2">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Receitas</span>
-              <TrendingUp className="h-4 w-4 text-emerald-500" />
+              <TrendingUp className="h-4 w-4 text-[var(--color-success)]" />
             </div>
-            <CardTitle className="text-xl text-emerald-600">{formatBRL(monthSummary.income)}</CardTitle>
+            <CardTitle className="text-xl text-[var(--color-success)]">{formatBRL(monthSummary.income)}</CardTitle>
             <CardDescription
               className={
-                incomeDelta === null ? "text-muted-foreground" : incomeDelta >= 0 ? "text-emerald-600" : "text-red-600"
+                incomeDelta === null
+                  ? "text-muted-foreground"
+                  : incomeDelta >= 0
+                  ? "text-[var(--color-success)]"
+                  : "text-[var(--color-danger)]"
               }
             >
               {incomeDelta === null ? "Sem comparacao" : `${incomeDelta.toFixed(1)}% em relacao ao mes passado`}
@@ -130,12 +134,16 @@ export default function WalletDashboard({ params }: { params: { walletId: string
           <CardHeader className="space-y-2">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Despesas</span>
-              <TrendingDown className="h-4 w-4 text-red-500" />
+              <TrendingDown className="h-4 w-4 text-[var(--color-danger)]" />
             </div>
-            <CardTitle className="text-xl text-red-600">{formatBRL(monthSummary.expense)}</CardTitle>
+            <CardTitle className="text-xl text-[var(--color-danger)]">{formatBRL(monthSummary.expense)}</CardTitle>
             <CardDescription
               className={
-                expenseDelta === null ? "text-muted-foreground" : expenseDelta <= 0 ? "text-emerald-600" : "text-red-600"
+                expenseDelta === null
+                  ? "text-muted-foreground"
+                  : expenseDelta <= 0
+                  ? "text-[var(--color-success)]"
+                  : "text-[var(--color-danger)]"
               }
             >
               {expenseDelta === null ? "Sem comparacao" : `${expenseDelta.toFixed(1)}% em relacao ao mes passado`}
@@ -202,16 +210,16 @@ export default function WalletDashboard({ params }: { params: { walletId: string
                   : ArrowUpRight;
               const color =
                 tx.type === TransactionType.EXPENSE
-                  ? "text-red-600"
+                  ? "text-[var(--color-danger)]"
                   : tx.type === TransactionType.TRANSFER
-                  ? "text-blue-600"
-                  : "text-emerald-600";
+                  ? "text-[var(--color-info)]"
+                  : "text-[var(--color-success)]";
               const badge =
                 tx.type === TransactionType.EXPENSE
-                  ? "bg-red-50 text-red-600"
+                  ? "bg-[var(--color-danger-soft)] text-[var(--color-danger)]"
                   : tx.type === TransactionType.TRANSFER
-                  ? "bg-blue-50 text-blue-600"
-                  : "bg-emerald-50 text-emerald-600";
+                  ? "bg-[var(--color-info-soft)] text-[var(--color-info)]"
+                  : "bg-[var(--color-success-soft)] text-[var(--color-success)]";
 
               return (
                 <div

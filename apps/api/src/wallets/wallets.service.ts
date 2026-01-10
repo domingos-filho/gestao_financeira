@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { WalletRole } from "@gf/shared";
 
@@ -58,30 +58,6 @@ export class WalletsService {
         name: true
       },
       orderBy: { createdAt: "desc" }
-    });
-  }
-
-  async addMember(walletId: string, email: string, role: WalletRole) {
-    const normalized = email.trim().toLowerCase();
-    const user = await this.prisma.user.findUnique({ where: { email: normalized } });
-    if (!user) {
-      throw new NotFoundException("User not found");
-    }
-
-    const existing = await this.prisma.walletMember.findFirst({
-      where: { walletId, userId: user.id }
-    });
-
-    if (existing) {
-      throw new ConflictException("User already member");
-    }
-
-    return this.prisma.walletMember.create({
-      data: {
-        walletId,
-        userId: user.id,
-        role
-      }
     });
   }
 

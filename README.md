@@ -91,16 +91,12 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 - POST /auth/logout
 - POST /wallets
 - GET /wallets
-- POST /wallets/:id/members
 - GET /wallets/:id/categories
 - POST /wallets/:id/categories
 - PATCH /wallets/:id/categories/:categoryId
 - GET /wallets/:id/debts
 - POST /wallets/:id/debts
 - PATCH /wallets/:id/debts/:debtId
-- GET /users/access (admin)
-- POST /users/access (admin)
-- DELETE /users/access/:email (admin)
 - POST /sync/push
 - GET /sync/pull?walletId=...&sinceSeq=...
 

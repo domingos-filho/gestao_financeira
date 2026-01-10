@@ -4,17 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BarChart3,
-  Bell,
-  CreditCard,
-  Folder,
-  LayoutGrid,
-  Search,
-  ArrowLeftRight,
-  Users,
-  Wallet
-} from "lucide-react";
+import { Bell, Folder, Search } from "lucide-react";
 import { UserRole } from "@gf/shared";
 import { useAuth } from "@/lib/auth";
 import { syncCategories } from "@/lib/categories";
@@ -25,7 +15,8 @@ import { SyncIndicator } from "@/components/sync-indicator";
 
 type NavItem = {
   label: string;
-  icon: ComponentType<{ className?: string }>;
+  icon?: ComponentType<{ className?: string }>;
+  iconSrc?: string;
   href?: (walletId?: string) => string | undefined;
   disabled?: boolean;
   adminOnly?: boolean;
@@ -34,29 +25,29 @@ type NavItem = {
 const navItems: NavItem[] = [
   {
     label: "Dashboard",
-    icon: LayoutGrid,
+    iconSrc: "/icons/dashboard.png",
     href: (walletId) => (walletId ? `/wallets/${walletId}` : "/wallets")
   },
   {
     label: "Gestao de carteiras",
-    icon: Wallet,
+    iconSrc: "/icons/carteira.png",
     href: () => "/wallets/manage",
     adminOnly: true
   },
   {
     label: "Usuarios",
-    icon: Users,
+    iconSrc: "/icons/usuarios.png",
     href: () => "/users",
     adminOnly: true
   },
   {
     label: "Transacoes",
-    icon: ArrowLeftRight,
+    iconSrc: "/icons/transacoes.png",
     href: (walletId) => (walletId ? `/wallets/${walletId}/transactions` : undefined)
   },
   {
     label: "Dividas",
-    icon: CreditCard,
+    iconSrc: "/icons/dividas.png",
     href: (walletId) => (walletId ? `/wallets/${walletId}/debts` : undefined)
   },
   {
@@ -66,13 +57,8 @@ const navItems: NavItem[] = [
   },
   {
     label: "Relatorios",
-    icon: BarChart3,
+    iconSrc: "/icons/relatorios.png",
     href: (walletId) => (walletId ? `/wallets/${walletId}/reports` : undefined)
-  },
-  {
-    label: "Membros",
-    icon: Users,
-    href: (walletId) => (walletId ? `/wallets/${walletId}/settings` : undefined)
   }
 ];
 
@@ -135,13 +121,18 @@ export function AppShell({ children, walletId }: AppShellProps) {
           <nav className="mt-8 flex flex-1 flex-col gap-1 text-sm">
             {nav.map((item) => {
               const Icon = item.icon;
+              const iconElement = item.iconSrc ? (
+                <img src={item.iconSrc} alt="" aria-hidden="true" className="h-4 w-4" />
+              ) : Icon ? (
+                <Icon className="h-4 w-4" />
+              ) : null;
               if (item.disabled || !item.href) {
                 return (
                   <div
                     key={item.label}
                     className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground opacity-60"
                   >
-                    <Icon className="h-4 w-4" />
+                    {iconElement}
                     {item.label}
                   </div>
                 );
@@ -158,7 +149,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
                       : "text-muted-foreground hover:bg-muted"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
+                  {iconElement}
                   {item.label}
                 </Link>
               );
@@ -170,7 +161,11 @@ export function AppShell({ children, walletId }: AppShellProps) {
               <SyncIndicator walletId={walletId} compact />
             ) : (
               <>
-                <span className={`h-2 w-2 rounded-full ${online ? "bg-emerald-500" : "bg-amber-500"}`} />
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    online ? "bg-[var(--color-success)]" : "bg-[var(--color-warning)]"
+                  }`}
+                />
                 {online ? "Online" : "Offline"}
               </>
             )}
@@ -204,13 +199,18 @@ export function AppShell({ children, walletId }: AppShellProps) {
             <nav className="flex items-center gap-2 overflow-x-auto text-xs">
               {nav.map((item) => {
                 const Icon = item.icon;
+                const iconElement = item.iconSrc ? (
+                  <img src={item.iconSrc} alt="" aria-hidden="true" className="h-4 w-4" />
+                ) : Icon ? (
+                  <Icon className="h-4 w-4" />
+                ) : null;
                 if (item.disabled || !item.href) {
                   return (
                     <div
                       key={item.label}
                       className="flex cursor-not-allowed items-center gap-2 rounded-full px-3 py-2 text-muted-foreground opacity-60"
                     >
-                      <Icon className="h-4 w-4" />
+                      {iconElement}
                       {item.label}
                     </div>
                   );
@@ -224,7 +224,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
                       item.active ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted"
                     )}
                   >
-                    <Icon className="h-4 w-4" />
+                    {iconElement}
                     {item.label}
                   </Link>
                 );

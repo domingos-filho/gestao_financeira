@@ -31,7 +31,7 @@ export function SyncIndicator({ walletId, compact = false }: { walletId: string;
     return (
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span
-          className={`h-2 w-2 rounded-full ${status === "error" ? "bg-red-500" : online ? "bg-emerald-500" : "bg-amber-500"}`}
+          className={`h-2 w-2 rounded-full ${status === "error" ? "bg-[var(--color-danger)]" : online ? "bg-[var(--color-success)]" : "bg-[var(--color-warning)]"}`}
         />
         {label}
       </div>
@@ -42,7 +42,7 @@ export function SyncIndicator({ walletId, compact = false }: { walletId: string;
     <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
       <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1">
         <span
-          className={`h-2 w-2 rounded-full ${status === "error" ? "bg-red-500" : online ? "bg-emerald-500" : "bg-amber-500"}`}
+          className={`h-2 w-2 rounded-full ${status === "error" ? "bg-[var(--color-danger)]" : online ? "bg-[var(--color-success)]" : "bg-[var(--color-warning)]"}`}
         />
         {label}
       </span>

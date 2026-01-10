@@ -72,10 +72,10 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
                 <span
                   className={`flex h-10 w-10 items-center justify-center rounded-full ${
                     tx.type === TransactionType.EXPENSE
-                      ? "bg-red-50 text-red-600"
+                      ? "bg-[var(--color-danger-soft)] text-[var(--color-danger)]"
                       : tx.type === TransactionType.TRANSFER
-                      ? "bg-blue-50 text-blue-600"
-                      : "bg-emerald-50 text-emerald-600"
+                      ? "bg-[var(--color-info-soft)] text-[var(--color-info)]"
+                      : "bg-[var(--color-success-soft)] text-[var(--color-success)]"
                   }`}
                 >
                   {tx.type === TransactionType.EXPENSE ? (
@@ -107,10 +107,10 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
                 <span
                   className={
                     tx.type === TransactionType.EXPENSE
-                      ? "text-red-600"
+                      ? "text-[var(--color-danger)]"
                       : tx.type === TransactionType.TRANSFER
-                      ? "text-blue-600"
-                      : "text-emerald-600"
+                      ? "text-[var(--color-info)]"
+                      : "text-[var(--color-success)]"
                   }
                 >
                   {formatBRL(tx.amountCents)}

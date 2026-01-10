@@ -106,7 +106,7 @@ export default function LoginPage() {
               <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
             </div>
             <p className="text-xs text-muted-foreground">Cadastro somente pelo administrador.</p>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Processando" : "Entrar"}
             </Button>

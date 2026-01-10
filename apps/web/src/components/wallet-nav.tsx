@@ -6,8 +6,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Dashboard", path: "" },
-  { label: "Transacoes", path: "/transactions" },
-  { label: "Configuracao", path: "/settings" }
+  { label: "Transacoes", path: "/transactions" }
 ];
 
 export function WalletNav({ walletId }: { walletId: string }) {

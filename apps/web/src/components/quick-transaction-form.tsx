@@ -103,24 +103,24 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
             type="button"
             className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${
               type === TransactionType.INCOME
-                ? "border-emerald-200 bg-emerald-50 text-emerald-600"
+                ? "border-[rgba(17,204,149,0.35)] bg-[var(--color-success-soft)] text-[var(--color-success)]"
                 : "border-border text-muted-foreground"
             }`}
             onClick={() => setType(TransactionType.INCOME)}
           >
-            <span className="h-2 w-2 rounded-full border border-emerald-400" />
+            <span className="h-2 w-2 rounded-full border border-[rgba(17,204,149,0.7)]" />
             Receita
           </button>
           <button
             type="button"
             className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${
               type === TransactionType.EXPENSE
-                ? "border-red-200 bg-red-50 text-red-600"
+                ? "border-[rgba(233,104,120,0.35)] bg-[var(--color-danger-soft)] text-[var(--color-danger)]"
                 : "border-border text-muted-foreground"
             }`}
             onClick={() => setType(TransactionType.EXPENSE)}
           >
-            <span className="h-2 w-2 rounded-full border border-red-400" />
+            <span className="h-2 w-2 rounded-full border border-[rgba(233,104,120,0.7)]" />
             Despesa
           </button>
         </div>
@@ -172,7 +172,7 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
         </Select>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
       <Button type="submit" className="w-full">
         Adicionar
