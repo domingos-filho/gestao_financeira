@@ -51,6 +51,7 @@ export default function UsersPage() {
   const isAdmin =
     user?.role === UserRole.ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
   const adminEmailNormalized = useMemo(() => adminEmail.toLowerCase(), [adminEmail]);
+  const walletKey = useMemo(() => wallets.map((wallet) => wallet.id).join("|"), [wallets]);
 
   useEffect(() => {
     if (!authLoading && user && !isAdmin) {
@@ -73,28 +74,12 @@ export default function UsersPage() {
       if (walletsRes.ok) {
         const data = (await walletsRes.json()) as WalletOption[];
         setWallets(data);
-        if (data.length > 0) {
-          setWalletId((current) => {
-            if (current && data.some((item) => item.id === current)) {
-              return current;
-            }
-            return data[0]?.id ?? "";
-          });
-        }
       } else {
         const fallbackRes = await authFetch("/wallets");
         if (fallbackRes.ok) {
           const data = (await fallbackRes.json()) as Array<{ wallet: WalletOption }>;
           const walletsData = data.map((entry) => entry.wallet);
           setWallets(walletsData);
-          if (walletsData.length > 0) {
-            setWalletId((current) => {
-              if (current && walletsData.some((item) => item.id === current)) {
-                return current;
-              }
-              return walletsData[0]?.id ?? "";
-            });
-          }
         } else {
           setMessage("Nao foi possivel carregar carteiras.");
         }
@@ -304,7 +289,11 @@ export default function UsersPage() {
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label>Carteira principal</Label>
-                    <Select value={walletId} onValueChange={setWalletId}>
+                    <Select
+                      key={`create-${walletKey}`}
+                      value={walletId || undefined}
+                      onValueChange={(value) => setWalletId(value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione uma carteira" />
                       </SelectTrigger>
@@ -380,7 +369,11 @@ export default function UsersPage() {
                           <div className="space-y-2">
                             <Label className="text-xs">Carteira</Label>
                             {isEditing ? (
-                              <Select value={editWalletId} onValueChange={setEditWalletId}>
+                              <Select
+                                key={`edit-${editId ?? "none"}-${walletKey}`}
+                                value={editWalletId || undefined}
+                                onValueChange={(value) => setEditWalletId(value)}
+                              >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione" />
                                 </SelectTrigger>
