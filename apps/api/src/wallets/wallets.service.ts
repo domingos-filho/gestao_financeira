@@ -52,13 +52,20 @@ export class WalletsService {
   }
 
   async listAllWallets() {
-    return this.prisma.wallet.findMany({
+    const wallets = await this.prisma.wallet.findMany({
       select: {
         id: true,
-        name: true
+        name: true,
+        _count: { select: { accounts: true } }
       },
       orderBy: { createdAt: "desc" }
     });
+
+    return wallets.map((wallet) => ({
+      id: wallet.id,
+      name: wallet.name,
+      accountsCount: wallet._count.accounts
+    }));
   }
 
   async updateWallet(walletId: string, name: string) {
