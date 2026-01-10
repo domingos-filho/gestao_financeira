@@ -51,6 +51,16 @@ export class WalletsService {
     }));
   }
 
+  async listAllWallets() {
+    return this.prisma.wallet.findMany({
+      select: {
+        id: true,
+        name: true
+      },
+      orderBy: { createdAt: "desc" }
+    });
+  }
+
   async addMember(walletId: string, email: string, role: WalletRole) {
     const normalized = email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({ where: { email: normalized } });

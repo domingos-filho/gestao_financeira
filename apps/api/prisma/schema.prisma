@@ -15,6 +15,11 @@ enum WalletRole {
   VIEWER
 }
 
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
 enum TransactionType {
   INCOME
   EXPENSE
@@ -40,8 +45,12 @@ enum SyncEventType {
 
 model User {
   id           String         @id @default(uuid())
+  name         String         @default("")
   email        String         @unique
   passwordHash String         @map("password_hash")
+  role         UserRole       @default(MEMBER)
+  defaultWalletId String?     @map("default_wallet_id")
+  defaultWallet Wallet?       @relation("DefaultWallet", fields: [defaultWalletId], references: [id])
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
 
@@ -60,6 +69,7 @@ model Wallet {
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
+  defaultUsers User[]        @relation("DefaultWallet")
   members     WalletMember[]
   accounts    Account[]
   categories  Category[]

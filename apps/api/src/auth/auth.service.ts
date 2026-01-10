@@ -4,6 +4,7 @@ import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcrypt";
 import { UsersService } from "../users/users.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { UserRole } from "@gf/shared";
 
 const ACCESS_TOKEN_TTL = "15m";
 const REFRESH_TOKEN_TTL = "7d";
@@ -66,15 +67,21 @@ export class AuthService {
 
   async register(email: string, password: string, deviceId: string) {
     const normalized = this.normalizeEmail(email);
-    await this.assertAccessAllowed(normalized);
+    if (normalized !== this.adminEmail) {
+      throw new ForbiddenException({
+        code: "ACCESS_DENIED",
+        adminEmail: this.adminEmail,
+        message: "Access denied"
+      });
+    }
     const existing = await this.users.findByEmail(normalized);
     if (existing) {
       throw new ConflictException("Email already registered");
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await this.users.createUser(normalized, passwordHash);
-    return this.issueTokens(user.id, user.email, deviceId);
+    const user = await this.users.createUser(normalized, passwordHash, { role: UserRole.ADMIN });
+    return this.issueTokens(user, deviceId);
   }
 
   async login(email: string, password: string, deviceId: string) {
@@ -82,7 +89,11 @@ export class AuthService {
     await this.assertAccessAllowed(normalized);
     const user = await this.users.findByEmail(normalized);
     if (!user) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new ForbiddenException({
+        code: "ACCESS_DENIED",
+        adminEmail: this.adminEmail,
+        message: "Access denied"
+      });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
@@ -90,7 +101,7 @@ export class AuthService {
       throw new UnauthorizedException("Invalid credentials");
     }
 
-    return this.issueTokens(user.id, user.email, deviceId);
+    return this.issueTokens(user, deviceId);
   }
 
   async refresh(refreshToken: string, deviceId: string) {
@@ -136,7 +147,12 @@ export class AuthService {
       data: { revokedAt: now }
     });
 
-    return this.issueTokens(payload.sub, payload.email, deviceId);
+    const user = await this.users.findById(payload.sub);
+    if (!user) {
+      throw new UnauthorizedException("Invalid refresh token");
+    }
+
+    return this.issueTokens(user, deviceId);
   }
 
   async logout(userId: string, deviceId: string) {
@@ -150,9 +166,12 @@ export class AuthService {
     });
   }
 
-  private async issueTokens(userId: string, email: string, deviceId: string) {
+  private async issueTokens(
+    user: { id: string; email: string; name: string; role: UserRole; defaultWalletId?: string | null },
+    deviceId: string
+  ) {
     const accessToken = await this.jwt.signAsync(
-      { sub: userId, email },
+      { sub: user.id, email: user.email },
       {
         secret: this.accessSecret,
         expiresIn: this.accessTtl
@@ -160,7 +179,7 @@ export class AuthService {
     );
 
     const refreshToken = await this.jwt.signAsync(
-      { sub: userId, email, deviceId },
+      { sub: user.id, email: user.email, deviceId },
       {
         secret: this.refreshSecret,
         expiresIn: this.refreshTtl
@@ -173,7 +192,7 @@ export class AuthService {
 
     await this.prisma.refreshToken.create({
       data: {
-        userId,
+        userId: user.id,
         deviceId,
         tokenHash,
         expiresAt
@@ -181,7 +200,13 @@ export class AuthService {
     });
 
     return {
-      user: { id: userId, email },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        defaultWalletId: user.defaultWalletId ?? null
+      },
       accessToken,
       refreshToken
     };

@@ -26,6 +26,12 @@ export class WalletsController {
     return this.wallets.listWallets(user.userId);
   }
 
+  @Get("admin")
+  @UseGuards(JwtAuthGuard, AdminEmailGuard)
+  listAll() {
+    return this.wallets.listAllWallets();
+  }
+
   @Post(":id/members")
   @WalletRoles(WalletRole.ADMIN)
   @UseGuards(JwtAuthGuard, WalletRoleGuard)
