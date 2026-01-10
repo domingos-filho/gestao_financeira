@@ -12,19 +12,19 @@ import { AppShell } from "@/components/app-shell";
 
 export default function WalletManagementPage() {
   const router = useRouter();
-  const { authFetch, user, loading } = useAuth();
+  const { authFetch, user, loading: authLoading } = useAuth();
   const [wallets, setWallets] = useState<Array<{ id: string; name: string }>>([]);
-  const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdmin =
     user?.role === UserRole.ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
   useEffect(() => {
-    if (!loading && user && !isAdmin) {
+    if (!authLoading && user && !isAdmin) {
       router.replace("/wallets");
     }
-  }, [loading, user, isAdmin, router]);
+  }, [authLoading, user, isAdmin, router]);
 
   const [name, setName] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
@@ -33,18 +33,18 @@ export default function WalletManagementPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const loadWallets = async () => {
-    setLoading(true);
+    setDataLoading(true);
     setError(null);
     const res = await authFetch("/wallets/admin");
     if (!res.ok) {
       setError("Nao foi possivel atualizar as carteiras.");
-      setLoading(false);
+      setDataLoading(false);
       return;
     }
 
     const data = (await res.json()) as Array<{ id: string; name: string }>;
     setWallets(data);
-    setLoading(false);
+    setDataLoading(false);
   };
 
   useEffect(() => {
@@ -168,8 +168,8 @@ export default function WalletManagementPage() {
                   <CardDescription>Renomeie ou exclua carteiras existentes.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {loading && <p className="text-sm text-muted-foreground">Carregando...</p>}
-                  {!loading && wallets.length === 0 && (
+                  {dataLoading && <p className="text-sm text-muted-foreground">Carregando...</p>}
+                  {!dataLoading && wallets.length === 0 && (
                     <p className="text-sm text-muted-foreground">Nenhuma carteira cadastrada.</p>
                   )}
                   {wallets.map((entry) => {
