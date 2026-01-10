@@ -1,11 +1,19 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "../prisma/prisma.service";
 import { UserRole, WalletRole } from "@gf/shared";
 import * as bcrypt from "bcrypt";
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService
+  ) {}
+
+  private get adminEmail() {
+    return (this.config.get<string>("ADMIN_EMAIL") ?? "fadomingosf@gmail.com").toLowerCase();
+  }
 
   private normalizeEmail(email: string) {
     return email.trim().toLowerCase();
@@ -201,6 +209,32 @@ export class UsersService {
           ? { id: updated.defaultWallet.id, name: updated.defaultWallet.name }
           : null
       };
+    });
+  }
+
+  async deleteManagedUser(userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new NotFoundException("User not found");
+      }
+
+      if (user.email.toLowerCase() === this.adminEmail) {
+        throw new BadRequestException("Admin user cannot be deleted");
+      }
+
+      const createdWallets = await tx.wallet.count({ where: { createdById: userId } });
+      if (createdWallets > 0) {
+        throw new ConflictException("User owns wallets");
+      }
+
+      await tx.walletMember.deleteMany({ where: { userId } });
+      await tx.refreshToken.deleteMany({ where: { userId } });
+      await tx.syncEvent.deleteMany({ where: { userId } });
+      await tx.user.delete({ where: { id: userId } });
+      await tx.accessGrant.deleteMany({ where: { email: user.email.toLowerCase() } });
+
+      return { id: userId };
     });
   }
 
