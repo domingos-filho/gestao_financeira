@@ -37,7 +37,6 @@ export async function syncDebts(walletId: string, authFetch: AuthFetch) {
   }));
 
   await db.transaction("rw", db.debts_local, async () => {
-    await db.debts_local.where("walletId").equals(walletId).delete();
     await db.debts_local.bulkPut(mapped);
   });
 

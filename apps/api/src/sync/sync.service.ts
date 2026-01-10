@@ -70,10 +70,13 @@ export class SyncService {
     });
 
     const wallet = await this.prisma.wallet.findUnique({ where: { id: walletId } });
+    if (!wallet) {
+      throw new BadRequestException("Wallet not found");
+    }
 
     return {
       walletId,
-      nextSeq: wallet?.serverSeq ?? sinceSeq,
+      nextSeq: wallet.serverSeq,
       events: events.map((event) => ({
         eventId: event.eventId,
         walletId: event.walletId,
