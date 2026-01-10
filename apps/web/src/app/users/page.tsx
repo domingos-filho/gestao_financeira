@@ -31,14 +31,14 @@ export default function UsersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editWalletId, setEditWalletId] = useState("");
+  const [editWalletId, setEditWalletId] = useState<string | undefined>(undefined);
   const [editPassword, setEditPassword] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [walletId, setWalletId] = useState("");
+  const [walletId, setWalletId] = useState<string | undefined>(undefined);
 
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
@@ -63,13 +63,16 @@ export default function UsersPage() {
       }
 
       if (walletsRes.ok) {
-        const data = (await walletsRes.json()) as WalletOption[];
-        setWallets(data);
+        const data = (await walletsRes.json()) as Array<{ id: string; name: string }>;
+        setWallets(data.map((wallet) => ({ id: wallet.id, name: wallet.name })));
       } else {
         const fallbackRes = await authFetch("/wallets");
         if (fallbackRes.ok) {
           const data = (await fallbackRes.json()) as Array<{ wallet: WalletOption }>;
-          const walletsData = data.map((entry) => entry.wallet);
+          const walletsData = data.map((entry) => ({
+            id: entry.wallet.id,
+            name: entry.wallet.name
+          }));
           setWallets(walletsData);
         } else {
           setMessage("Nao foi possivel carregar carteiras.");
@@ -87,9 +90,9 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (wallets.length === 0) {
-      setWalletId("");
+      setWalletId(undefined);
       if (editId) {
-        setEditWalletId("");
+        setEditWalletId(undefined);
       }
       return;
     }
@@ -98,7 +101,7 @@ export default function UsersPage() {
       if (current && wallets.some((item) => item.id === current)) {
         return current;
       }
-      return wallets[0]?.id ?? "";
+      return wallets[0]?.id;
     });
 
     if (editId) {
@@ -106,7 +109,7 @@ export default function UsersPage() {
         if (current && wallets.some((item) => item.id === current)) {
           return current;
         }
-        return wallets[0]?.id ?? "";
+        return wallets[0]?.id;
       });
     }
   }, [wallets, editId]);
@@ -151,14 +154,14 @@ export default function UsersPage() {
   const startEdit = (item: ManagedUser) => {
     setEditId(item.id);
     setEditName(item.name);
-    setEditWalletId(item.defaultWallet?.id ?? "");
+    setEditWalletId(item.defaultWallet?.id);
     setEditPassword("");
   };
 
   const cancelEdit = () => {
     setEditId(null);
     setEditName("");
-    setEditWalletId("");
+    setEditWalletId(undefined);
     setEditPassword("");
   };
 
