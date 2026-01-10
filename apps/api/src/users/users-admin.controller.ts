@@ -15,6 +15,11 @@ export class UsersAdminController {
     return this.users.listUsers();
   }
 
+  @Get("wallet-options")
+  listWalletOptions() {
+    return this.users.listWalletOptions();
+  }
+
   @Post()
   create(@Body() dto: CreateManagedUserDto) {
     return this.users.createManagedUser(dto);
