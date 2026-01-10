@@ -4,7 +4,8 @@ import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcrypt";
 import { UsersService } from "../users/users.service";
 import { PrismaService } from "../prisma/prisma.service";
-import { UserRole } from "@gf/shared";
+import { UserRole as SharedUserRole } from "@gf/shared";
+import { UserRole as PrismaUserRole } from "@prisma/client";
 
 const ACCESS_TOKEN_TTL = "15m";
 const REFRESH_TOKEN_TTL = "7d";
@@ -80,7 +81,7 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await this.users.createUser(normalized, passwordHash, { role: UserRole.ADMIN });
+    const user = await this.users.createUser(normalized, passwordHash, { role: SharedUserRole.ADMIN });
     return this.issueTokens(user, deviceId);
   }
 
@@ -167,7 +168,13 @@ export class AuthService {
   }
 
   private async issueTokens(
-    user: { id: string; email: string; name: string; role: UserRole; defaultWalletId?: string | null },
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role: SharedUserRole | PrismaUserRole | string;
+      defaultWalletId?: string | null;
+    },
     deviceId: string
   ) {
     const accessToken = await this.jwt.signAsync(
@@ -204,7 +211,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role,
+        role: user.role === "ADMIN" ? SharedUserRole.ADMIN : SharedUserRole.MEMBER,
         defaultWalletId: user.defaultWalletId ?? null
       },
       accessToken,
