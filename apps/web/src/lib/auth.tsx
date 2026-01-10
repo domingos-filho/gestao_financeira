@@ -203,7 +203,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (path: string, options: RequestInit = {}) => {
       const accessToken = accessRef.current;
       const headers = new Headers(options.headers ?? {});
-      if (!headers.has("Content-Type") && options.body) {
+      const isFormData =
+        typeof FormData !== "undefined" && options.body instanceof FormData;
+      const isUrlEncoded = options.body instanceof URLSearchParams;
+      if (!headers.has("Content-Type") && options.body && !isFormData && !isUrlEncoded) {
         headers.set("Content-Type", "application/json");
       }
       if (accessToken) {
@@ -226,7 +229,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         retryHeaders.set("Authorization", `Bearer ${nextAccess}`);
       }
       if (!retryHeaders.has("Content-Type") && options.body) {
-        retryHeaders.set("Content-Type", "application/json");
+        const isRetryFormData =
+          typeof FormData !== "undefined" && options.body instanceof FormData;
+        const isRetryUrlEncoded = options.body instanceof URLSearchParams;
+        if (!isRetryFormData && !isRetryUrlEncoded) {
+          retryHeaders.set("Content-Type", "application/json");
+        }
       }
 
       return fetch(`${API_URL}${path}`, {

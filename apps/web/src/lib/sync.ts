@@ -234,7 +234,11 @@ async function applyRemoteEvents(events: SyncEventServer[]) {
 
 export async function getLastSeq(walletId: string) {
   const value = await getMetadata(`lastSeq:${walletId}`);
-  return value ? Number(value) : 0;
+  if (!value) {
+    return 0;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 export async function getLastSyncAt(walletId: string) {

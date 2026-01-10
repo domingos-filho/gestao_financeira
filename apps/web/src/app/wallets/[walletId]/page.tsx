@@ -19,6 +19,14 @@ function formatBRL(amountCents: number) {
   });
 }
 
+function getOccurredTime(value?: string | Date | null) {
+  if (!value) {
+    return 0;
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+}
+
 export default function WalletDashboard({ params }: { params: { walletId: string } }) {
   const { walletId } = params;
 
@@ -59,7 +67,9 @@ export default function WalletDashboard({ params }: { params: { walletId: string
       if (tx.type === TransactionType.EXPENSE) expense += tx.amountCents;
     }
 
-    const recent = [...filtered].sort((a, b) => (b.occurredAt ?? "").localeCompare(a.occurredAt ?? "")).slice(0, 5);
+    const recent = [...filtered]
+      .sort((a, b) => getOccurredTime(b.occurredAt) - getOccurredTime(a.occurredAt))
+      .slice(0, 5);
 
     return {
       income,
