@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useWallets } from "@/lib/wallets";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { RequireAuth } from "@/components/require-auth";
 import { AppShell } from "@/components/app-shell";
 
@@ -92,16 +92,22 @@ export default function WalletsPage() {
               {displayWallets.map((wallet) => (
                 <Card
                   key={wallet.id}
-                  className="cursor-pointer transition hover:-translate-y-0.5 hover:shadow-sm"
+                  className="min-h-[110px] cursor-pointer transition hover:-translate-y-0.5 hover:shadow-sm"
                   onClick={() => router.push(`/wallets/${wallet.id}`)}
                 >
-                  <CardHeader>
-                    <CardTitle>{wallet.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      {wallet.accountsCount} conta(s)
-                    </p>
+                  <CardContent className="flex items-center gap-4 p-5">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
+                      <img
+                        src="/icons/icone%20de%20carteiras.png"
+                        alt=""
+                        aria-hidden="true"
+                        className="h-8 w-8"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <CardTitle className="text-base">{wallet.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{wallet.accountsCount} conta(s)</p>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
