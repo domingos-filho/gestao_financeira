@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { UserRole } from "@gf/shared";
 import { useAuth } from "@/lib/auth";
 import { AppShell } from "@/components/app-shell";
 import { RequireAuth } from "@/components/require-auth";
@@ -12,54 +13,53 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type WalletOption = { id: string; name: string };
-const ROLE_ADMIN = "ADMIN";
-const ROLE_MEMBER = "MEMBER";
-type UserRoleValue = typeof ROLE_ADMIN | typeof ROLE_MEMBER;
 
 type ManagedUser = {
   id: string;
   name: string;
   email: string;
-  role: UserRoleValue;
+  role: UserRole;
   defaultWallet: WalletOption | null;
 };
 
 const roleOptions = [
-  { value: ROLE_ADMIN, label: "Admin" },
-  { value: ROLE_MEMBER, label: "Membro" }
+  { value: UserRole.ADMIN, label: "Admin" },
+  { value: UserRole.MEMBER, label: "Membro" }
 ];
 
 export default function UsersPage() {
   const router = useRouter();
-  const { authFetch, user, loading } = useAuth();
+  const { authFetch, user, loading: authLoading } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [wallets, setWallets] = useState<WalletOption[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editRole, setEditRole] = useState<UserRoleValue>(ROLE_MEMBER);
+  const [editRole, setEditRole] = useState<UserRole>(UserRole.MEMBER);
   const [editWalletId, setEditWalletId] = useState("");
   const [editPassword, setEditPassword] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRoleValue>(ROLE_MEMBER);
+  const [role, setRole] = useState<UserRole>(UserRole.MEMBER);
   const [walletId, setWalletId] = useState("");
 
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdmin =
-    user?.role === ROLE_ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
+    user?.role === UserRole.ADMIN || user?.email?.toLowerCase() === adminEmail.toLowerCase();
+  const adminEmailNormalized = useMemo(() => adminEmail.toLowerCase(), [adminEmail]);
 
   useEffect(() => {
-    if (!loading && user && !isAdmin) {
+    if (!authLoading && user && !isAdmin) {
       router.replace("/wallets");
     }
-  }, [loading, user, isAdmin, router]);
+  }, [authLoading, user, isAdmin, router]);
 
   const loadData = async () => {
-    setLoading(true);
+    setDataLoading(true);
     try {
       const [usersRes, walletsRes] = await Promise.all([authFetch("/users"), authFetch("/wallets/admin")]);
 
@@ -100,7 +100,7 @@ export default function UsersPage() {
         }
       }
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
@@ -108,6 +108,32 @@ export default function UsersPage() {
     if (!isAdmin) return;
     loadData();
   }, [isAdmin, authFetch]);
+
+  useEffect(() => {
+    if (wallets.length === 0) {
+      setWalletId("");
+      if (editId) {
+        setEditWalletId("");
+      }
+      return;
+    }
+
+    setWalletId((current) => {
+      if (current && wallets.some((item) => item.id === current)) {
+        return current;
+      }
+      return wallets[0]?.id ?? "";
+    });
+
+    if (editId) {
+      setEditWalletId((current) => {
+        if (current && wallets.some((item) => item.id === current)) {
+          return current;
+        }
+        return wallets[0]?.id ?? "";
+      });
+    }
+  }, [wallets, editId]);
 
   const handleCreate = async () => {
     setMessage(null);
@@ -142,7 +168,7 @@ export default function UsersPage() {
     setName("");
     setEmail("");
     setPassword("");
-    setRole(ROLE_MEMBER);
+    setRole(UserRole.MEMBER);
     setMessage("Usuario criado.");
     loadData();
   };
@@ -150,7 +176,7 @@ export default function UsersPage() {
   const startEdit = (item: ManagedUser) => {
     setEditId(item.id);
     setEditName(item.name);
-    setEditRole(item.role);
+    setEditRole(item.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.MEMBER);
     setEditWalletId(item.defaultWallet?.id ?? "");
     setEditPassword("");
   };
@@ -158,7 +184,7 @@ export default function UsersPage() {
   const cancelEdit = () => {
     setEditId(null);
     setEditName("");
-    setEditRole(ROLE_MEMBER);
+    setEditRole(UserRole.MEMBER);
     setEditWalletId("");
     setEditPassword("");
   };
@@ -173,7 +199,7 @@ export default function UsersPage() {
 
     const payload: {
       name?: string;
-      role?: UserRoleValue;
+      role?: UserRole;
       walletId?: string;
       password?: string;
     } = {
@@ -201,6 +227,24 @@ export default function UsersPage() {
 
     setMessage("Usuario atualizado.");
     cancelEdit();
+    loadData();
+  };
+
+  const handleDelete = async (targetId: string) => {
+    if (!window.confirm("Excluir este usuario?")) {
+      return;
+    }
+    setMessage(null);
+    setBusyId(targetId);
+    const res = await authFetch(`/users/${targetId}`, { method: "DELETE" });
+    setBusyId(null);
+
+    if (!res.ok) {
+      setMessage("Nao foi possivel excluir o usuario.");
+      return;
+    }
+
+    setMessage("Usuario excluido.");
     loadData();
   };
 
@@ -245,7 +289,7 @@ export default function UsersPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Perfil</Label>
-                    <Select value={role} onValueChange={(value) => setRole(value as UserRoleValue)}>
+                    <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
@@ -276,7 +320,7 @@ export default function UsersPage() {
                       <p className="text-xs text-muted-foreground">Cadastre uma carteira antes de criar usuarios.</p>
                     )}
                   </div>
-                  <Button onClick={handleCreate} disabled={loading || wallets.length === 0}>
+                  <Button onClick={handleCreate} disabled={dataLoading || wallets.length === 0}>
                     Criar usuario
                   </Button>
                 </CardContent>
@@ -288,30 +332,34 @@ export default function UsersPage() {
                   <CardDescription>Atualize perfil, senha ou carteira principal.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {loading && <p className="text-sm text-muted-foreground">Carregando...</p>}
-                  {!loading && users.length === 0 && (
+                  {dataLoading && <p className="text-sm text-muted-foreground">Carregando...</p>}
+                  {!dataLoading && users.length === 0 && (
                     <p className="text-sm text-muted-foreground">Nenhum usuario cadastrado.</p>
                   )}
                   {users.map((item) => {
                     const isEditing = editId === item.id;
+                    const isBusy = busyId === item.id;
+                    const isProtected =
+                      item.email.toLowerCase() === adminEmailNormalized || item.id === user?.id;
                     return (
                       <div
                         key={item.id}
                         className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 md:flex-row md:items-center md:justify-between"
                       >
-                        <div className="space-y-2 md:min-w-[240px]">
-                          {isEditing ? (
-                            <Input value={editName} onChange={(event) => setEditName(event.target.value)} />
-                          ) : (
-                            <p className="text-sm font-semibold text-foreground">{item.name}</p>
-                          )}
-                          <p className="text-xs text-muted-foreground">{item.email}</p>
-                        </div>
-                        <div className="grid flex-1 gap-3 md:grid-cols-3">
+                        <div className="grid flex-1 gap-3 md:grid-cols-4">
+                          <div className="space-y-2">
+                            <Label className="text-xs">Nome</Label>
+                            {isEditing ? (
+                              <Input value={editName} onChange={(event) => setEditName(event.target.value)} />
+                            ) : (
+                              <p className="text-sm text-muted-foreground">{item.name || "Sem nome"}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground">{item.email}</p>
+                          </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Perfil</Label>
                             {isEditing ? (
-                              <Select value={editRole} onValueChange={(value) => setEditRole(value as UserRoleValue)}>
+                              <Select value={editRole} onValueChange={(value) => setEditRole(value as UserRole)}>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione" />
                                 </SelectTrigger>
@@ -325,7 +373,7 @@ export default function UsersPage() {
                               </Select>
                             ) : (
                               <p className="text-sm text-muted-foreground">
-                                {item.role === ROLE_ADMIN ? "Admin" : "Membro"}
+                                {item.role === UserRole.ADMIN ? "Admin" : "Membro"}
                               </p>
                             )}
                           </div>
@@ -367,15 +415,26 @@ export default function UsersPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           {isEditing ? (
                             <>
-                              <Button onClick={handleUpdate}>Salvar</Button>
-                              <Button variant="outline" onClick={cancelEdit}>
+                              <Button onClick={handleUpdate} disabled={isBusy}>
+                                Salvar
+                              </Button>
+                              <Button variant="outline" onClick={cancelEdit} disabled={isBusy}>
                                 Cancelar
                               </Button>
                             </>
                           ) : (
-                            <Button variant="outline" onClick={() => startEdit(item)}>
-                              Editar
-                            </Button>
+                            <>
+                              <Button variant="outline" onClick={() => startEdit(item)} disabled={isBusy}>
+                                Editar
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                onClick={() => handleDelete(item.id)}
+                                disabled={isBusy || isProtected}
+                              >
+                                Excluir
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>

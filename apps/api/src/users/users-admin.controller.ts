@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { AdminEmailGuard } from "../common/guards/admin-email.guard";
 import { UsersService } from "./users.service";
@@ -23,5 +23,10 @@ export class UsersAdminController {
   @Patch(":id")
   update(@Param("id") userId: string, @Body() dto: UpdateManagedUserDto) {
     return this.users.updateManagedUser(userId, dto);
+  }
+
+  @Delete(":id")
+  remove(@Param("id") userId: string) {
+    return this.users.deleteManagedUser(userId);
   }
 }
