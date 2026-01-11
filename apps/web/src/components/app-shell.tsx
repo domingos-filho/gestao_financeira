@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Folder, Search } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { syncCategories } from "@/lib/categories";
 import { syncDebts } from "@/lib/debts";
@@ -25,9 +25,14 @@ type ResolvedNavItem = Omit<NavItem, "href"> & { href: string; active: boolean }
 
 const navItems: NavItem[] = [
   {
+    label: "Home",
+    iconSrc: "/icons/icone%20de%20carteiras.png",
+    href: () => "/wallets"
+  },
+  {
     label: "Dashboard",
     iconSrc: "/icons/dashboard.png",
-    href: (walletId) => (walletId ? `/wallets/${walletId}` : "/wallets")
+    href: (walletId) => (walletId ? `/wallets/${walletId}` : undefined)
   },
   {
     label: "Gestao de carteiras",
