@@ -6,7 +6,7 @@ import { WalletRole } from "@gf/shared";
 import { useAuth } from "@/lib/auth";
 
 export type WalletAccount = { id: string; name: string };
-export type WalletSummary = { id: string; name: string; accounts?: WalletAccount[] };
+export type WalletSummary = { id: string; name: string; accounts?: WalletAccount[]; membersCount?: number };
 export type WalletEntry = { role: WalletRole; wallet: WalletSummary };
 
 async function fetchWallets(authFetch: (path: string, options?: RequestInit) => Promise<Response>) {

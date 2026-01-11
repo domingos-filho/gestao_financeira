@@ -167,6 +167,10 @@ export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncPar
     .where({ walletId, status: "PENDING" })
     .sortBy("createdAt");
 
+  if (pending.length > 0 && pending.some((event) => event.deviceId !== deviceId)) {
+    await db.sync_events_local.where({ walletId, status: "PENDING" }).modify({ deviceId });
+  }
+
   if (pending.length > 0) {
     const pushRes = await authFetch("/sync/push", {
       method: "POST",
@@ -177,7 +181,7 @@ export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncPar
           eventId: event.eventId,
           walletId: event.walletId,
           userId: event.userId,
-          deviceId: event.deviceId,
+          deviceId,
           eventType: event.eventType,
           payload: event.payload
         }))

@@ -16,9 +16,9 @@ export default function HomePage() {
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
   const walletsQuery = useWallets();
-  const [adminWallets, setAdminWallets] = useState<Array<{ id: string; name: string; accountsCount?: number }>>(
-    []
-  );
+  const [adminWallets, setAdminWallets] = useState<
+    Array<{ id: string; name: string; membersCount?: number; accountsCount?: number }>
+  >([]);
   const [adminLoading, setAdminLoading] = useState(false);
   const [adminError, setAdminError] = useState(false);
 
@@ -32,7 +32,12 @@ export default function HomePage() {
         if (!res.ok) {
           throw new Error("Failed to load wallets");
         }
-        const data = (await res.json()) as Array<{ id: string; name: string; accountsCount?: number }>;
+        const data = (await res.json()) as Array<{
+          id: string;
+          name: string;
+          membersCount?: number;
+          accountsCount?: number;
+        }>;
         if (active) {
           setAdminWallets(data);
         }
@@ -58,13 +63,13 @@ export default function HomePage() {
       return adminWallets.map((wallet) => ({
         id: wallet.id,
         name: wallet.name,
-        accountsCount: wallet.accountsCount ?? 0
+        membersCount: wallet.membersCount ?? wallet.accountsCount ?? 0
       }));
     }
     return (walletsQuery.data ?? []).map((entry) => ({
       id: entry.wallet.id,
       name: entry.wallet.name,
-      accountsCount: entry.wallet.accounts?.length ?? 0
+      membersCount: entry.wallet.membersCount ?? entry.wallet.accounts?.length ?? 0
     }));
   }, [isAdmin, adminWallets, walletsQuery.data]);
 
@@ -130,7 +135,7 @@ export default function HomePage() {
                         </div>
                         <div className="space-y-1">
                           <CardTitle className="text-base">{wallet.name}</CardTitle>
-                          <p className="text-sm text-muted-foreground">{wallet.accountsCount} conta(s)</p>
+                          <p className="text-sm text-muted-foreground">{wallet.membersCount} usuario(s)</p>
                         </div>
                       </CardContent>
                     </Card>

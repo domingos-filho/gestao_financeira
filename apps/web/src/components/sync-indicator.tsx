@@ -2,12 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { useSyncEngine } from "@/lib/sync-engine";
+import type { SyncStatus } from "@/lib/sync-engine";
 import { parseDate } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 
-export function SyncIndicator({ walletId, compact = false }: { walletId: string; compact?: boolean }) {
-  const { status, lastSyncAt, runSync } = useSyncEngine(walletId);
+type SyncIndicatorProps = {
+  status: SyncStatus;
+  lastSyncAt: string | null;
+  runSync: () => void;
+  compact?: boolean;
+};
+
+export function SyncIndicator({ status, lastSyncAt, runSync, compact = false }: SyncIndicatorProps) {
   const [online, setOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
 
   useEffect(() => {
