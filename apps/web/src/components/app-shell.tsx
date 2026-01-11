@@ -8,6 +8,7 @@ import { Bell, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { syncCategories } from "@/lib/categories";
 import { syncDebts } from "@/lib/debts";
+import { useSyncEngine } from "@/lib/sync-engine";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand-logo";
 import { SyncIndicator } from "@/components/sync-indicator";
@@ -80,6 +81,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
   const hideAdminItems = Boolean(walletId);
+  const syncEngine = useSyncEngine(walletId);
 
   useEffect(() => {
     const handleOnline = () => setOnline(true);
@@ -162,7 +164,12 @@ export function AppShell({ children, walletId }: AppShellProps) {
 
           <div className="mt-auto flex items-center gap-2 text-xs text-muted-foreground">
             {walletId ? (
-              <SyncIndicator walletId={walletId} compact />
+              <SyncIndicator
+                status={syncEngine.status}
+                lastSyncAt={syncEngine.lastSyncAt}
+                runSync={syncEngine.runSync}
+                compact
+              />
             ) : (
               <>
                 <span

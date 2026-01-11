@@ -45,7 +45,8 @@ export class WalletsService {
       include: {
         wallet: {
           include: {
-            accounts: true
+            accounts: true,
+            _count: { select: { members: true } }
           }
         }
       }
@@ -53,7 +54,12 @@ export class WalletsService {
 
     return memberships.map((m) => ({
       role: m.role,
-      wallet: m.wallet
+      wallet: {
+        id: m.wallet.id,
+        name: m.wallet.name,
+        accounts: m.wallet.accounts,
+        membersCount: m.wallet._count.members
+      }
     }));
   }
 
@@ -62,7 +68,7 @@ export class WalletsService {
       select: {
         id: true,
         name: true,
-        _count: { select: { accounts: true } }
+        _count: { select: { members: true, accounts: true } }
       },
       orderBy: { createdAt: "desc" }
     });
@@ -70,6 +76,7 @@ export class WalletsService {
     return wallets.map((wallet) => ({
       id: wallet.id,
       name: wallet.name,
+      membersCount: wallet._count.members,
       accountsCount: wallet._count.accounts
     }));
   }

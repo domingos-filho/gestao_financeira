@@ -2,12 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { useSyncEngine } from "@/lib/sync-engine";
+import type { SyncStatus } from "@/lib/sync-engine";
 import { parseDate } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 
-export function SyncIndicator({ walletId, compact = false }: { walletId: string; compact?: boolean }) {
-  const { status, lastSyncAt, runSync } = useSyncEngine(walletId);
+type SyncIndicatorProps = {
+  status: SyncStatus;
+  lastSyncAt: string | null;
+  runSync: () => void;
+  compact?: boolean;
+};
+
+export function SyncIndicator({ status, lastSyncAt, runSync, compact = false }: SyncIndicatorProps) {
   const [online, setOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
 
   useEffect(() => {
@@ -29,11 +35,17 @@ export function SyncIndicator({ walletId, compact = false }: { walletId: string;
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span
-          className={`h-2 w-2 rounded-full ${status === "error" ? "bg-[var(--color-danger)]" : online ? "bg-[var(--color-success)]" : "bg-[var(--color-warning)]"}`}
-        />
-        {label}
+      <div className="flex flex-col items-start gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span
+            className={`h-2 w-2 rounded-full ${status === "error" ? "bg-[var(--color-danger)]" : online ? "bg-[var(--color-success)]" : "bg-[var(--color-warning)]"}`}
+          />
+          {label}
+        </div>
+        <Button variant="ghost" size="sm" onClick={runSync} type="button" className="-ml-2 h-7 px-2 text-xs">
+          <RefreshCw className="h-3.5 w-3.5" />
+          Sincronizar
+        </Button>
       </div>
     );
   }
