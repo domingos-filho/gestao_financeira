@@ -41,12 +41,13 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
   }, [categories, type]);
 
   useEffect(() => {
-    if (availableCategories.length === 0) {
+    const firstCategory = availableCategories[0];
+    if (!firstCategory) {
       setCategoryId(null);
       return;
     }
     if (!categoryId || !availableCategories.some((category) => category.id === categoryId)) {
-      setCategoryId(availableCategories[0].id);
+      setCategoryId(firstCategory.id);
     }
   }, [availableCategories, categoryId]);
 
