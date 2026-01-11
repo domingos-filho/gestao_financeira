@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { WalletRole } from "@gf/shared";
+import { DEFAULT_CATEGORIES } from "../categories/default-categories";
 
 @Injectable()
 export class WalletsService {
@@ -21,6 +22,11 @@ export class WalletsService {
           accounts: {
             create: {
               name: "Conta principal"
+            }
+          },
+          categories: {
+            createMany: {
+              data: DEFAULT_CATEGORIES
             }
           }
         },

@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { TransactionType } from "@gf/shared";
+import { CategoryType, TransactionType } from "@gf/shared";
 import { createLocalTransaction } from "@/lib/sync";
 import { getDeviceId } from "@/lib/device";
 import { useWalletAccounts } from "@/lib/wallets";
 import { useAuth } from "@/lib/auth";
 import { db, safeDexie } from "@/lib/db";
+import { getCategoryIcon } from "@/lib/category-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,11 +34,21 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const availableCategories = useMemo(() => {
+    const list = categories ?? [];
+    const targetType = type === TransactionType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE;
+    return list.filter((category) => !category.archivedAt && category.type === targetType);
+  }, [categories, type]);
+
   useEffect(() => {
-    if (!categoryId && categories && categories[0]) {
-      setCategoryId(categories[0].id);
+    if (availableCategories.length === 0) {
+      setCategoryId(null);
+      return;
     }
-  }, [categoryId, categories]);
+    if (!categoryId || !availableCategories.some((category) => category.id === categoryId)) {
+      setCategoryId(availableCategories[0].id);
+    }
+  }, [availableCategories, categoryId]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -141,11 +152,23 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={noneCategoryValue}>Sem categoria</SelectItem>
-            {(categories ?? []).map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
+            {availableCategories.map((category) => {
+              const Icon = getCategoryIcon(category.icon);
+              const displayColor = category.color ?? "#4fa2ff";
+              return (
+                <SelectItem key={category.id} value={category.id}>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="flex h-6 w-6 items-center justify-center rounded-full"
+                      style={{ backgroundColor: `${displayColor}1A`, color: displayColor }}
+                    >
+                      <Icon className="h-3 w-3" />
+                    </span>
+                    {category.name}
+                  </span>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>

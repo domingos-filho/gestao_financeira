@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
-import { TransactionType } from "@gf/shared";
+import { CategoryType, TransactionType } from "@gf/shared";
 import { db, safeDexie } from "@/lib/db";
 import { createLocalTransaction, deleteLocalTransaction, updateLocalTransaction } from "@/lib/sync";
 import { getDeviceId } from "@/lib/device";
 import { useWalletAccounts } from "@/lib/wallets";
 import { useAuth } from "@/lib/auth";
+import { getCategoryIcon } from "@/lib/category-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +57,19 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const visibleCategories = useMemo(() => {
+    if (type === TransactionType.TRANSFER) {
+      return [];
+    }
+    const targetType = type === TransactionType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE;
+    return (categories ?? []).filter((category) => !category.archivedAt && category.type === targetType);
+  }, [categories, type]);
+
+  const selectedCategory = useMemo(() => {
+    if (!categoryId) return null;
+    return (categories ?? []).find((category) => category.id === categoryId) ?? null;
+  }, [categories, categoryId]);
+
   useEffect(() => {
     if (!existing) return;
     setAccountId(existing.accountId);
@@ -74,10 +88,22 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
   }, [accountId, accounts]);
 
   useEffect(() => {
-    if (!categoryId && categories && categories[0]) {
-      setCategoryId(categories[0].id);
+    if (type === TransactionType.TRANSFER) {
+      setCategoryId(null);
+      return;
     }
-  }, [categoryId, categories]);
+    const targetType = type === TransactionType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE;
+    if (selectedCategory?.archivedAt && selectedCategory.type === targetType) {
+      return;
+    }
+    if (visibleCategories.length === 0) {
+      setCategoryId(null);
+      return;
+    }
+    if (!categoryId || !visibleCategories.some((category) => category.id === categoryId)) {
+      setCategoryId(visibleCategories[0].id);
+    }
+  }, [categoryId, type, visibleCategories, selectedCategory]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -247,11 +273,28 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={noneCategoryValue}>Sem categoria</SelectItem>
-            {(categories ?? []).map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
+            {selectedCategory && selectedCategory.archivedAt && (
+              <SelectItem value={selectedCategory.id} disabled>
+                {selectedCategory.name} (arquivada)
               </SelectItem>
-            ))}
+            )}
+            {visibleCategories.map((category) => {
+              const Icon = getCategoryIcon(category.icon);
+              const displayColor = category.color ?? "#4fa2ff";
+              return (
+                <SelectItem key={category.id} value={category.id}>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="flex h-6 w-6 items-center justify-center rounded-full"
+                      style={{ backgroundColor: `${displayColor}1A`, color: displayColor }}
+                    >
+                      <Icon className="h-3 w-3" />
+                    </span>
+                    {category.name}
+                  </span>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>
