@@ -8,10 +8,12 @@ import { ArrowDownRight, ArrowUpRight, List, Plus, Repeat, TrendingDown, Trendin
 import { db, safeDexie } from "@/lib/db";
 import { formatDate, parseDate } from "@/lib/date";
 import { useWallets } from "@/lib/wallets";
+import { usePeriodFilter } from "@/lib/period-filter";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QuickTransactionForm } from "@/components/quick-transaction-form";
+import { PeriodFilterPanel } from "@/components/period-filter";
 
 function formatBRL(amountCents: number) {
   return (amountCents / 100).toLocaleString("pt-BR", {
@@ -23,6 +25,7 @@ function formatBRL(amountCents: number) {
 export default function WalletDashboard({ params }: { params: { walletId: string } }) {
   const { walletId } = params;
   const walletsQuery = useWallets();
+  const { filter, setFilter, period, clearRange } = usePeriodFilter(walletId);
 
   const transactions = useLiveQuery(
     () =>
@@ -40,20 +43,16 @@ export default function WalletDashboard({ params }: { params: { walletId: string
     recent: NonNullable<typeof transactions>;
   };
 
-  const monthSummary = useMemo<Summary>(() => {
+  const periodSummary = useMemo<Summary>(() => {
     if (!transactions) {
       return { income: 0, expense: 0, net: 0, recent: [] };
     }
-
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
     let income = 0;
     let expense = 0;
     const filtered = transactions.filter((tx) => {
       const occurred = parseDate(tx.occurredAt);
-      return occurred ? occurred >= start && occurred < end : false;
+      return occurred ? occurred >= period.start && occurred < period.end : false;
     });
 
     for (const tx of filtered) {
@@ -69,39 +68,36 @@ export default function WalletDashboard({ params }: { params: { walletId: string
       net: income - expense,
       recent
     };
-  }, [transactions]);
+  }, [period.end, period.start, transactions]);
 
   const previousSummary = useMemo(() => {
     if (!transactions) {
       return { income: 0, expense: 0 };
     }
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const end = new Date(now.getFullYear(), now.getMonth(), 1);
-
     let income = 0;
     let expense = 0;
     for (const tx of transactions) {
       const occurred = parseDate(tx.occurredAt);
-      if (occurred && occurred >= start && occurred < end) {
+      if (occurred && occurred >= period.prevStart && occurred < period.prevEnd) {
         if (tx.type === TransactionType.INCOME) income += tx.amountCents;
         if (tx.type === TransactionType.EXPENSE) expense += tx.amountCents;
       }
     }
     return { income, expense };
-  }, [transactions]);
+  }, [period.prevEnd, period.prevStart, transactions]);
 
+  const comparisonLabel = period.isRange ? "em relacao ao periodo anterior" : "em relacao ao mes passado";
   const incomeDelta =
     previousSummary.income > 0
-      ? ((monthSummary.income - previousSummary.income) / previousSummary.income) * 100
+      ? ((periodSummary.income - previousSummary.income) / previousSummary.income) * 100
       : null;
   const expenseDelta =
     previousSummary.expense > 0
-      ? ((monthSummary.expense - previousSummary.expense) / previousSummary.expense) * 100
+      ? ((periodSummary.expense - previousSummary.expense) / previousSummary.expense) * 100
       : null;
 
-  const budgetTarget = monthSummary.income;
-  const budgetUsed = monthSummary.expense;
+  const budgetTarget = periodSummary.income;
+  const budgetUsed = periodSummary.expense;
   const budgetPct = budgetTarget ? Math.min(100, Math.round((budgetUsed / budgetTarget) * 100)) : 0;
   const walletName = useMemo(() => {
     const entry = walletsQuery.data?.find((item) => item.wallet.id === walletId);
@@ -110,16 +106,28 @@ export default function WalletDashboard({ params }: { params: { walletId: string
 
   return (
     <div className="grid gap-6 animate-rise">
-      <div className="space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          {walletName && (
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-              Carteira: {walletName}
-            </span>
-          )}
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold">Dashboard</h1>
+            {walletName && (
+              <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+                Carteira: {walletName}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">Visao geral das suas financas pessoais</p>
         </div>
-        <p className="text-sm text-muted-foreground">Visao geral das suas financas pessoais</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <PeriodFilterPanel
+            filter={filter}
+            onFilterChange={setFilter}
+            periodLabel={period.label}
+            isRangeActive={period.isRange}
+            onClearRange={clearRange}
+            className="w-full"
+          />
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -129,7 +137,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
               <span>Receitas</span>
               <TrendingUp className="h-4 w-4 text-[var(--color-success)]" />
             </div>
-            <CardTitle className="text-xl text-[var(--color-success)]">{formatBRL(monthSummary.income)}</CardTitle>
+            <CardTitle className="text-xl text-[var(--color-success)]">{formatBRL(periodSummary.income)}</CardTitle>
             <CardDescription
               className={
                 incomeDelta === null
@@ -139,7 +147,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
                   : "text-[var(--color-danger)]"
               }
             >
-              {incomeDelta === null ? "Sem comparacao" : `${incomeDelta.toFixed(1)}% em relacao ao mes passado`}
+              {incomeDelta === null ? "Sem comparacao" : `${incomeDelta.toFixed(1)}% ${comparisonLabel}`}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -149,7 +157,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
               <span>Despesas</span>
               <TrendingDown className="h-4 w-4 text-[var(--color-danger)]" />
             </div>
-            <CardTitle className="text-xl text-[var(--color-danger)]">{formatBRL(monthSummary.expense)}</CardTitle>
+            <CardTitle className="text-xl text-[var(--color-danger)]">{formatBRL(periodSummary.expense)}</CardTitle>
             <CardDescription
               className={
                 expenseDelta === null
@@ -159,7 +167,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
                   : "text-[var(--color-danger)]"
               }
             >
-              {expenseDelta === null ? "Sem comparacao" : `${expenseDelta.toFixed(1)}% em relacao ao mes passado`}
+              {expenseDelta === null ? "Sem comparacao" : `${expenseDelta.toFixed(1)}% ${comparisonLabel}`}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -169,7 +177,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
               <span>Saldo</span>
               <Wallet className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle className="text-xl">{formatBRL(monthSummary.net)}</CardTitle>
+            <CardTitle className="text-xl">{formatBRL(periodSummary.net)}</CardTitle>
             <CardDescription>Diferenca entre receitas e despesas</CardDescription>
           </CardHeader>
         </Card>
@@ -210,11 +218,11 @@ export default function WalletDashboard({ params }: { params: { walletId: string
               <CardTitle>Transacoes Recentes</CardTitle>
               <List className="h-4 w-4 text-muted-foreground" />
             </div>
-            <CardDescription>Ultimos registros deste mes</CardDescription>
+            <CardDescription>Ultimos registros do periodo</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {monthSummary.recent.length === 0 && <p className="text-sm text-muted-foreground">Sem transacoes.</p>}
-            {monthSummary.recent.map((tx) => {
+            {periodSummary.recent.length === 0 && <p className="text-sm text-muted-foreground">Sem transacoes.</p>}
+            {periodSummary.recent.map((tx) => {
               const Icon =
                 tx.type === TransactionType.EXPENSE
                   ? ArrowDownRight

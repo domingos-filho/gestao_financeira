@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { TransactionType } from "@gf/shared";
 import { ArrowDownRight, ArrowUpRight, Repeat } from "lucide-react";
 import { db, safeDexie } from "@/lib/db";
 import { formatDate } from "@/lib/date";
 import { getCategoryIcon } from "@/lib/category-icons";
+import { usePeriodFilter } from "@/lib/period-filter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PeriodFilterPanel } from "@/components/period-filter";
 
 function formatBRL(amountCents: number) {
   return (amountCents / 100).toLocaleString("pt-BR", {
@@ -20,6 +22,8 @@ function formatBRL(amountCents: number) {
 
 export default function TransactionsPage({ params }: { params: { walletId: string } }) {
   const { walletId } = params;
+  const { filter, setFilter, period, clearRange } = usePeriodFilter(walletId);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   const transactions = useLiveQuery(
     () =>
@@ -43,7 +47,19 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
     return new Map((categories ?? []).map((category) => [category.id, category]));
   }, [categories]);
 
-  const sorted = (transactions ?? []).sort((a, b) => (b.occurredAt ?? "").localeCompare(a.occurredAt ?? ""));
+  const filtered = useMemo(() => {
+    if (!transactions) return [];
+    return transactions.filter((tx) => {
+      const occurred = new Date(tx.occurredAt);
+      if (Number.isNaN(occurred.getTime())) return false;
+      return occurred >= period.start && occurred < period.end;
+    });
+  }, [period.end, period.start, transactions]);
+
+  const sorted = useMemo(
+    () => [...filtered].sort((a, b) => (b.occurredAt ?? "").localeCompare(a.occurredAt ?? "")),
+    [filtered]
+  );
 
   return (
     <div className="grid gap-6 animate-rise">
@@ -52,9 +68,44 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
           <h2 className="text-2xl font-semibold">Todas as Transacoes</h2>
           <p className="text-sm text-muted-foreground">Historico completo de receitas e despesas</p>
         </div>
-        <Button asChild variant="create" className="w-full sm:w-auto">
-          <Link href={`/wallets/${walletId}/transactions/new`}>Nova transacao</Link>
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:hidden"
+            onClick={() => setMobileFilterOpen((prev) => !prev)}
+          >
+            {mobileFilterOpen ? "Fechar filtros" : "Filtrar"}
+          </Button>
+          <Button asChild variant="create" className="w-full sm:w-auto">
+            <Link href={`/wallets/${walletId}/transactions/new`}>Nova transacao</Link>
+          </Button>
+        </div>
+      </div>
+
+      {mobileFilterOpen && (
+        <div className="sm:hidden">
+          <PeriodFilterPanel
+            filter={filter}
+            onFilterChange={setFilter}
+            periodLabel={period.label}
+            isRangeActive={period.isRange}
+            onClearRange={clearRange}
+            showMobileHeader
+            onClose={() => setMobileFilterOpen(false)}
+            className="animate-rise"
+          />
+        </div>
+      )}
+
+      <div className="hidden sm:block">
+        <PeriodFilterPanel
+          filter={filter}
+          onFilterChange={setFilter}
+          periodLabel={period.label}
+          isRangeActive={period.isRange}
+          onClearRange={clearRange}
+        />
       </div>
 
       <Card>
@@ -62,7 +113,7 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
           <CardTitle>Listagem de Transacoes ({sorted.length})</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {sorted.length === 0 && <p className="text-sm text-muted-foreground">Sem transacoes locais.</p>}
+          {sorted.length === 0 && <p className="text-sm text-muted-foreground">Sem transacoes no periodo.</p>}
           {sorted.map((tx) => (
             <Link
               key={tx.id}

@@ -218,47 +218,32 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label>Conta</Label>
-          <Select value={activeAccountId} onValueChange={setAccountId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent>
-              {safeAccounts.map((account) => (
-                <SelectItem key={account.id} value={account.id}>
-                  {account.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="grid gap-4">
         <div className="space-y-2">
           <Label>Tipo</Label>
-          <Select
-            value={type}
-            onValueChange={(value) => {
-              if (
-                value === TransactionType.EXPENSE ||
-                value === TransactionType.INCOME ||
-                value === TransactionType.TRANSFER
-              ) {
-                setType(value);
-              }
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent>
+          <div className="relative">
+            <select
+              className="flex h-10 w-full appearance-none items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              value={type}
+              onChange={(event) => {
+                const value = event.target.value as TransactionType;
+                if (
+                  value === TransactionType.EXPENSE ||
+                  value === TransactionType.INCOME ||
+                  value === TransactionType.TRANSFER
+                ) {
+                  setType(value);
+                }
+              }}
+            >
               {typeOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
+                <option key={option.value} value={option.value}>
                   {option.label}
-                </SelectItem>
+                </option>
               ))}
-            </SelectContent>
-          </Select>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          </div>
         </div>
       </div>
 
