@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, RefreshCw, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { syncCategories } from "@/lib/categories";
 import { syncDebts } from "@/lib/debts";
@@ -84,6 +84,8 @@ export function AppShell({ children, walletId }: AppShellProps) {
   const hideAdminItems = Boolean(walletId);
   const syncEngine = useSyncEngine(walletId);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handleOnline = () => setOnline(true);
@@ -106,6 +108,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
 
   useEffect(() => {
     setMobileMenuOpen(false);
+    setUserMenuOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -128,6 +131,27 @@ export function AppShell({ children, walletId }: AppShellProps) {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setUserMenuOpen(false);
+      }
+    };
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (userMenuRef.current && target && !userMenuRef.current.contains(target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    document.addEventListener("mousedown", handleClick);
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      document.removeEventListener("mousedown", handleClick);
+    };
+  }, [userMenuOpen]);
 
   const nav = useMemo<ResolvedNavItem[]>(
     () =>
@@ -153,6 +177,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
 
   const displayName = user?.name?.trim() || "Usuario";
   const initials = (displayName[0] ?? "U").toUpperCase();
+  const syncDisabled = !walletId;
   const footerStatus = walletId ? (
     <SyncIndicator
       status={syncEngine.status}
@@ -205,6 +230,21 @@ export function AppShell({ children, walletId }: AppShellProps) {
                 </Link>
               );
             })}
+
+            <button
+              type="button"
+              onClick={syncEngine.runSync}
+              disabled={syncDisabled}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-left transition",
+                syncDisabled
+                  ? "cursor-not-allowed text-muted-foreground/50"
+                  : "text-muted-foreground hover:bg-muted"
+              )}
+            >
+              <RefreshCw className="h-6 w-6" />
+              Sincronizar
+            </button>
           </nav>
 
           <div className="mt-auto flex items-center gap-2 text-xs text-muted-foreground">
@@ -227,16 +267,28 @@ export function AppShell({ children, walletId }: AppShellProps) {
               <span className="sr-only">UniConta</span>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground shadow-sm transition hover:bg-muted/70"
+                  aria-haspopup="menu"
+                  aria-expanded={userMenuOpen}
+                  aria-label="Abrir menu do usuario"
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
+                >
                   {initials}
-                </span>
-                <span className="max-w-[140px] truncate text-sm text-foreground md:max-w-none">
-                  {displayName}
-                </span>
-                <Button variant="outline" size="sm" onClick={logout}>
-                  Sair
-                </Button>
+                </button>
+                <div
+                  className={cn(
+                    "absolute right-0 mt-3 w-48 origin-top-right rounded-xl border border-border bg-card p-3 text-sm shadow-lg transition",
+                    userMenuOpen ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
+                  )}
+                >
+                  <p className="truncate text-sm font-semibold text-foreground">{displayName}</p>
+                  <Button variant="outline" size="sm" onClick={logout} className="mt-3 w-full">
+                    Sair
+                  </Button>
+                </div>
               </div>
             </div>
           </header>
@@ -313,6 +365,24 @@ export function AppShell({ children, walletId }: AppShellProps) {
                   </Link>
                 );
               })}
+
+              <button
+                type="button"
+                onClick={() => {
+                  syncEngine.runSync();
+                  setMobileMenuOpen(false);
+                }}
+                disabled={syncDisabled}
+                className={cn(
+                  "flex items-center gap-4 rounded-2xl border border-transparent px-4 py-3 text-base font-semibold transition",
+                  syncDisabled
+                    ? "cursor-not-allowed text-muted-foreground/50"
+                    : "text-muted-foreground hover:border-border hover:bg-muted"
+                )}
+              >
+                <RefreshCw className="h-7 w-7" />
+                <span className="flex-1">Sincronizar</span>
+              </button>
             </div>
           </nav>
 
