@@ -27,7 +27,11 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
   );
   const noneCategoryValue = "__none__";
 
-  const accountId = accounts[0]?.id ?? "";
+  const validAccounts = useMemo(
+    () => accounts.filter((account) => account && account.id && account.name),
+    [accounts]
+  );
+  const accountId = validAccounts[0]?.id ?? "";
   const [type, setType] = useState<TransactionType>(TransactionType.INCOME);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -35,7 +39,8 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
   const [error, setError] = useState<string | null>(null);
 
   const normalizedCategories = useMemo(() => {
-    return (categories ?? []).map((category) => ({
+    const safeCategories = (categories ?? []).filter((category) => category && category.id && category.name);
+    return safeCategories.map((category) => ({
       ...category,
       type: category.type ?? CategoryType.EXPENSE,
       color: category.color ?? "#4fa2ff",
@@ -106,7 +111,7 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
     return <p className="text-sm text-muted-foreground">Carregando contas...</p>;
   }
 
-  if (accounts.length === 0) {
+  if (validAccounts.length === 0) {
     return <p className="text-sm text-muted-foreground">Nenhuma conta disponivel para esta carteira.</p>;
   }
 
