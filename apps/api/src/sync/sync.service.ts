@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { Prisma, SyncEventType, TransactionType } from "@prisma/client";
+import { Prisma, SyncEventType, TransactionType as PrismaTransactionType } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
-import { TransactionPayload, TransactionPayloadSchema } from "@gf/shared";
+import { TransactionPayload, TransactionPayloadSchema, TransactionType as SharedTransactionType } from "@gf/shared";
 
 @Injectable()
 export class SyncService {
@@ -159,7 +159,7 @@ export class SyncService {
       throw new BadRequestException("amount_cents must be positive");
     }
 
-    if (transaction.type === TransactionType.TRANSFER) {
+    if (transaction.type === SharedTransactionType.TRANSFER) {
       if (!transaction.counterpartyAccountId) {
         throw new BadRequestException("counterparty_account_id required for transfer");
       }
@@ -213,7 +213,7 @@ export class SyncService {
           id: transaction.id,
           walletId: transaction.walletId,
           accountId: transaction.accountId,
-          type: transaction.type as TransactionType,
+          type: transaction.type as PrismaTransactionType,
           amountCents: transaction.amountCents,
           occurredAt,
           description: transaction.description,
@@ -234,7 +234,7 @@ export class SyncService {
         id: transaction.id,
         walletId: transaction.walletId,
         accountId: transaction.accountId,
-        type: transaction.type as TransactionType,
+        type: transaction.type as PrismaTransactionType,
         amountCents: transaction.amountCents,
         occurredAt,
         description: transaction.description,
@@ -244,7 +244,7 @@ export class SyncService {
       },
       update: {
         accountId: transaction.accountId,
-        type: transaction.type as TransactionType,
+        type: transaction.type as PrismaTransactionType,
         amountCents: transaction.amountCents,
         occurredAt,
         description: transaction.description,
@@ -267,11 +267,11 @@ export class SyncService {
     }
 
     const type =
-      data.type === TransactionType.INCOME ||
-      data.type === TransactionType.EXPENSE ||
-      data.type === TransactionType.TRANSFER
+      data.type === SharedTransactionType.INCOME ||
+      data.type === SharedTransactionType.EXPENSE ||
+      data.type === SharedTransactionType.TRANSFER
         ? data.type
-        : TransactionType.EXPENSE;
+        : SharedTransactionType.EXPENSE;
 
     let amountCents =
       typeof data.amountCents === "number" ? data.amountCents : Number(data.amountCents ?? 0);
