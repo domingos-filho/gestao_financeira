@@ -202,7 +202,9 @@ export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncPar
     });
 
     if (!pushRes.ok) {
-      throw new Error("Push failed");
+      const details = await pushRes.text().catch(() => "");
+      console.error("Sync push failed", details);
+      throw new Error(details || "Push failed");
     }
 
     await Promise.all(

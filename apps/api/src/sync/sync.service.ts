@@ -2,11 +2,13 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { Prisma, SyncEventType, TransactionType } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { TransactionPayloadSchema } from "@gf/shared";
-import { ZodError } from "zod";
 
 @Injectable()
 export class SyncService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   async pushEvents(params: {
     userId: string;
@@ -20,46 +22,55 @@ export class SyncService {
       const applied: { eventId: string; serverSeq: number }[] = [];
 
       for (const event of events) {
-        if (event.walletId !== walletId) {
-          throw new BadRequestException("walletId mismatch");
-        }
-        if (event.deviceId !== deviceId) {
-          throw new BadRequestException("deviceId mismatch");
-        }
-
-        const existing = await tx.syncEvent.findUnique({ where: { eventId: event.eventId } });
-        if (existing) {
-          continue;
-        }
-
-        const serverSeq = await this.nextWalletSeq(tx, walletId);
-        const payload = this.normalizePayload(event.payload);
-
         try {
-          await tx.syncEvent.create({
-            data: {
-              eventId: event.eventId,
-              walletId,
-              userId,
-              deviceId,
-              eventType: event.eventType,
-              payload,
-              serverSeq
-            }
-          });
-        } catch (error) {
-          if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+          if (event.walletId !== walletId) {
+            throw new BadRequestException("walletId mismatch");
+          }
+          if (event.deviceId !== deviceId) {
+            throw new BadRequestException("deviceId mismatch");
+          }
+
+          const existing = await tx.syncEvent.findUnique({ where: { eventId: event.eventId } });
+          if (existing) {
             continue;
           }
-          if (error instanceof Prisma.PrismaClientValidationError) {
-            throw new BadRequestException("Invalid sync payload");
+
+          const serverSeq = await this.nextWalletSeq(tx, walletId);
+          const payload = this.normalizePayload(event.payload);
+
+          try {
+            await tx.syncEvent.create({
+              data: {
+                eventId: event.eventId,
+                walletId,
+                userId,
+                deviceId,
+                eventType: event.eventType,
+                payload,
+                serverSeq
+              }
+            });
+          } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+              continue;
+            }
+            if (error instanceof Prisma.PrismaClientValidationError) {
+              throw new BadRequestException("Invalid sync payload");
+            }
+            throw error;
           }
-          throw error;
+
+          await this.applyEvent(tx, walletId, event.eventType, payload);
+
+          applied.push({ eventId: event.eventId, serverSeq });
+        } catch (error) {
+          console.error("Sync push failed", {
+            eventId: event.eventId,
+            eventType: event.eventType,
+            error: error instanceof Error ? error.message : String(error)
+          });
+          throw this.buildSyncError(error, event);
         }
-
-        await this.applyEvent(tx, walletId, event.eventType, payload);
-
-        applied.push({ eventId: event.eventId, serverSeq });
       }
 
       const wallet = await tx.wallet.findUnique({ where: { id: walletId } });
@@ -130,26 +141,22 @@ export class SyncService {
       throw new BadRequestException("Unsupported event type");
     }
 
-    let transaction: ReturnType<typeof TransactionPayloadSchema.parse>;
-    try {
-      transaction = TransactionPayloadSchema.parse(payload);
-    } catch (error) {
-      if (error instanceof ZodError) {
-        throw new BadRequestException("Invalid transaction payload");
+    let transaction = this.normalizeTransactionPayload(payload, walletId);
+    let parsed = TransactionPayloadSchema.safeParse(transaction);
+    if (!parsed.success) {
+      const fallbackAccount = await this.getFallbackAccountId(tx, walletId);
+      if (fallbackAccount) {
+        transaction.accountId = fallbackAccount;
       }
-      throw error;
+      parsed = TransactionPayloadSchema.safeParse(transaction);
     }
-
-    if (transaction.walletId !== walletId) {
-      throw new BadRequestException("Transaction wallet mismatch");
+    if (!parsed.success) {
+      throw new BadRequestException("Invalid transaction payload");
     }
+    transaction = parsed.data;
 
     if (transaction.amountCents <= 0) {
       throw new BadRequestException("amount_cents must be positive");
-    }
-
-    if (!transaction.description.trim()) {
-      throw new BadRequestException("description is required");
     }
 
     if (transaction.type === TransactionType.TRANSFER) {
@@ -167,7 +174,11 @@ export class SyncService {
       where: { id: transaction.accountId, walletId }
     });
     if (!account) {
-      throw new BadRequestException("Invalid account_id");
+      const fallback = await this.getFallbackAccountId(tx, walletId);
+      if (!fallback) {
+        throw new BadRequestException("Invalid account_id");
+      }
+      transaction.accountId = fallback;
     }
 
     if (transaction.categoryId) {
@@ -175,7 +186,7 @@ export class SyncService {
         where: { id: transaction.categoryId, walletId }
       });
       if (!category) {
-        throw new BadRequestException("Invalid category_id");
+        transaction.categoryId = null;
       }
     }
 
@@ -244,6 +255,87 @@ export class SyncService {
     });
   }
 
+  private normalizeTransactionPayload(payload: unknown, walletId: string) {
+    if (!payload || typeof payload !== "object") {
+      throw new BadRequestException("Invalid transaction payload");
+    }
+
+    const data = payload as Record<string, unknown>;
+    const id = typeof data.id === "string" ? data.id : "";
+    if (!id || !this.uuidRegex.test(id)) {
+      throw new BadRequestException("Invalid transaction payload");
+    }
+
+    const type =
+      data.type === TransactionType.INCOME ||
+      data.type === TransactionType.EXPENSE ||
+      data.type === TransactionType.TRANSFER
+        ? data.type
+        : TransactionType.EXPENSE;
+
+    let amountCents =
+      typeof data.amountCents === "number" ? data.amountCents : Number(data.amountCents ?? 0);
+    if (!Number.isFinite(amountCents)) {
+      amountCents = 0;
+    }
+    if (!Number.isInteger(amountCents)) {
+      amountCents = Math.round(amountCents);
+    }
+    if (amountCents < 0) {
+      amountCents = Math.abs(amountCents);
+    }
+
+    const rawOccurredAt = typeof data.occurredAt === "string" ? data.occurredAt : new Date().toISOString();
+    const occurredAtDate = new Date(rawOccurredAt);
+    const hasOccurredAtTimezone = /Z$|[+-]\d{2}:\d{2}$/.test(rawOccurredAt);
+    const occurredAt = Number.isNaN(occurredAtDate.getTime())
+      ? new Date().toISOString()
+      : !rawOccurredAt.includes("T") || !hasOccurredAtTimezone
+      ? occurredAtDate.toISOString()
+      : rawOccurredAt;
+
+    let description = typeof data.description === "string" ? data.description : String(data.description ?? "");
+    if (!description.trim()) {
+      description = "Sem descricao";
+    }
+
+    const rawDeletedAt = typeof data.deletedAt === "string" ? data.deletedAt : null;
+    let deletedAt: string | null = null;
+    if (rawDeletedAt) {
+      const deletedAtDate = new Date(rawDeletedAt);
+      const hasDeletedAtTimezone = /Z$|[+-]\d{2}:\d{2}$/.test(rawDeletedAt);
+      if (!Number.isNaN(deletedAtDate.getTime())) {
+        deletedAt = !rawDeletedAt.includes("T") || !hasDeletedAtTimezone ? deletedAtDate.toISOString() : rawDeletedAt;
+      }
+    }
+
+    return {
+      id,
+      walletId,
+      accountId:
+        typeof data.accountId === "string" && this.uuidRegex.test(data.accountId) ? data.accountId : "",
+      type,
+      amountCents,
+      occurredAt,
+      description,
+      categoryId:
+        typeof data.categoryId === "string" && this.uuidRegex.test(data.categoryId) ? data.categoryId : null,
+      counterpartyAccountId:
+        typeof data.counterpartyAccountId === "string" && this.uuidRegex.test(data.counterpartyAccountId)
+          ? data.counterpartyAccountId
+          : null,
+      deletedAt
+    };
+  }
+
+  private async getFallbackAccountId(tx: Prisma.TransactionClient, walletId: string) {
+    const account = await tx.account.findFirst({
+      where: { walletId },
+      orderBy: { createdAt: "asc" }
+    });
+    return account?.id ?? null;
+  }
+
   private normalizePayload(payload: unknown): Prisma.InputJsonValue {
     if (payload === undefined) {
       throw new BadRequestException("payload is required");
@@ -253,5 +345,50 @@ export class SyncService {
     } catch {
       throw new BadRequestException("Invalid sync payload");
     }
+  }
+
+  private buildSyncError(
+    error: unknown,
+    event: { eventId?: string; eventType?: SyncEventType }
+  ) {
+    const base = {
+      message: "SYNC_EVENT_FAILED",
+      eventId: event.eventId ?? null,
+      eventType: event.eventType ?? null
+    };
+
+    if (error instanceof BadRequestException) {
+      const response = error.getResponse();
+      const reason =
+        typeof response === "string"
+          ? response
+          : typeof response === "object" && response && "message" in response
+          ? (response as { message?: string | string[] }).message
+          : error.message;
+      return new BadRequestException({
+        ...base,
+        reason
+      });
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return new BadRequestException({
+        ...base,
+        reason: error.message,
+        code: error.code
+      });
+    }
+
+    if (error instanceof Prisma.PrismaClientValidationError) {
+      return new BadRequestException({
+        ...base,
+        reason: "Invalid sync payload"
+      });
+    }
+
+    return new BadRequestException({
+      ...base,
+      reason: error instanceof Error ? error.message : "Unknown sync error"
+    });
   }
 }
