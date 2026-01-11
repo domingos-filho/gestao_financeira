@@ -26,8 +26,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const nextUser = await login(email, password);
-      const target = nextUser.defaultWalletId ? `/wallets/${nextUser.defaultWalletId}` : "/wallets";
-      router.replace(target);
+      router.replace("/wallets");
     } catch (err) {
       if (err instanceof AccessDeniedError) {
         setAccessDenied(err.adminEmail ?? fallbackAdmin);
@@ -45,8 +44,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const nextUser = await register(email, password);
-      const target = nextUser.defaultWalletId ? `/wallets/${nextUser.defaultWalletId}` : "/wallets";
-      router.replace(target);
+      router.replace("/wallets");
     } catch (err) {
       if (err instanceof AccessDeniedError) {
         setAccessDenied(err.adminEmail ?? fallbackAdmin);
@@ -87,12 +85,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md animate-rise">
         <CardHeader className="space-y-3">
-          <div className="flex items-center gap-3">
-            <BrandMark className="h-12 w-auto" />
-            <div>
-              <CardTitle className="sr-only">UniConta</CardTitle>
-              <CardDescription>Controle financeiro para o casal.</CardDescription>
-            </div>
+          <div className="flex items-center justify-center">
+            <BrandMark className="h-[72px] w-auto" />
+            <CardTitle className="sr-only">UniConta</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
