@@ -94,7 +94,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     if (safeAccounts.some((account) => account.id === accountId)) {
       return accountId;
     }
-    return safeAccounts[0].id;
+    return safeAccounts[0]?.id ?? "";
   }, [accountId, safeAccounts]);
 
   const resolvedCategoryId = useMemo(() => {
