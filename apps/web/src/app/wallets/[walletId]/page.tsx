@@ -7,6 +7,7 @@ import { TransactionType } from "@gf/shared";
 import { ArrowDownRight, ArrowUpRight, List, Plus, Repeat, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { db, safeDexie } from "@/lib/db";
 import { formatDate, parseDate } from "@/lib/date";
+import { useWallets } from "@/lib/wallets";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ function getOccurredTime(value?: string | Date | null) {
 
 export default function WalletDashboard({ params }: { params: { walletId: string } }) {
   const { walletId } = params;
+  const walletsQuery = useWallets();
 
   const transactions = useLiveQuery(
     () =>
@@ -111,11 +113,22 @@ export default function WalletDashboard({ params }: { params: { walletId: string
   const budgetTarget = monthSummary.income;
   const budgetUsed = monthSummary.expense;
   const budgetPct = budgetTarget ? Math.min(100, Math.round((budgetUsed / budgetTarget) * 100)) : 0;
+  const walletName = useMemo(() => {
+    const entry = walletsQuery.data?.find((item) => item.wallet.id === walletId);
+    return entry?.wallet.name ?? null;
+  }, [walletId, walletsQuery.data]);
 
   return (
     <div className="grid gap-6 animate-rise">
-      <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+      <div className="space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          {walletName && (
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+              Carteira: {walletName}
+            </span>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground">Visao geral das suas financas pessoais</p>
       </div>
 
