@@ -11,21 +11,20 @@ import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [accessDenied, setAccessDenied] = useState<string | null>(null);
   const fallbackAdmin = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
-  const canRegisterAdmin = email.trim().toLowerCase() === fallbackAdmin.toLowerCase();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const nextUser = await login(email, password);
+      await login(email, password);
       router.replace("/wallets");
     } catch (err) {
       if (err instanceof AccessDeniedError) {
@@ -33,24 +32,6 @@ export default function LoginPage() {
         return;
       }
       setError("Falha ao autenticar. Verifique os dados.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAdminRegister = async () => {
-    if (!canRegisterAdmin) return;
-    setError(null);
-    setLoading(true);
-    try {
-      const nextUser = await register(email, password);
-      router.replace("/wallets");
-    } catch (err) {
-      if (err instanceof AccessDeniedError) {
-        setAccessDenied(err.adminEmail ?? fallbackAdmin);
-        return;
-      }
-      setError("Falha ao registrar. Verifique os dados.");
     } finally {
       setLoading(false);
     }
@@ -105,11 +86,6 @@ export default function LoginPage() {
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Processando" : "Entrar"}
             </Button>
-            {canRegisterAdmin && (
-              <Button type="button" variant="outline" className="w-full" onClick={handleAdminRegister} disabled={loading}>
-                Registrar administrador
-              </Button>
-            )}
           </form>
         </CardContent>
       </Card>

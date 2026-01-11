@@ -121,7 +121,7 @@ export default function UsersPage() {
         if (current && wallets.some((item) => item.id === current)) {
           return current;
         }
-        return wallets[0]?.id ?? "";
+        return "";
       });
     }
   }, [wallets, editId]);
@@ -159,6 +159,7 @@ export default function UsersPage() {
     setName("");
     setEmail("");
     setPassword("");
+    setWalletId("");
     setMessage("Usuario criado.");
     loadData();
   };
@@ -279,13 +280,9 @@ export default function UsersPage() {
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label>Carteira principal</Label>
-                    <Select value={walletId} onValueChange={(value) => setWalletId(value)}>
+                    <Select value={walletId || undefined} onValueChange={(value) => setWalletId(value)}>
                       <SelectTrigger>
-                        {walletId ? (
-                          <SelectValue />
-                        ) : (
-                          <span className="text-muted-foreground">Selecione uma carteira</span>
-                        )}
+                        <SelectValue placeholder="Selecione uma carteira" />
                       </SelectTrigger>
                       <SelectContent>
                         {wallets.map((wallet) => (
@@ -349,13 +346,9 @@ export default function UsersPage() {
                           <div className="space-y-2">
                             <Label className="text-xs">Carteira</Label>
                             {isEditing ? (
-                              <Select value={editWalletId} onValueChange={(value) => setEditWalletId(value)}>
+                              <Select value={editWalletId || undefined} onValueChange={(value) => setEditWalletId(value)}>
                                 <SelectTrigger>
-                                  {editWalletId ? (
-                                    <SelectValue />
-                                  ) : (
-                                    <span className="text-muted-foreground">Selecione uma carteira</span>
-                                  )}
+                                  <SelectValue placeholder="Selecione uma carteira" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {wallets.map((wallet) => (
