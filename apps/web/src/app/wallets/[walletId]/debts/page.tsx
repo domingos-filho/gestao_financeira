@@ -176,7 +176,9 @@ export default function DebtsPage({ params }: { params: { walletId: string } }) 
             <Input type="date" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
           </div>
           <div className="md:col-span-2 flex flex-wrap items-center gap-3">
-            <Button onClick={handleCreate}>Salvar</Button>
+            <Button variant="create" onClick={handleCreate}>
+              Salvar
+            </Button>
             {message && <p className="text-sm text-muted-foreground">{message}</p>}
           </div>
         </CardContent>

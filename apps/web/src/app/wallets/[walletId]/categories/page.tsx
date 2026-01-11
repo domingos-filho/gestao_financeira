@@ -431,7 +431,9 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={handleCreate}>Adicionar</Button>
+            <Button variant="create" onClick={handleCreate}>
+              Adicionar
+            </Button>
             {message && <span className="text-sm text-muted-foreground">{message}</span>}
           </div>
         </CardContent>
@@ -446,7 +448,7 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
           {!hasAnyCategories && (
             <div className="flex flex-col gap-3">
               <p className="text-sm text-muted-foreground">Nenhuma categoria encontrada.</p>
-              <Button variant="outline" onClick={handleSeedDefaults} disabled={seedLoading}>
+              <Button variant="create" onClick={handleSeedDefaults} disabled={seedLoading}>
                 {seedLoading ? "Criando..." : "Gerar categorias padrao"}
               </Button>
             </div>
@@ -553,7 +555,7 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
                             </div>
 
                             <div className="flex flex-wrap gap-2">
-                              <Button onClick={() => handleEdit(category)} disabled={isBusy}>
+                              <Button variant="edit" onClick={() => handleEdit(category)} disabled={isBusy}>
                                 Salvar
                               </Button>
                               <Button variant="outline" onClick={cancelEdit} disabled={isBusy}>
@@ -595,7 +597,7 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
                                 >
                                   <ArrowDown className="h-4 w-4" />
                                 </Button>
-                                <Button variant="outline" onClick={() => startEdit(category)} disabled={isBusy}>
+                                <Button variant="edit" onClick={() => startEdit(category)} disabled={isBusy}>
                                   Editar
                                 </Button>
                                 <Button
@@ -607,7 +609,7 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
                                   <span className="sr-only">Arquivar</span>
                                 </Button>
                                 <Button
-                                  variant="ghost"
+                                  variant="delete"
                                   onClick={() => {
                                     setDeleteId(category.id);
                                     setDeleteTargetId("");
@@ -640,11 +642,7 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
                                     ))}
                                   </select>
                                   <div className="flex flex-wrap gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      onClick={() => handleDelete(category)}
-                                      disabled={isBusy}
-                                    >
+                                    <Button variant="delete" onClick={() => handleDelete(category)} disabled={isBusy}>
                                       Confirmar exclusao
                                     </Button>
                                     <Button
@@ -711,7 +709,7 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
                               Restaurar
                             </Button>
                             <Button
-                              variant="ghost"
+                              variant="delete"
                               onClick={() => {
                                 setDeleteId(category.id);
                                 setDeleteTargetId("");
@@ -744,11 +742,7 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
                                 ))}
                               </select>
                               <div className="flex flex-wrap gap-2">
-                                <Button
-                                  variant="ghost"
-                                  onClick={() => handleDelete(category)}
-                                  disabled={isBusy}
-                                >
+                                <Button variant="delete" onClick={() => handleDelete(category)} disabled={isBusy}>
                                   Confirmar exclusao
                                 </Button>
                                 <Button

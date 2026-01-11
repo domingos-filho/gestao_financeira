@@ -156,7 +156,9 @@ export default function WalletManagementPage() {
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                   />
-                  <Button onClick={handleCreate}>Criar</Button>
+                  <Button variant="create" onClick={handleCreate}>
+                    Criar
+                  </Button>
                 </CardContent>
               </Card>
 
@@ -190,7 +192,7 @@ export default function WalletManagementPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           {isEditing ? (
                             <>
-                              <Button onClick={() => handleUpdate(wallet.id)} disabled={isBusy}>
+                              <Button variant="edit" onClick={() => handleUpdate(wallet.id)} disabled={isBusy}>
                                 Salvar
                               </Button>
                               <Button variant="outline" onClick={cancelEdit} disabled={isBusy}>
@@ -199,10 +201,10 @@ export default function WalletManagementPage() {
                             </>
                           ) : (
                             <>
-                              <Button variant="outline" onClick={() => startEdit(wallet.id, wallet.name)}>
+                              <Button variant="edit" onClick={() => startEdit(wallet.id, wallet.name)}>
                                 Editar
                               </Button>
-                              <Button variant="ghost" onClick={() => handleDelete(wallet.id)} disabled={isBusy}>
+                              <Button variant="delete" onClick={() => handleDelete(wallet.id)} disabled={isBusy}>
                                 Excluir
                               </Button>
                             </>

@@ -132,6 +132,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
 
   const activeAccountId = resolvedAccountId || accountId;
   const categoryValue = resolvedCategoryId ?? "";
+  const isEditing = Boolean(transactionId);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -332,12 +333,14 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
       {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
       <div className="flex flex-wrap gap-3">
-        <Button type="submit">Salvar</Button>
+        <Button type="submit" variant={isEditing ? "edit" : "create"}>
+          Salvar
+        </Button>
         <Button type="button" variant="outline" onClick={() => router.back()}>
           Cancelar
         </Button>
         {existing && (
-          <Button type="button" variant="ghost" onClick={handleDelete}>
+          <Button type="button" variant="delete" onClick={handleDelete}>
             Excluir
           </Button>
         )}

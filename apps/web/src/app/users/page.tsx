@@ -325,7 +325,7 @@ export default function UsersPage() {
                       <p className="text-xs text-muted-foreground">Cadastre uma carteira antes de criar usuarios.</p>
                     )}
                   </div>
-                  <Button onClick={handleCreate} disabled={dataLoading || wallets.length === 0}>
+                  <Button variant="create" onClick={handleCreate} disabled={dataLoading || wallets.length === 0}>
                     Criar usuario
                   </Button>
                 </CardContent>
@@ -399,7 +399,7 @@ export default function UsersPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           {isEditing ? (
                             <>
-                              <Button onClick={handleUpdate} disabled={isBusy}>
+                              <Button variant="edit" onClick={handleUpdate} disabled={isBusy}>
                                 Salvar
                               </Button>
                               <Button variant="outline" onClick={cancelEdit} disabled={isBusy}>
@@ -408,11 +408,11 @@ export default function UsersPage() {
                             </>
                           ) : (
                             <>
-                              <Button variant="outline" onClick={() => startEdit(item)} disabled={isBusy}>
+                              <Button variant="edit" onClick={() => startEdit(item)} disabled={isBusy}>
                                 Editar
                               </Button>
                               <Button
-                                variant="ghost"
+                                variant="delete"
                                 onClick={() => handleDelete(item.id)}
                                 disabled={isBusy || isProtected}
                               >
