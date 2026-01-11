@@ -57,18 +57,28 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const normalizedCategories = useMemo(() => {
+    return (categories ?? []).map((category) => ({
+      ...category,
+      type: category.type ?? CategoryType.EXPENSE,
+      color: category.color ?? "#4fa2ff",
+      icon: category.icon ?? "tag",
+      archivedAt: category.archivedAt ?? null
+    }));
+  }, [categories]);
+
   const visibleCategories = useMemo(() => {
     if (type === TransactionType.TRANSFER) {
       return [];
     }
     const targetType = type === TransactionType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE;
-    return (categories ?? []).filter((category) => !category.archivedAt && category.type === targetType);
-  }, [categories, type]);
+    return normalizedCategories.filter((category) => !category.archivedAt && category.type === targetType);
+  }, [normalizedCategories, type]);
 
   const selectedCategory = useMemo(() => {
     if (!categoryId) return null;
-    return (categories ?? []).find((category) => category.id === categoryId) ?? null;
-  }, [categories, categoryId]);
+    return normalizedCategories.find((category) => category.id === categoryId) ?? null;
+  }, [normalizedCategories, categoryId]);
 
   useEffect(() => {
     if (!existing) return;
@@ -241,7 +251,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
         <div className="space-y-2">
           <Label>Conta destino</Label>
           <Select
-            value={counterpartyAccountId ?? ""}
+            value={counterpartyAccountId ?? undefined}
             onValueChange={(value) => setCounterpartyAccountId(value || null)}
           >
             <SelectTrigger>

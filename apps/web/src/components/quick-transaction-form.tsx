@@ -34,11 +34,21 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const normalizedCategories = useMemo(() => {
+    return (categories ?? []).map((category) => ({
+      ...category,
+      type: category.type ?? CategoryType.EXPENSE,
+      color: category.color ?? "#4fa2ff",
+      icon: category.icon ?? "tag",
+      archivedAt: category.archivedAt ?? null
+    }));
+  }, [categories]);
+
   const availableCategories = useMemo(() => {
-    const list = categories ?? [];
+    const list = normalizedCategories;
     const targetType = type === TransactionType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE;
     return list.filter((category) => !category.archivedAt && category.type === targetType);
-  }, [categories, type]);
+  }, [normalizedCategories, type]);
 
   useEffect(() => {
     const firstCategory = availableCategories[0];
