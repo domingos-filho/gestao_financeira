@@ -164,11 +164,17 @@ async function persistLocalEvent(params: {
 export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncParams) {
   await sanitizePendingEvents(walletId);
   const pending = await db.sync_events_local
-    .where({ walletId, status: "PENDING" })
+    .where("walletId")
+    .equals(walletId)
+    .and((event) => event.status === "PENDING")
     .sortBy("createdAt");
 
   if (pending.length > 0 && pending.some((event) => event.deviceId !== deviceId)) {
-    await db.sync_events_local.where({ walletId, status: "PENDING" }).modify({ deviceId });
+    await db.sync_events_local
+      .where("walletId")
+      .equals(walletId)
+      .and((event) => event.status === "PENDING")
+      .modify({ deviceId });
   }
 
   if (pending.length > 0) {
@@ -216,7 +222,11 @@ export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncPar
 async function sanitizePendingEvents(walletId: string) {
   const [categories, pending] = await Promise.all([
     db.categories_local.where("walletId").equals(walletId).toArray(),
-    db.sync_events_local.where({ walletId, status: "PENDING" }).toArray()
+    db.sync_events_local
+      .where("walletId")
+      .equals(walletId)
+      .and((event) => event.status === "PENDING")
+      .toArray()
   ]);
 
   if (pending.length === 0) {
