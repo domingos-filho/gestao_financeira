@@ -9,11 +9,11 @@ import { createLocalTransaction, deleteLocalTransaction, updateLocalTransaction 
 import { getDeviceId } from "@/lib/device";
 import { useWalletAccounts } from "@/lib/wallets";
 import { useAuth } from "@/lib/auth";
-import { getCategoryIcon } from "@/lib/category-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronDown } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 const typeOptions = [
@@ -33,7 +33,6 @@ function toIsoDate(value: string) {
 export function TransactionForm({ walletId, transactionId }: { walletId: string; transactionId?: string }) {
   const router = useRouter();
   const { user } = useAuth();
-  const noneCategoryValue = "__none__";
   const noneAccountValue = "__none_account__";
 
   const existing = useLiveQuery(
@@ -132,6 +131,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
   }, [existing]);
 
   const activeAccountId = resolvedAccountId || accountId;
+  const categoryValue = resolvedCategoryId ?? "";
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -306,39 +306,27 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
 
       <div className="space-y-2">
         <Label>Categoria</Label>
-        <Select
-          value={resolvedCategoryId ?? noneCategoryValue}
-          onValueChange={(value) => setCategoryId(value === noneCategoryValue ? null : value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sem categoria" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={noneCategoryValue}>Sem categoria</SelectItem>
+        <div className="relative">
+          <select
+            className="flex h-10 w-full appearance-none items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+            value={categoryValue}
+            onChange={(event) => setCategoryId(event.target.value || null)}
+            disabled={type === TransactionType.TRANSFER}
+          >
+            <option value="">Sem categoria</option>
             {selectedCategory && selectedCategory.archivedAt && (
-              <SelectItem value={selectedCategory.id} disabled>
+              <option value={selectedCategory.id} disabled>
                 {selectedCategory.name} (arquivada)
-              </SelectItem>
+              </option>
             )}
-            {visibleCategories.map((category) => {
-              const Icon = getCategoryIcon(category.icon);
-              const displayColor = category.color ?? "#4fa2ff";
-              return (
-                <SelectItem key={category.id} value={category.id}>
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="flex h-6 w-6 items-center justify-center rounded-full"
-                      style={{ backgroundColor: `${displayColor}1A`, color: displayColor }}
-                    >
-                      <Icon className="h-3 w-3" />
-                    </span>
-                    {category.name}
-                  </span>
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+            {visibleCategories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        </div>
       </div>
 
       {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}

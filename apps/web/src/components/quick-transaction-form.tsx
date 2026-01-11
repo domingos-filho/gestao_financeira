@@ -8,11 +8,10 @@ import { getDeviceId } from "@/lib/device";
 import { useWalletAccounts } from "@/lib/wallets";
 import { useAuth } from "@/lib/auth";
 import { db, safeDexie } from "@/lib/db";
-import { getCategoryIcon } from "@/lib/category-icons";
+import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type QuickTransactionFormProps = {
   walletId: string;
@@ -25,7 +24,6 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
     () => safeDexie(() => db.categories_local.where("walletId").equals(walletId).toArray(), []),
     [walletId]
   );
-  const noneCategoryValue = "__none__";
 
   const validAccounts = useMemo(
     () => accounts.filter((account) => account && account.id && account.name),
@@ -65,6 +63,8 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
     }
     return categoryId;
   }, [availableCategories, categoryId]);
+
+  const categoryValue = resolvedCategoryId ?? "";
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -159,34 +159,21 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
 
       <div className="space-y-2">
         <Label>Categoria</Label>
-        <Select
-          value={resolvedCategoryId ?? noneCategoryValue}
-          onValueChange={(value) => setCategoryId(value === noneCategoryValue ? null : value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sem categoria" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={noneCategoryValue}>Sem categoria</SelectItem>
-            {availableCategories.map((category) => {
-              const Icon = getCategoryIcon(category.icon);
-              const displayColor = category.color ?? "#4fa2ff";
-              return (
-                <SelectItem key={category.id} value={category.id}>
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="flex h-6 w-6 items-center justify-center rounded-full"
-                      style={{ backgroundColor: `${displayColor}1A`, color: displayColor }}
-                    >
-                      <Icon className="h-3 w-3" />
-                    </span>
-                    {category.name}
-                  </span>
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+        <div className="relative">
+          <select
+            className="flex h-10 w-full appearance-none items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            value={categoryValue}
+            onChange={(event) => setCategoryId(event.target.value || null)}
+          >
+            <option value="">Sem categoria</option>
+            {availableCategories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        </div>
       </div>
 
       {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
