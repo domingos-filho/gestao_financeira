@@ -33,20 +33,31 @@ export class SyncService {
         }
 
         const serverSeq = await this.nextWalletSeq(tx, walletId);
+        const payload = this.normalizePayload(event.payload);
 
-        await tx.syncEvent.create({
-          data: {
-            eventId: event.eventId,
-            walletId,
-            userId,
-            deviceId,
-            eventType: event.eventType,
-            payload: event.payload as Prisma.InputJsonValue,
-            serverSeq
+        try {
+          await tx.syncEvent.create({
+            data: {
+              eventId: event.eventId,
+              walletId,
+              userId,
+              deviceId,
+              eventType: event.eventType,
+              payload,
+              serverSeq
+            }
+          });
+        } catch (error) {
+          if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+            continue;
           }
-        });
+          if (error instanceof Prisma.PrismaClientValidationError) {
+            throw new BadRequestException("Invalid sync payload");
+          }
+          throw error;
+        }
 
-        await this.applyEvent(tx, walletId, event.eventType, event.payload);
+        await this.applyEvent(tx, walletId, event.eventType, payload);
 
         applied.push({ eventId: event.eventId, serverSeq });
       }
@@ -231,5 +242,16 @@ export class SyncService {
         deletedAt: null
       }
     });
+  }
+
+  private normalizePayload(payload: unknown): Prisma.InputJsonValue {
+    if (payload === undefined) {
+      throw new BadRequestException("payload is required");
+    }
+    try {
+      return JSON.parse(JSON.stringify(payload)) as Prisma.InputJsonValue;
+    } catch {
+      throw new BadRequestException("Invalid sync payload");
+    }
   }
 }

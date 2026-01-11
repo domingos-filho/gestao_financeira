@@ -176,6 +176,13 @@ export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncPar
       .and((event) => event.status === "PENDING")
       .modify({ deviceId });
   }
+  if (pending.length > 0 && pending.some((event) => event.userId !== userId)) {
+    await db.sync_events_local
+      .where("walletId")
+      .equals(walletId)
+      .and((event) => event.status === "PENDING")
+      .modify({ userId });
+  }
 
   if (pending.length > 0) {
     const pushRes = await authFetch("/sync/push", {
@@ -186,7 +193,7 @@ export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncPar
         events: pending.map((event) => ({
           eventId: event.eventId,
           walletId: event.walletId,
-          userId: event.userId,
+          userId,
           deviceId,
           eventType: event.eventType,
           payload: event.payload
