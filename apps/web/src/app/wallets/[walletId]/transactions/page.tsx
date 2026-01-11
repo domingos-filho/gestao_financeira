@@ -47,12 +47,12 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
 
   return (
     <div className="grid gap-6 animate-rise">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div>
           <h2 className="text-2xl font-semibold">Todas as Transacoes</h2>
           <p className="text-sm text-muted-foreground">Historico completo de receitas e despesas</p>
         </div>
-        <Button asChild variant="create">
+        <Button asChild variant="create" className="w-full sm:w-auto">
           <Link href={`/wallets/${walletId}/transactions/new`}>Nova transacao</Link>
         </Button>
       </div>
@@ -67,9 +67,9 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
             <Link
               key={tx.id}
               href={`/wallets/${walletId}/transactions/${tx.id}/edit`}
-              className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 transition hover:shadow-sm"
+              className="flex flex-col gap-3 rounded-lg border border-border bg-card px-4 py-3 transition hover:shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-6"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <span
                   className={`flex h-10 w-10 items-center justify-center rounded-full ${
                     tx.type === TransactionType.EXPENSE
@@ -87,9 +87,9 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
                     <ArrowUpRight className="h-4 w-4" />
                   )}
                 </span>
-                <div>
-                  <p className="font-medium">{tx.description || "Sem descricao"}</p>
-                  <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="min-w-0">
+                  <p className="truncate font-medium sm:whitespace-normal">{tx.description || "Sem descricao"}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>{formatDate(tx.occurredAt)}</span>
                     <span className="flex items-center gap-2 rounded-full border border-border px-2 py-0.5 text-[10px]">
                       {tx.categoryId && categoryMap.get(tx.categoryId) ? (
@@ -117,7 +117,7 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 text-sm">
+              <div className="flex w-full items-center justify-between gap-3 text-sm sm:w-auto sm:justify-start">
                 <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
                   {tx.type === TransactionType.EXPENSE
                     ? "Despesa"
