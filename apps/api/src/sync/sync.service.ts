@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { Prisma, SyncEventType, TransactionType } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
-import { TransactionPayloadSchema } from "@gf/shared";
+import { TransactionPayload, TransactionPayloadSchema } from "@gf/shared";
 
 @Injectable()
 export class SyncService {
@@ -255,7 +255,7 @@ export class SyncService {
     });
   }
 
-  private normalizeTransactionPayload(payload: unknown, walletId: string) {
+  private normalizeTransactionPayload(payload: unknown, walletId: string): TransactionPayload {
     if (!payload || typeof payload !== "object") {
       throw new BadRequestException("Invalid transaction payload");
     }
