@@ -113,18 +113,19 @@ export class SyncService {
   }
 
   private async nextWalletSeq(tx: Prisma.TransactionClient, walletId: string) {
-    const result = await tx.$queryRaw<{ server_seq: number }[]>`
-      UPDATE "Wallet"
-      SET "server_seq" = "server_seq" + 1
-      WHERE "id" = ${walletId}
-      RETURNING "server_seq"
-    `;
-
-    if (!result[0]) {
-      throw new BadRequestException("Wallet not found");
+    try {
+      const wallet = await tx.wallet.update({
+        where: { id: walletId },
+        data: { serverSeq: { increment: 1 } },
+        select: { serverSeq: true }
+      });
+      return wallet.serverSeq;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        throw new BadRequestException("Wallet not found");
+      }
+      throw error;
     }
-
-    return result[0].server_seq;
   }
 
   private async applyEvent(
