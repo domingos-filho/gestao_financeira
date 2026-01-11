@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Menu, Search, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { syncCategories } from "@/lib/categories";
 import { syncDebts } from "@/lib/debts";
@@ -223,16 +223,10 @@ export function AppShell({ children, walletId }: AppShellProps) {
               >
                 <Menu className="h-5 w-5" />
               </button>
-              <BrandMark className="h-8 w-auto" />
+              <BrandMark className="h-10 w-auto md:h-11" />
               <span className="sr-only">UniConta</span>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <button type="button" className="rounded-full p-2 hover:bg-muted" aria-label="Pesquisar">
-                <Search className="h-4 w-4" />
-              </button>
-              <button type="button" className="rounded-full p-2 hover:bg-muted" aria-label="Notificacoes">
-                <Bell className="h-4 w-4" />
-              </button>
               <div className="flex items-center gap-2">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold">
                   {initials}
