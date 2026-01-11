@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserRole } from "@gf/shared";
+import { ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { AppShell } from "@/components/app-shell";
 import { RequireAuth } from "@/components/require-auth";
@@ -10,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type WalletOption = { id: string; name: string };
 
@@ -21,6 +21,46 @@ type ManagedUser = {
   role: UserRole;
   defaultWallet: WalletOption | null;
 };
+
+type WalletSelectProps = {
+  value: string;
+  onChange: (value: string) => void;
+  wallets: WalletOption[];
+  disabled?: boolean;
+};
+
+function WalletSelect({ value, onChange, wallets, disabled }: WalletSelectProps) {
+  const isEmpty = wallets.length === 0;
+
+  return (
+    <div className="relative">
+      <select
+        className="flex h-10 w-full appearance-none items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={disabled || isEmpty}
+      >
+        {isEmpty ? (
+          <option value="" disabled>
+            Nenhuma carteira cadastrada
+          </option>
+        ) : (
+          <>
+            <option value="" disabled>
+              Selecione uma carteira
+            </option>
+            {wallets.map((wallet) => (
+              <option key={wallet.id} value={wallet.id}>
+                {wallet.name}
+              </option>
+            ))}
+          </>
+        )}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+    </div>
+  );
+}
 
 export default function UsersPage() {
   const router = useRouter();
@@ -280,23 +320,7 @@ export default function UsersPage() {
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label>Carteira principal</Label>
-                    <Select value={walletId || undefined} onValueChange={(value) => setWalletId(value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma carteira" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {wallets.map((wallet) => (
-                          <SelectItem key={wallet.id} value={wallet.id}>
-                            {wallet.name}
-                          </SelectItem>
-                        ))}
-                        {wallets.length === 0 && (
-                          <SelectItem value="__empty" disabled>
-                            Nenhuma carteira cadastrada
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <WalletSelect value={walletId} onChange={setWalletId} wallets={wallets} disabled={dataLoading} />
                     {wallets.length === 0 && (
                       <p className="text-xs text-muted-foreground">Cadastre uma carteira antes de criar usuarios.</p>
                     )}
@@ -346,23 +370,12 @@ export default function UsersPage() {
                           <div className="space-y-2">
                             <Label className="text-xs">Carteira</Label>
                             {isEditing ? (
-                              <Select value={editWalletId || undefined} onValueChange={(value) => setEditWalletId(value)}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione uma carteira" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {wallets.map((wallet) => (
-                                    <SelectItem key={wallet.id} value={wallet.id}>
-                                      {wallet.name}
-                                    </SelectItem>
-                                  ))}
-                                  {wallets.length === 0 && (
-                                    <SelectItem value="__empty" disabled>
-                                      Nenhuma carteira cadastrada
-                                    </SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
+                              <WalletSelect
+                                value={editWalletId}
+                                onChange={setEditWalletId}
+                                wallets={wallets}
+                                disabled={isBusy}
+                              />
                             ) : (
                               <p className="text-sm text-muted-foreground">
                                 {item.defaultWallet?.name ?? "Sem carteira"}
