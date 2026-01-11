@@ -12,6 +12,7 @@ import { useSyncEngine } from "@/lib/sync-engine";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand-logo";
 import { SyncIndicator } from "@/components/sync-indicator";
+import { Button } from "@/components/ui/button";
 
 type NavItem = {
   label: string;
@@ -76,7 +77,7 @@ type AppShellProps = {
 
 export function AppShell({ children, walletId }: AppShellProps) {
   const pathname = usePathname();
-  const { user, authFetch } = useAuth();
+  const { user, authFetch, logout } = useAuth();
   const [online, setOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
@@ -150,7 +151,8 @@ export function AppShell({ children, walletId }: AppShellProps) {
     [walletId, pathname, isAdmin, hideAdminItems]
   );
 
-  const initials = (user?.email?.[0] ?? "U").toUpperCase();
+  const displayName = user?.name?.trim() || "Usuario";
+  const initials = (displayName[0] ?? "U").toUpperCase();
   const footerStatus = walletId ? (
     <SyncIndicator
       status={syncEngine.status}
@@ -235,7 +237,12 @@ export function AppShell({ children, walletId }: AppShellProps) {
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold">
                   {initials}
                 </span>
-                <span className="hidden text-sm text-foreground md:inline">{user?.email ?? "usuario@exemplo.com"}</span>
+                <span className="max-w-[140px] truncate text-sm text-foreground md:max-w-none">
+                  {displayName}
+                </span>
+                <Button variant="outline" size="sm" onClick={logout}>
+                  Sair
+                </Button>
               </div>
             </div>
           </header>
