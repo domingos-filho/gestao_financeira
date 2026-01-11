@@ -162,6 +162,7 @@ async function persistLocalEvent(params: {
 }
 
 export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncParams) {
+  await sanitizePendingEvents(walletId);
   const pending = await db.sync_events_local
     .where({ walletId, status: "PENDING" })
     .sortBy("createdAt");
@@ -206,6 +207,119 @@ export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncPar
 
   await setMetadata(`lastSeq:${walletId}`, String(data.nextSeq));
   await setMetadata(`lastSyncAt:${walletId}`, new Date().toISOString());
+}
+
+async function sanitizePendingEvents(walletId: string) {
+  const [categories, pending] = await Promise.all([
+    db.categories_local.where("walletId").equals(walletId).toArray(),
+    db.sync_events_local.where({ walletId, status: "PENDING" }).toArray()
+  ]);
+
+  if (pending.length === 0) {
+    return;
+  }
+
+  const categoryIds = new Set(categories.map((category) => category.id));
+  const hasCategoryIndex = categoryIds.size > 0;
+
+  await db.transaction("rw", db.sync_events_local, db.transactions_local, async () => {
+    for (const event of pending) {
+      const payload = event.payload as Partial<TransactionPayload> | null | undefined;
+      if (!payload || payload.walletId !== walletId || !payload.id || !payload.accountId) {
+        continue;
+      }
+
+      let changed = false;
+      const nextType =
+        payload.type === TransactionType.INCOME ||
+        payload.type === TransactionType.EXPENSE ||
+        payload.type === TransactionType.TRANSFER
+          ? payload.type
+          : TransactionType.EXPENSE;
+
+      const nextPayload: TransactionPayload = {
+        id: payload.id,
+        walletId: payload.walletId ?? walletId,
+        accountId: payload.accountId,
+        type: nextType,
+        amountCents:
+          typeof payload.amountCents === "number"
+            ? payload.amountCents
+            : Number(payload.amountCents ?? 0),
+        occurredAt: typeof payload.occurredAt === "string" ? payload.occurredAt : new Date().toISOString(),
+        description: typeof payload.description === "string" ? payload.description : String(payload.description ?? ""),
+        categoryId: typeof payload.categoryId === "string" ? payload.categoryId : null,
+        counterpartyAccountId:
+          typeof payload.counterpartyAccountId === "string" ? payload.counterpartyAccountId : null,
+        deletedAt: typeof payload.deletedAt === "string" ? payload.deletedAt : null
+      };
+      if (payload.type !== nextType) {
+        changed = true;
+      }
+
+      if (hasCategoryIndex && nextPayload.categoryId && !categoryIds.has(nextPayload.categoryId)) {
+        nextPayload.categoryId = null;
+        changed = true;
+      }
+
+      const occurredAt = new Date(nextPayload.occurredAt);
+      const hasOccurredAtTimezone = /Z$|[+-]\d{2}:\d{2}$/.test(nextPayload.occurredAt);
+      if (Number.isNaN(occurredAt.getTime())) {
+        nextPayload.occurredAt = new Date().toISOString();
+        changed = true;
+      } else if (!nextPayload.occurredAt.includes("T") || !hasOccurredAtTimezone) {
+        nextPayload.occurredAt = occurredAt.toISOString();
+        changed = true;
+      }
+
+      if (nextPayload.deletedAt) {
+        const deletedAt = new Date(nextPayload.deletedAt);
+        const hasDeletedAtTimezone = /Z$|[+-]\d{2}:\d{2}$/.test(nextPayload.deletedAt);
+        if (Number.isNaN(deletedAt.getTime())) {
+          nextPayload.deletedAt = null;
+          changed = true;
+        } else if (!nextPayload.deletedAt.includes("T") || !hasDeletedAtTimezone) {
+          nextPayload.deletedAt = deletedAt.toISOString();
+          changed = true;
+        }
+      }
+
+      if (nextPayload.amountCents < 0) {
+        nextPayload.amountCents = Math.abs(nextPayload.amountCents);
+        changed = true;
+      }
+      if (!Number.isFinite(nextPayload.amountCents)) {
+        nextPayload.amountCents = 0;
+        changed = true;
+      } else if (!Number.isInteger(nextPayload.amountCents)) {
+        nextPayload.amountCents = Math.round(nextPayload.amountCents);
+        changed = true;
+      }
+
+      if (!nextPayload.description.trim()) {
+        nextPayload.description = "Sem descricao";
+        changed = true;
+      }
+
+      if (!changed) {
+        continue;
+      }
+
+      const now = new Date().toISOString();
+      await db.sync_events_local.update(event.eventId, { payload: nextPayload });
+      await db.transactions_local.update(nextPayload.id, {
+        accountId: nextPayload.accountId,
+        type: nextPayload.type,
+        amountCents: nextPayload.amountCents,
+        occurredAt: nextPayload.occurredAt,
+        description: nextPayload.description,
+        categoryId: nextPayload.categoryId ?? null,
+        counterpartyAccountId: nextPayload.counterpartyAccountId ?? null,
+        deletedAt: nextPayload.deletedAt ?? null,
+        updatedAt: now
+      });
+    }
+  });
 }
 
 async function applyRemoteEvents(events: SyncEventServer[]) {
