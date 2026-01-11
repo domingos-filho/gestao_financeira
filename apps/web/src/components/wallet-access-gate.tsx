@@ -31,7 +31,7 @@ export function WalletAccessGate({
   if (loading || !user) {
     return (
       <RequireAuth>
-        <AppShell>
+        <AppShell walletId={walletId}>
           <p className="text-sm text-muted-foreground">Carregando...</p>
         </AppShell>
       </RequireAuth>
@@ -41,7 +41,7 @@ export function WalletAccessGate({
   if (walletsQuery.isLoading) {
     return (
       <RequireAuth>
-        <AppShell>
+        <AppShell walletId={walletId}>
           <p className="text-sm text-muted-foreground">Verificando acesso...</p>
         </AppShell>
       </RequireAuth>
