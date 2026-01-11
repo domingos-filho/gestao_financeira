@@ -100,8 +100,12 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
       setCategoryId(null);
       return;
     }
+    const firstCategory = visibleCategories[0];
+    if (!firstCategory) {
+      return;
+    }
     if (!categoryId || !visibleCategories.some((category) => category.id === categoryId)) {
-      setCategoryId(visibleCategories[0].id);
+      setCategoryId(firstCategory.id);
     }
   }, [categoryId, type, visibleCategories, selectedCategory]);
 
