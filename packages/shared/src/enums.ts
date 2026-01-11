@@ -4,6 +4,11 @@ export enum TransactionType {
   TRANSFER = "TRANSFER"
 }
 
+export enum CategoryType {
+  INCOME = "INCOME",
+  EXPENSE = "EXPENSE"
+}
+
 export enum WalletRole {
   ADMIN = "ADMIN",
   EDITOR = "EDITOR",

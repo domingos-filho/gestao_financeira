@@ -26,6 +26,11 @@ enum TransactionType {
   TRANSFER
 }
 
+enum CategoryType {
+  INCOME
+  EXPENSE
+}
+
 enum AccessStatus {
   ALLOWED
   REVOKED
@@ -108,11 +113,18 @@ model Category {
   id        String    @id @default(uuid())
   walletId  String    @map("wallet_id")
   name      String
+  type      CategoryType @default(EXPENSE)
+  color     String    @default("#4fa2ff")
+  icon      String    @default("tag")
+  sortOrder Int       @default(0) @map("sort_order")
+  archivedAt DateTime? @map("archived_at")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
   wallet    Wallet    @relation(fields: [walletId], references: [id])
   transactions Transaction[]
+
+  @@index([walletId, type, sortOrder])
 }
 
 model Transaction {

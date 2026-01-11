@@ -1,5 +1,5 @@
 import Dexie, { Table } from "dexie";
-import { SyncEventType, TransactionPayload, TransactionType } from "@gf/shared";
+import { CategoryType, SyncEventType, TransactionPayload, TransactionType } from "@gf/shared";
 
 export type TransactionLocal = {
   id: string;
@@ -19,6 +19,11 @@ export type CategoryLocal = {
   id: string;
   walletId: string;
   name: string;
+  type: CategoryType;
+  color: string;
+  icon: string;
+  sortOrder: number;
+  archivedAt?: string | null;
   updatedAt: string;
 };
 
@@ -72,6 +77,13 @@ class FinanceDB extends Dexie {
     this.version(2).stores({
       transactions_local: "id, walletId, occurredAt, deletedAt",
       categories_local: "id, walletId, updatedAt",
+      debts_local: "id, walletId, status, startedAt",
+      sync_events_local: "eventId, walletId, status, createdAt",
+      sync_metadata: "key"
+    });
+    this.version(3).stores({
+      transactions_local: "id, walletId, occurredAt, deletedAt",
+      categories_local: "id, walletId, type, archivedAt, sortOrder, updatedAt",
       debts_local: "id, walletId, status, startedAt",
       sync_events_local: "eventId, walletId, status, createdAt",
       sync_metadata: "key"

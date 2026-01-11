@@ -6,6 +6,11 @@ type CategoryResponse = {
   id: string;
   walletId: string;
   name: string;
+  type: string;
+  color?: string;
+  icon?: string;
+  sortOrder?: number;
+  archivedAt?: string | null;
   updatedAt?: string;
   createdAt?: string;
 };
@@ -21,6 +26,11 @@ export async function syncCategories(walletId: string, authFetch: AuthFetch) {
     id: category.id,
     walletId: category.walletId,
     name: category.name,
+    type: category.type as CategoryLocal["type"],
+    color: category.color ?? "#4fa2ff",
+    icon: category.icon ?? "tag",
+    sortOrder: category.sortOrder ?? 0,
+    archivedAt: category.archivedAt ?? null,
     updatedAt: category.updatedAt ?? category.createdAt ?? new Date().toISOString()
   }));
 
