@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { CategoryType, TransactionType } from "@gf/shared";
 import { createLocalTransaction } from "@/lib/sync";
@@ -55,15 +55,15 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
     return list.filter((category) => !category.archivedAt && category.type === targetType);
   }, [normalizedCategories, type]);
 
-  useEffect(() => {
+  const resolvedCategoryId = useMemo(() => {
     const firstCategory = availableCategories[0];
     if (!firstCategory) {
-      setCategoryId(null);
-      return;
+      return null;
     }
     if (!categoryId || !availableCategories.some((category) => category.id === categoryId)) {
-      setCategoryId(firstCategory.id);
+      return firstCategory.id;
     }
+    return categoryId;
   }, [availableCategories, categoryId]);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -94,7 +94,7 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
         amountCents,
         occurredAt: new Date().toISOString(),
         description,
-        categoryId: categoryId ?? null,
+        categoryId: resolvedCategoryId ?? null,
         counterpartyAccountId: null,
         userId: user.id,
         deviceId: getDeviceId()
@@ -160,7 +160,7 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
       <div className="space-y-2">
         <Label>Categoria</Label>
         <Select
-          value={categoryId ?? noneCategoryValue}
+          value={resolvedCategoryId ?? noneCategoryValue}
           onValueChange={(value) => setCategoryId(value === noneCategoryValue ? null : value)}
         >
           <SelectTrigger>
