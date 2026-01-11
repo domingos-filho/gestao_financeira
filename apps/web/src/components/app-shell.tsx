@@ -79,6 +79,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
   const [online, setOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
+  const hideAdminItems = Boolean(walletId);
 
   useEffect(() => {
     const handleOnline = () => setOnline(true);
@@ -102,7 +103,12 @@ export function AppShell({ children, walletId }: AppShellProps) {
   const nav = useMemo<ResolvedNavItem[]>(
     () =>
       navItems
-        .filter((item) => !item.adminOnly || isAdmin)
+        .filter((item) => {
+          if (item.adminOnly && hideAdminItems) {
+            return false;
+          }
+          return !item.adminOnly || isAdmin;
+        })
         .map((item) => {
           const href = item.href ? item.href(walletId) : undefined;
           if (!href || item.disabled) {
@@ -113,7 +119,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
           return { ...item, href, active };
         })
         .filter((item): item is ResolvedNavItem => item !== null),
-    [walletId, pathname, isAdmin]
+    [walletId, pathname, isAdmin, hideAdminItems]
   );
 
   const initials = (user?.email?.[0] ?? "U").toUpperCase();

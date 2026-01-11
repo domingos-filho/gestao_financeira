@@ -26,18 +26,12 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
   );
   const noneCategoryValue = "__none__";
 
-  const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
+  const accountId = accounts[0]?.id ?? "";
   const [type, setType] = useState<TransactionType>(TransactionType.INCOME);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!accountId && accounts[0]) {
-      setAccountId(accounts[0].id);
-    }
-  }, [accountId, accounts]);
 
   useEffect(() => {
     if (!categoryId && categories && categories[0]) {
@@ -61,7 +55,7 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
       return;
     }
     if (!accountId) {
-      setError("Selecione uma conta.");
+      setError("Nenhuma conta disponivel.");
       return;
     }
 
@@ -134,22 +128,6 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
       <div className="space-y-2">
         <Label>Valor (R$)</Label>
         <Input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Conta</Label>
-        <Select value={accountId} onValueChange={setAccountId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione uma conta" />
-          </SelectTrigger>
-          <SelectContent>
-            {accounts.map((account) => (
-              <SelectItem key={account.id} value={account.id}>
-                {account.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="space-y-2">
