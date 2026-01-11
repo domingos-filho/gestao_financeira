@@ -82,10 +82,43 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     return normalizedCategories.filter((category) => !category.archivedAt && category.type === targetType);
   }, [normalizedCategories, type]);
 
-  const selectedCategory = useMemo(() => {
+  const rawSelectedCategory = useMemo(() => {
     if (!categoryId) return null;
     return normalizedCategories.find((category) => category.id === categoryId) ?? null;
   }, [normalizedCategories, categoryId]);
+
+  const resolvedAccountId = useMemo(() => {
+    if (safeAccounts.length === 0) {
+      return "";
+    }
+    if (safeAccounts.some((account) => account.id === accountId)) {
+      return accountId;
+    }
+    return safeAccounts[0].id;
+  }, [accountId, safeAccounts]);
+
+  const resolvedCategoryId = useMemo(() => {
+    if (type === TransactionType.TRANSFER) {
+      return null;
+    }
+    const firstCategory = visibleCategories[0];
+    const targetType = type === TransactionType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE;
+    if (categoryId && rawSelectedCategory?.archivedAt && rawSelectedCategory.type === targetType) {
+      return categoryId;
+    }
+    if (!firstCategory) {
+      return null;
+    }
+    if (!categoryId || !visibleCategories.some((category) => category.id === categoryId)) {
+      return firstCategory.id;
+    }
+    return categoryId;
+  }, [categoryId, rawSelectedCategory, type, visibleCategories]);
+
+  const selectedCategory = useMemo(() => {
+    if (!resolvedCategoryId) return null;
+    return normalizedCategories.find((category) => category.id === resolvedCategoryId) ?? null;
+  }, [normalizedCategories, resolvedCategoryId]);
 
   useEffect(() => {
     if (!existing) return;
@@ -98,33 +131,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     setCategoryId(existing.categoryId ?? null);
   }, [existing]);
 
-  useEffect(() => {
-    if (!safeAccounts.some((account) => account.id === accountId)) {
-      setAccountId(safeAccounts[0]?.id ?? "");
-    }
-  }, [accountId, safeAccounts]);
-
-  useEffect(() => {
-    if (type === TransactionType.TRANSFER) {
-      setCategoryId(null);
-      return;
-    }
-    const targetType = type === TransactionType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE;
-    if (selectedCategory?.archivedAt && selectedCategory.type === targetType) {
-      return;
-    }
-    if (visibleCategories.length === 0) {
-      setCategoryId(null);
-      return;
-    }
-    const firstCategory = visibleCategories[0];
-    if (!firstCategory) {
-      return;
-    }
-    if (!categoryId || !visibleCategories.some((category) => category.id === categoryId)) {
-      setCategoryId(firstCategory.id);
-    }
-  }, [categoryId, type, visibleCategories, selectedCategory]);
+  const activeAccountId = resolvedAccountId || accountId;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -152,12 +159,12 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
       await updateLocalTransaction({
         id: existing.id,
         walletId,
-        accountId,
+        accountId: activeAccountId,
         type,
         amountCents,
         occurredAt: occurredAtIso,
         description,
-        categoryId: categoryId ?? null,
+        categoryId: resolvedCategoryId ?? null,
         counterpartyAccountId: type === TransactionType.TRANSFER ? counterpartyAccountId : null,
         userId: user.id,
         deviceId
@@ -165,12 +172,12 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     } else {
       await createLocalTransaction({
         walletId,
-        accountId,
+        accountId: activeAccountId,
         type,
         amountCents,
         occurredAt: occurredAtIso,
         description,
-        categoryId: categoryId ?? null,
+        categoryId: resolvedCategoryId ?? null,
         counterpartyAccountId: type === TransactionType.TRANSFER ? counterpartyAccountId : null,
         userId: user.id,
         deviceId
@@ -206,14 +213,14 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     return <p className="text-sm text-muted-foreground">Nenhuma conta disponivel para esta carteira.</p>;
   }
 
-  const transferTargets = safeAccounts.filter((account) => account.id !== accountId);
+  const transferTargets = safeAccounts.filter((account) => account.id !== activeAccountId);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label>Conta</Label>
-          <Select value={accountId} onValueChange={setAccountId}>
+          <Select value={activeAccountId} onValueChange={setAccountId}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
@@ -300,7 +307,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
       <div className="space-y-2">
         <Label>Categoria</Label>
         <Select
-          value={categoryId ?? noneCategoryValue}
+          value={resolvedCategoryId ?? noneCategoryValue}
           onValueChange={(value) => setCategoryId(value === noneCategoryValue ? null : value)}
         >
           <SelectTrigger>
