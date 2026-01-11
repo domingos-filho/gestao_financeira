@@ -253,7 +253,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center justify-between border-b border-border bg-card px-4 py-4 md:px-6">
+          <header className="relative z-40 flex items-center justify-between border-b border-border bg-card px-4 py-4 md:px-6">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -267,10 +267,10 @@ export function AppShell({ children, walletId }: AppShellProps) {
               <span className="sr-only">UniConta</span>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="relative" ref={userMenuRef}>
+              <div className="relative z-50" ref={userMenuRef}>
                 <button
                   type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground shadow-sm transition hover:bg-muted/70"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#4fa2ff,#e96878)] text-xs font-semibold text-white shadow-sm transition hover:opacity-90"
                   aria-haspopup="menu"
                   aria-expanded={userMenuOpen}
                   aria-label="Abrir menu do usuario"
@@ -280,7 +280,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
                 </button>
                 <div
                   className={cn(
-                    "absolute right-0 mt-3 w-48 origin-top-right rounded-xl border border-border bg-card p-3 text-sm shadow-lg transition",
+                    "absolute right-0 mt-3 w-48 origin-top-right rounded-xl border border-border bg-card p-3 text-sm shadow-lg transition z-50",
                     userMenuOpen ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
                   )}
                 >
