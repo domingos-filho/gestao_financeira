@@ -34,6 +34,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
   const router = useRouter();
   const { user } = useAuth();
   const noneCategoryValue = "__none__";
+  const noneAccountValue = "__none_account__";
 
   const existing = useLiveQuery(
     () =>
@@ -48,6 +49,11 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
 
   const { accounts, isLoading: accountsLoading } = useWalletAccounts(walletId);
 
+  const safeAccounts = useMemo(
+    () => accounts.filter((account) => account && account.id && account.name),
+    [accounts]
+  );
+
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [type, setType] = useState<TransactionType>(TransactionType.EXPENSE);
   const [amount, setAmount] = useState("0");
@@ -58,7 +64,8 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
   const [error, setError] = useState<string | null>(null);
 
   const normalizedCategories = useMemo(() => {
-    return (categories ?? []).map((category) => ({
+    const safeCategories = (categories ?? []).filter((category) => category && category.id && category.name);
+    return safeCategories.map((category) => ({
       ...category,
       type: category.type ?? CategoryType.EXPENSE,
       color: category.color ?? "#4fa2ff",
@@ -92,10 +99,10 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
   }, [existing]);
 
   useEffect(() => {
-    if (!accountId && accounts.length > 0 && accounts[0]) {
-      setAccountId(accounts[0].id);
+    if (!safeAccounts.some((account) => account.id === accountId)) {
+      setAccountId(safeAccounts[0]?.id ?? "");
     }
-  }, [accountId, accounts]);
+  }, [accountId, safeAccounts]);
 
   useEffect(() => {
     if (type === TransactionType.TRANSFER) {
@@ -195,11 +202,11 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     return <p className="text-sm text-muted-foreground">Carregando contas...</p>;
   }
 
-  if (accounts.length === 0) {
+  if (safeAccounts.length === 0) {
     return <p className="text-sm text-muted-foreground">Nenhuma conta disponivel para esta carteira.</p>;
   }
 
-  const transferTargets = accounts.filter((account) => account.id !== accountId);
+  const transferTargets = safeAccounts.filter((account) => account.id !== accountId);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -211,7 +218,7 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
-              {accounts.map((account) => (
+              {safeAccounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
                   {account.name}
                 </SelectItem>
@@ -221,7 +228,18 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
         </div>
         <div className="space-y-2">
           <Label>Tipo</Label>
-          <Select value={type} onValueChange={(value) => setType(value as TransactionType)}>
+          <Select
+            value={type}
+            onValueChange={(value) => {
+              if (
+                value === TransactionType.EXPENSE ||
+                value === TransactionType.INCOME ||
+                value === TransactionType.TRANSFER
+              ) {
+                setType(value);
+              }
+            }}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
@@ -251,13 +269,16 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
         <div className="space-y-2">
           <Label>Conta destino</Label>
           <Select
-            value={counterpartyAccountId ?? undefined}
-            onValueChange={(value) => setCounterpartyAccountId(value || null)}
+            value={counterpartyAccountId ?? noneAccountValue}
+            onValueChange={(value) =>
+              setCounterpartyAccountId(value === noneAccountValue ? null : value)
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value={noneAccountValue}>Selecione</SelectItem>
               {transferTargets.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
                   {account.name}
