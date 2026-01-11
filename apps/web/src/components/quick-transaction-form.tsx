@@ -178,7 +178,7 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
 
       {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
-      <Button type="submit" className="w-full">
+      <Button type="submit" variant="create" className="w-full">
         Adicionar
       </Button>
     </form>

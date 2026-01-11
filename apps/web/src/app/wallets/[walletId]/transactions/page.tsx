@@ -52,7 +52,7 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
           <h2 className="text-2xl font-semibold">Todas as Transacoes</h2>
           <p className="text-sm text-muted-foreground">Historico completo de receitas e despesas</p>
         </div>
-        <Button asChild>
+        <Button asChild variant="create">
           <Link href={`/wallets/${walletId}/transactions/new`}>Nova transacao</Link>
         </Button>
       </div>
