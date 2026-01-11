@@ -20,6 +20,14 @@ function formatBRL(amountCents: number) {
   });
 }
 
+function getOccurredTime(value?: string | Date | null) {
+  if (!value) {
+    return 0;
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+}
+
 export default function TransactionsPage({ params }: { params: { walletId: string } }) {
   const { walletId } = params;
   const { filter, setFilter, period, clearRange } = usePeriodFilter(walletId);
@@ -27,7 +35,7 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
 
   const transactions = useLiveQuery(
     () =>
-      safeDexie(
+  safeDexie(
         () =>
           db.transactions_local
             .where("walletId")
