@@ -4,14 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useWallets } from "@/lib/wallets";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { RequireAuth } from "@/components/require-auth";
 import { AppShell } from "@/components/app-shell";
 
 export default function HomePage() {
   const router = useRouter();
-  const { logout, authFetch, user } = useAuth();
+  const { authFetch, user } = useAuth();
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
@@ -86,9 +85,6 @@ export default function HomePage() {
               <h1 className="text-2xl font-semibold">Home</h1>
               <p className="text-sm text-muted-foreground">Sua central de acesso as carteiras compartilhadas.</p>
             </div>
-            <Button variant="outline" onClick={logout}>
-              Sair
-            </Button>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
