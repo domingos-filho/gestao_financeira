@@ -3,8 +3,8 @@ const APP_CACHE = `gf-app-${CACHE_VERSION}`;
 const ASSETS = [
   "/offline.html",
   "/manifest.json",
-  "/icons/icon-192.svg",
-  "/icons/icon-512.svg"
+  "/icons/icon-192.png",
+  "/icons/icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
