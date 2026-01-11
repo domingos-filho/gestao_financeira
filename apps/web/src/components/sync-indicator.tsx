@@ -35,11 +35,17 @@ export function SyncIndicator({ status, lastSyncAt, runSync, compact = false }: 
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span
-          className={`h-2 w-2 rounded-full ${status === "error" ? "bg-[var(--color-danger)]" : online ? "bg-[var(--color-success)]" : "bg-[var(--color-warning)]"}`}
-        />
-        {label}
+      <div className="flex flex-col items-start gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span
+            className={`h-2 w-2 rounded-full ${status === "error" ? "bg-[var(--color-danger)]" : online ? "bg-[var(--color-success)]" : "bg-[var(--color-warning)]"}`}
+          />
+          {label}
+        </div>
+        <Button variant="ghost" size="sm" onClick={runSync} type="button" className="-ml-2 h-7 px-2 text-xs">
+          <RefreshCw className="h-3.5 w-3.5" />
+          Sincronizar
+        </Button>
       </div>
     );
   }
