@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { TransactionType } from "@gf/shared";
+import { TransactionType, toTimestamp } from "@gf/shared";
 import { ArrowDownRight, ArrowUpRight, Repeat } from "lucide-react";
 import { db, safeDexie, type TransactionLocal } from "@/lib/db";
 import { formatDate } from "@/lib/date";
@@ -18,6 +18,38 @@ function formatBRL(amountCents: number) {
     style: "currency",
     currency: "BRL"
   });
+}
+
+function toServerSeq(value?: number | null) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function compareTransactions(a: TransactionLocal, b: TransactionLocal) {
+  const aSeq = toServerSeq(a.serverSeq ?? null);
+  const bSeq = toServerSeq(b.serverSeq ?? null);
+  if (aSeq !== null && bSeq !== null && aSeq !== bSeq) {
+    return bSeq - aSeq;
+  }
+
+  const aOccurred = toTimestamp(a.occurredAt);
+  const bOccurred = toTimestamp(b.occurredAt);
+  if (aOccurred !== null && bOccurred !== null && aOccurred !== bOccurred) {
+    return bOccurred - aOccurred;
+  }
+
+  const aCreated = toTimestamp(a.createdAt ?? a.updatedAt ?? null);
+  const bCreated = toTimestamp(b.createdAt ?? b.updatedAt ?? null);
+  if (aCreated !== null && bCreated !== null && aCreated !== bCreated) {
+    return bCreated - aCreated;
+  }
+  if (aCreated !== null && bCreated === null) {
+    return -1;
+  }
+  if (bCreated !== null && aCreated === null) {
+    return 1;
+  }
+
+  return a.id.localeCompare(b.id);
 }
 
 export default function TransactionsPage({ params }: { params: { walletId: string } }) {
