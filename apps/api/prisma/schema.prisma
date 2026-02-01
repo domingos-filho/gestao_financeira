@@ -81,6 +81,7 @@ model Wallet {
   transactions Transaction[]
   debts       Debt[]
   syncEvents  SyncEvent[]
+  snapshots   WalletSnapshot[]
 }
 
 model WalletMember {
@@ -162,6 +163,18 @@ model SyncEvent {
 
   @@index([walletId, serverSeq])
   @@index([walletId, serverReceivedAt])
+}
+
+model WalletSnapshot {
+  id            String   @id @default(uuid())
+  walletId      String   @map("wallet_id")
+  lastServerSeq Int      @map("last_server_seq")
+  state         Json
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  wallet        Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, createdAt])
 }
 
 model RefreshToken {
