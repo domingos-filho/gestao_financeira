@@ -20,47 +20,6 @@ function formatBRL(amountCents: number) {
   });
 }
 
-function toTimestamp(value?: string | null) {
-  if (!value) {
-    return null;
-  }
-  const date = new Date(value);
-  const time = date.getTime();
-  return Number.isNaN(time) ? null : time;
-}
-
-function toServerSeq(value?: number | null) {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function compareTransactions(a: TransactionLocal, b: TransactionLocal) {
-  const aSeq = toServerSeq(a.serverSeq ?? null);
-  const bSeq = toServerSeq(b.serverSeq ?? null);
-  if (aSeq !== null && bSeq !== null && aSeq !== bSeq) {
-    return bSeq - aSeq;
-  }
-
-  const aOccurred = toTimestamp(a.occurredAt);
-  const bOccurred = toTimestamp(b.occurredAt);
-  if (aOccurred !== null && bOccurred !== null && aOccurred !== bOccurred) {
-    return bOccurred - aOccurred;
-  }
-
-  const aCreated = toTimestamp(a.createdAt ?? a.updatedAt ?? null);
-  const bCreated = toTimestamp(b.createdAt ?? b.updatedAt ?? null);
-  if (aCreated !== null && bCreated !== null && aCreated !== bCreated) {
-    return bCreated - aCreated;
-  }
-  if (aCreated !== null && bCreated === null) {
-    return -1;
-  }
-  if (bCreated !== null && aCreated === null) {
-    return 1;
-  }
-
-  return a.id.localeCompare(b.id);
-}
-
 export default function TransactionsPage({ params }: { params: { walletId: string } }) {
   const { walletId } = params;
   const { filter, setFilter, period, clearRange } = usePeriodFilter(walletId);
@@ -68,7 +27,7 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
 
   const transactions = useLiveQuery(
     () =>
-      safeDexie(
+  safeDexie(
         () =>
           db.transactions_local
             .where("walletId")
