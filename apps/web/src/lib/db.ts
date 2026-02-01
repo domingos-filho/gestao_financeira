@@ -1,5 +1,5 @@
 import Dexie, { Table } from "dexie";
-import { CategoryType, SyncEventType, TransactionPayload, TransactionType } from "@gf/shared";
+import { CategoryType, SyncEventType, TransactionPayload, TransactionType, WalletRole } from "@gf/shared";
 
 export type TransactionLocal = {
   id: string;
@@ -44,6 +44,21 @@ export type DebtLocal = {
   updatedAt: string;
 };
 
+export type WalletLocal = {
+  id: string;
+  name: string;
+  role: WalletRole;
+  membersCount?: number | null;
+  updatedAt: string;
+};
+
+export type AccountLocal = {
+  id: string;
+  walletId: string;
+  name: string;
+  updatedAt: string;
+};
+
 export type SyncEventStatus = "PENDING" | "ACKED";
 
 export type SyncEventLocal = {
@@ -66,6 +81,8 @@ class FinanceDB extends Dexie {
   transactions_local!: Table<TransactionLocal, string>;
   categories_local!: Table<CategoryLocal, string>;
   debts_local!: Table<DebtLocal, string>;
+  wallets_local!: Table<WalletLocal, string>;
+  accounts_local!: Table<AccountLocal, string>;
   sync_events_local!: Table<SyncEventLocal, string>;
   sync_metadata!: Table<SyncMetadata, string>;
 
@@ -87,6 +104,15 @@ class FinanceDB extends Dexie {
       transactions_local: "id, walletId, occurredAt, deletedAt",
       categories_local: "id, walletId, type, archivedAt, sortOrder, updatedAt",
       debts_local: "id, walletId, status, startedAt",
+      sync_events_local: "eventId, walletId, status, createdAt",
+      sync_metadata: "key"
+    });
+    this.version(4).stores({
+      transactions_local: "id, walletId, occurredAt, deletedAt",
+      categories_local: "id, walletId, type, archivedAt, sortOrder, updatedAt",
+      debts_local: "id, walletId, status, startedAt",
+      wallets_local: "id, role, updatedAt",
+      accounts_local: "id, walletId, updatedAt",
       sync_events_local: "eventId, walletId, status, createdAt",
       sync_metadata: "key"
     });
