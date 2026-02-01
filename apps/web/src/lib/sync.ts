@@ -134,6 +134,10 @@ async function persistLocalEvent(params: {
   const now = new Date().toISOString();
 
   await db.transaction("rw", db.transactions_local, db.sync_events_local, async () => {
+    const existing = await db.transactions_local.get(params.payload.id);
+    const createdAt = existing?.createdAt ?? now;
+    const serverSeq = existing?.serverSeq ?? null;
+
     await db.transactions_local.put({
       id: params.payload.id,
       walletId: params.payload.walletId,
@@ -145,6 +149,8 @@ async function persistLocalEvent(params: {
       categoryId: params.payload.categoryId ?? null,
       counterpartyAccountId: params.payload.counterpartyAccountId ?? null,
       deletedAt: params.payload.deletedAt ?? null,
+      createdAt,
+      serverSeq,
       updatedAt: now
     });
 
@@ -349,6 +355,9 @@ async function applyRemoteEvents(events: SyncEventServer[]) {
   await db.transaction("rw", db.transactions_local, db.sync_events_local, async () => {
     for (const event of events) {
       const payload = event.payload;
+      const existing = await db.transactions_local.get(payload.id);
+      const createdAt = existing?.createdAt ?? event.serverReceivedAt ?? new Date().toISOString();
+      const updatedAt = new Date().toISOString();
 
       await db.transactions_local.put({
         id: payload.id,
@@ -361,7 +370,9 @@ async function applyRemoteEvents(events: SyncEventServer[]) {
         categoryId: payload.categoryId ?? null,
         counterpartyAccountId: payload.counterpartyAccountId ?? null,
         deletedAt: event.eventType === SyncEventType.TRANSACTION_DELETED ? payload.deletedAt ?? new Date().toISOString() : null,
-        updatedAt: new Date().toISOString()
+        createdAt,
+        serverSeq: event.serverSeq,
+        updatedAt
       });
 
       await db.sync_events_local.update(event.eventId, { status: "ACKED" });
