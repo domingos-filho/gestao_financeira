@@ -1,5 +1,6 @@
 const CACHE_VERSION = "v1";
 const APP_CACHE = `gf-app-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `gf-runtime-${CACHE_VERSION}`;
 const ASSETS = [
   "/offline.html",
   "/manifest.json",
@@ -17,7 +18,11 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== APP_CACHE).map((key) => caches.delete(key)))
+      Promise.all(
+        keys
+          .filter((key) => key !== APP_CACHE && key !== RUNTIME_CACHE)
+          .map((key) => caches.delete(key))
+      )
     )
   );
   self.clients.claim();
@@ -36,7 +41,17 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => caches.match("/offline.html"))
+      fetch(request)
+        .then((response) => {
+          if (response && response.ok) {
+            const copy = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches.match(request).then((cached) => cached || caches.match("/offline.html"))
+        )
     );
     return;
   }
