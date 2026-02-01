@@ -12,6 +12,8 @@ export type TransactionLocal = {
   categoryId?: string | null;
   counterpartyAccountId?: string | null;
   deletedAt?: string | null;
+  createdAt?: string | null;
+  serverSeq?: number | null;
   updatedAt: string;
 };
 

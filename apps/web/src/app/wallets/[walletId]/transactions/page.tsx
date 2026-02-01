@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { TransactionType } from "@gf/shared";
 import { ArrowDownRight, ArrowUpRight, Repeat } from "lucide-react";
-import { db, safeDexie } from "@/lib/db";
+import { db, safeDexie, type TransactionLocal } from "@/lib/db";
 import { formatDate } from "@/lib/date";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { usePeriodFilter } from "@/lib/period-filter";
@@ -18,14 +18,6 @@ function formatBRL(amountCents: number) {
     style: "currency",
     currency: "BRL"
   });
-}
-
-function getOccurredTime(value?: string | Date | null) {
-  if (!value) {
-    return 0;
-  }
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 }
 
 export default function TransactionsPage({ params }: { params: { walletId: string } }) {
@@ -57,17 +49,15 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
 
   const filtered = useMemo(() => {
     if (!transactions) return [];
+    const periodStart = period.start.getTime();
+    const periodEnd = period.end.getTime();
     return transactions.filter((tx) => {
-      const occurred = new Date(tx.occurredAt);
-      if (Number.isNaN(occurred.getTime())) return false;
-      return occurred >= period.start && occurred < period.end;
+      const occurred = toTimestamp(tx.occurredAt);
+      return occurred !== null && occurred >= periodStart && occurred < periodEnd;
     });
   }, [period.end, period.start, transactions]);
 
-  const sorted = useMemo(
-    () => [...filtered].sort((a, b) => (b.occurredAt ?? "").localeCompare(a.occurredAt ?? "")),
-    [filtered]
-  );
+  const sorted = useMemo(() => [...filtered].sort(compareTransactions), [filtered]);
 
   return (
     <div className="grid gap-6 animate-rise">
