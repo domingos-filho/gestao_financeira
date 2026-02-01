@@ -3,6 +3,10 @@ import { Prisma, SyncEventType, TransactionType as PrismaTransactionType } from 
 import { PrismaService } from "../prisma/prisma.service";
 import { TransactionPayload, TransactionPayloadSchema, TransactionType as SharedTransactionType } from "@gf/shared";
 
+const DEFAULT_SNAPSHOT_EVENT_INTERVAL = 200;
+const DEFAULT_SNAPSHOT_MAX_AGE_HOURS = 24;
+const DEFAULT_COMPACTION_KEEP_SEQ = 50;
+
 @Injectable()
 export class SyncService {
   constructor(private readonly prisma: PrismaService) {}
@@ -74,27 +78,62 @@ export class SyncService {
       }
 
       const wallet = await tx.wallet.findUnique({ where: { id: walletId } });
+      const currentSeq = wallet?.serverSeq ?? 0;
+
+      try {
+        await this.maybeCreateSnapshot(tx, walletId, currentSeq);
+      } catch (error) {
+        console.error("Snapshot generation failed", {
+          walletId,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
 
       return {
         appliedCount: applied.length,
-        lastSeq: wallet?.serverSeq ?? 0
+        lastSeq: currentSeq
       };
     });
   }
 
-  async pullEvents(walletId: string, sinceSeq: number) {
-    const events = await this.prisma.syncEvent.findMany({
-      where: {
-        walletId,
-        serverSeq: { gt: sinceSeq }
-      },
-      orderBy: { serverSeq: "asc" }
-    });
-
+  async pullEvents(walletId: string, sinceSeq: number, useSnapshot = false) {
     const wallet = await this.prisma.wallet.findUnique({ where: { id: walletId } });
     if (!wallet) {
       throw new BadRequestException("Wallet not found");
     }
+
+    let snapshotPayload: {
+      walletId: string;
+      lastServerSeq: number;
+      state: Prisma.JsonValue;
+      createdAt: string;
+    } | null = null;
+    let effectiveSinceSeq = sinceSeq;
+
+    if (useSnapshot) {
+      const snapshot = await this.prisma.walletSnapshot.findFirst({
+        where: { walletId },
+        orderBy: { createdAt: "desc" }
+      });
+
+      if (snapshot && sinceSeq <= snapshot.lastServerSeq) {
+        snapshotPayload = {
+          walletId,
+          lastServerSeq: snapshot.lastServerSeq,
+          state: snapshot.state,
+          createdAt: snapshot.createdAt.toISOString()
+        };
+        effectiveSinceSeq = snapshot.lastServerSeq;
+      }
+    }
+
+    const events = await this.prisma.syncEvent.findMany({
+      where: {
+        walletId,
+        serverSeq: { gt: effectiveSinceSeq }
+      },
+      orderBy: { serverSeq: "asc" }
+    });
 
     return {
       walletId,
@@ -108,7 +147,8 @@ export class SyncService {
         payload: event.payload,
         serverSeq: event.serverSeq,
         serverReceivedAt: event.serverReceivedAt.toISOString()
-      }))
+      })),
+      snapshot: snapshotPayload
     };
   }
 
@@ -390,6 +430,125 @@ export class SyncService {
     return new BadRequestException({
       ...base,
       reason: error instanceof Error ? error.message : "Unknown sync error"
+    });
+  }
+
+  private normalizeNumber(value: string | undefined, fallback: number) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return fallback;
+    }
+    return parsed;
+  }
+
+  private get snapshotEventInterval() {
+    return this.normalizeNumber(process.env.SYNC_SNAPSHOT_EVENT_INTERVAL, DEFAULT_SNAPSHOT_EVENT_INTERVAL);
+  }
+
+  private get snapshotMaxAgeHours() {
+    return this.normalizeNumber(process.env.SYNC_SNAPSHOT_MAX_AGE_HOURS, DEFAULT_SNAPSHOT_MAX_AGE_HOURS);
+  }
+
+  private get compactionEnabled() {
+    return process.env.SYNC_COMPACTION_ENABLED === "true";
+  }
+
+  private get compactionKeepSeq() {
+    return this.normalizeNumber(process.env.SYNC_COMPACTION_KEEP_SEQ, DEFAULT_COMPACTION_KEEP_SEQ);
+  }
+
+  private async maybeCreateSnapshot(
+    tx: Prisma.TransactionClient,
+    walletId: string,
+    currentSeq: number
+  ) {
+    const interval = this.snapshotEventInterval;
+    if (!interval || currentSeq <= 0) {
+      return;
+    }
+
+    const lastSnapshot = await tx.walletSnapshot.findFirst({
+      where: { walletId },
+      orderBy: { createdAt: "desc" }
+    });
+
+    if (lastSnapshot) {
+      const delta = currentSeq - lastSnapshot.lastServerSeq;
+      const ageMs = Date.now() - lastSnapshot.createdAt.getTime();
+      const maxAgeMs = this.snapshotMaxAgeHours * 60 * 60 * 1000;
+      if (delta < interval && ageMs < maxAgeMs) {
+        return;
+      }
+    } else if (currentSeq < interval) {
+      return;
+    }
+
+    const transactions = await tx.transaction.findMany({
+      where: { walletId },
+      select: {
+        id: true,
+        walletId: true,
+        accountId: true,
+        type: true,
+        amountCents: true,
+        occurredAt: true,
+        description: true,
+        categoryId: true,
+        counterpartyAccountId: true,
+        deletedAt: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    const state = {
+      transactions: transactions.map((item) => ({
+        id: item.id,
+        walletId: item.walletId,
+        accountId: item.accountId,
+        type: item.type,
+        amountCents: item.amountCents,
+        occurredAt: item.occurredAt.toISOString(),
+        description: item.description,
+        categoryId: item.categoryId ?? null,
+        counterpartyAccountId: item.counterpartyAccountId ?? null,
+        deletedAt: item.deletedAt ? item.deletedAt.toISOString() : null,
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString()
+      }))
+    };
+
+    const snapshot = await tx.walletSnapshot.create({
+      data: {
+        walletId,
+        lastServerSeq: currentSeq,
+        state
+      }
+    });
+
+    await this.maybeCompactEvents(tx, walletId, snapshot.lastServerSeq);
+  }
+
+  private async maybeCompactEvents(
+    tx: Prisma.TransactionClient,
+    walletId: string,
+    snapshotSeq: number
+  ) {
+    if (!this.compactionEnabled) {
+      return;
+    }
+
+    const keepSeq = this.compactionKeepSeq;
+    const cutoff = snapshotSeq - keepSeq;
+    if (cutoff <= 0) {
+      return;
+    }
+
+    await tx.syncEvent.deleteMany({
+      where: {
+        walletId,
+        serverSeq: { lte: cutoff }
+      }
     });
   }
 }

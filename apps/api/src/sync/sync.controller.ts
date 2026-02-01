@@ -39,6 +39,6 @@ export class SyncController {
   @WalletRoles(WalletRole.VIEWER)
   @UseGuards(JwtAuthGuard, WalletRoleGuard)
   pull(@Query() query: SyncPullQueryDto) {
-    return this.sync.pullEvents(query.walletId, query.sinceSeq);
+    return this.sync.pullEvents(query.walletId, query.sinceSeq, query.useSnapshot ?? false);
   }
 }

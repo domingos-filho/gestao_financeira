@@ -1,5 +1,5 @@
-import { IsInt, IsUUID, Min } from "class-validator";
-import { Type } from "class-transformer";
+import { IsBoolean, IsInt, IsOptional, IsUUID, Min } from "class-validator";
+import { Transform, Type } from "class-transformer";
 
 export class SyncPullQueryDto {
   @IsUUID()
@@ -9,4 +9,9 @@ export class SyncPullQueryDto {
   @IsInt()
   @Min(0)
   sinceSeq!: number;
+
+  @Transform(({ value }) => value === true || value === "true" || value === "1")
+  @IsBoolean()
+  @IsOptional()
+  useSnapshot?: boolean;
 }

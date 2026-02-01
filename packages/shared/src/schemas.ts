@@ -35,7 +35,16 @@ export const SyncPullResponseSchema = z.object({
   events: z.array(SyncEventSchema.extend({
     serverSeq: z.number().int(),
     serverReceivedAt: z.string().datetime()
-  }))
+  })),
+  snapshot: z
+    .object({
+      walletId: z.string().uuid(),
+      lastServerSeq: z.number().int(),
+      state: z.unknown(),
+      createdAt: z.string().datetime()
+    })
+    .nullable()
+    .optional()
 });
 
 export type TransactionPayload = z.infer<typeof TransactionPayloadSchema>;
