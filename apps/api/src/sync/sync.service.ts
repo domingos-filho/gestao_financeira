@@ -1,7 +1,15 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { Prisma, SyncEventType, TransactionType as PrismaTransactionType } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
-import { TransactionPayload, TransactionPayloadSchema, TransactionType as SharedTransactionType } from "@gf/shared";
+import {
+  isMonthKey,
+  RecurringExpensePayload,
+  RecurringExpensePayloadSchema,
+  TransactionPayload,
+  TransactionPayloadSchema,
+  TransactionType as SharedTransactionType,
+  toMonthKey
+} from "@gf/shared";
 
 const DEFAULT_SNAPSHOT_EVENT_INTERVAL = 200;
 const DEFAULT_SNAPSHOT_MAX_AGE_HOURS = 24;
@@ -152,6 +160,22 @@ export class SyncService {
     };
   }
 
+  private isTransactionEvent(eventType: SyncEventType) {
+    return (
+      eventType === SyncEventType.TRANSACTION_CREATED ||
+      eventType === SyncEventType.TRANSACTION_UPDATED ||
+      eventType === SyncEventType.TRANSACTION_DELETED
+    );
+  }
+
+  private isRecurringExpenseEvent(eventType: SyncEventType) {
+    return (
+      eventType === SyncEventType.RECURRING_EXPENSE_CREATED ||
+      eventType === SyncEventType.RECURRING_EXPENSE_UPDATED ||
+      eventType === SyncEventType.RECURRING_EXPENSE_DELETED
+    );
+  }
+
   private async nextWalletSeq(tx: Prisma.TransactionClient, walletId: string) {
     try {
       const wallet = await tx.wallet.update({
@@ -174,14 +198,23 @@ export class SyncService {
     eventType: SyncEventType,
     payload: unknown
   ) {
-    if (
-      eventType !== SyncEventType.TRANSACTION_CREATED &&
-      eventType !== SyncEventType.TRANSACTION_UPDATED &&
-      eventType !== SyncEventType.TRANSACTION_DELETED
-    ) {
-      throw new BadRequestException("Unsupported event type");
+    if (this.isTransactionEvent(eventType)) {
+      await this.applyTransactionEvent(tx, walletId, eventType, payload);
+      return;
     }
+    if (this.isRecurringExpenseEvent(eventType)) {
+      await this.applyRecurringExpenseEvent(tx, walletId, eventType, payload);
+      return;
+    }
+    throw new BadRequestException("Unsupported event type");
+  }
 
+  private async applyTransactionEvent(
+    tx: Prisma.TransactionClient,
+    walletId: string,
+    eventType: SyncEventType,
+    payload: unknown
+  ) {
     let transaction = this.normalizeTransactionPayload(payload, walletId);
     let parsed = TransactionPayloadSchema.safeParse(transaction);
     if (!parsed.success) {
@@ -240,6 +273,15 @@ export class SyncService {
       }
     }
 
+    if (transaction.recurringExpenseId) {
+      const recurringExpense = await tx.recurringExpense.findFirst({
+        where: { id: transaction.recurringExpenseId, walletId }
+      });
+      if (!recurringExpense) {
+        throw new BadRequestException("Invalid recurring_expense_id");
+      }
+    }
+
     const occurredAt = new Date(transaction.occurredAt);
     if (Number.isNaN(occurredAt.getTime())) {
       throw new BadRequestException("Invalid occurred_at");
@@ -260,6 +302,8 @@ export class SyncService {
           description: transaction.description,
           categoryId: transaction.categoryId ?? null,
           counterpartyAccountId: transaction.counterpartyAccountId ?? null,
+          recurringExpenseId: transaction.recurringExpenseId ?? null,
+          recurringMonth: transaction.recurringMonth ?? null,
           deletedAt: deleteTimestamp
         },
         update: {
@@ -281,6 +325,8 @@ export class SyncService {
         description: transaction.description,
         categoryId: transaction.categoryId ?? null,
         counterpartyAccountId: transaction.counterpartyAccountId ?? null,
+        recurringExpenseId: transaction.recurringExpenseId ?? null,
+        recurringMonth: transaction.recurringMonth ?? null,
         deletedAt: null
       },
       update: {
@@ -291,7 +337,102 @@ export class SyncService {
         description: transaction.description,
         categoryId: transaction.categoryId ?? null,
         counterpartyAccountId: transaction.counterpartyAccountId ?? null,
+        recurringExpenseId: transaction.recurringExpenseId ?? null,
+        recurringMonth: transaction.recurringMonth ?? null,
         deletedAt: null
+      }
+    });
+  }
+
+  private async applyRecurringExpenseEvent(
+    tx: Prisma.TransactionClient,
+    walletId: string,
+    eventType: SyncEventType,
+    payload: unknown
+  ) {
+    let recurringExpense = this.normalizeRecurringExpensePayload(payload, walletId);
+    let parsed = RecurringExpensePayloadSchema.safeParse(recurringExpense);
+    if (!parsed.success) {
+      const fallbackAccount = await this.getFallbackAccountId(tx, walletId);
+      if (fallbackAccount) {
+        recurringExpense.accountId = fallbackAccount;
+      }
+      parsed = RecurringExpensePayloadSchema.safeParse(recurringExpense);
+    }
+    if (!parsed.success) {
+      throw new BadRequestException("Invalid recurring expense payload");
+    }
+    recurringExpense = parsed.data;
+
+    if (recurringExpense.amountCents <= 0) {
+      throw new BadRequestException("amount_cents must be positive");
+    }
+
+    const account = await tx.account.findFirst({
+      where: { id: recurringExpense.accountId, walletId }
+    });
+    if (!account) {
+      const fallback = await this.getFallbackAccountId(tx, walletId);
+      if (!fallback) {
+        throw new BadRequestException("Invalid account_id");
+      }
+      recurringExpense.accountId = fallback;
+    }
+
+    if (recurringExpense.categoryId) {
+      const category = await tx.category.findFirst({
+        where: { id: recurringExpense.categoryId, walletId }
+      });
+      if (!category) {
+        recurringExpense.categoryId = null;
+      }
+    }
+
+    const archivedAt = recurringExpense.archivedAt ? new Date(recurringExpense.archivedAt) : null;
+
+    if (eventType === SyncEventType.RECURRING_EXPENSE_DELETED) {
+      const archiveTimestamp = archivedAt ?? new Date();
+      await tx.recurringExpense.upsert({
+        where: { id: recurringExpense.id },
+        create: {
+          id: recurringExpense.id,
+          walletId: recurringExpense.walletId,
+          accountId: recurringExpense.accountId,
+          description: recurringExpense.description,
+          amountCents: recurringExpense.amountCents,
+          categoryId: recurringExpense.categoryId ?? null,
+          dayOfMonth: recurringExpense.dayOfMonth,
+          startMonth: recurringExpense.startMonth,
+          archivedAt: archiveTimestamp
+        },
+        update: {
+          archivedAt: archiveTimestamp
+        }
+      });
+      return;
+    }
+
+    await tx.recurringExpense.upsert({
+      where: { id: recurringExpense.id },
+      create: {
+        id: recurringExpense.id,
+        walletId: recurringExpense.walletId,
+        accountId: recurringExpense.accountId,
+        description: recurringExpense.description,
+        amountCents: recurringExpense.amountCents,
+        categoryId: recurringExpense.categoryId ?? null,
+        dayOfMonth: recurringExpense.dayOfMonth,
+        startMonth: recurringExpense.startMonth,
+        archivedAt: recurringExpense.archivedAt ? new Date(recurringExpense.archivedAt) : null
+      },
+      update: {
+        accountId: recurringExpense.accountId,
+        description: recurringExpense.description,
+        amountCents: recurringExpense.amountCents,
+        categoryId: recurringExpense.categoryId ?? null,
+        dayOfMonth: recurringExpense.dayOfMonth,
+        startMonth: recurringExpense.startMonth,
+        archivedAt: recurringExpense.archivedAt ? new Date(recurringExpense.archivedAt) : null
       }
     });
   }
@@ -350,6 +491,20 @@ export class SyncService {
       }
     }
 
+    const recurringExpenseId =
+      type === SharedTransactionType.EXPENSE &&
+      typeof data.recurringExpenseId === "string" &&
+      this.uuidRegex.test(data.recurringExpenseId)
+        ? data.recurringExpenseId
+        : null;
+    const rawRecurringMonth = typeof data.recurringMonth === "string" ? data.recurringMonth : null;
+    const recurringMonth =
+      recurringExpenseId && isMonthKey(rawRecurringMonth)
+        ? rawRecurringMonth
+        : recurringExpenseId
+        ? toMonthKey(occurredAt)
+        : null;
+
     return {
       id,
       walletId,
@@ -365,7 +520,76 @@ export class SyncService {
         typeof data.counterpartyAccountId === "string" && this.uuidRegex.test(data.counterpartyAccountId)
           ? data.counterpartyAccountId
           : null,
-      deletedAt
+      deletedAt,
+      recurringExpenseId,
+      recurringMonth
+    };
+  }
+
+  private normalizeRecurringExpensePayload(payload: unknown, walletId: string): RecurringExpensePayload {
+    if (!payload || typeof payload !== "object") {
+      throw new BadRequestException("Invalid recurring expense payload");
+    }
+
+    const data = payload as Record<string, unknown>;
+    const id = typeof data.id === "string" ? data.id : "";
+    if (!id || !this.uuidRegex.test(id)) {
+      throw new BadRequestException("Invalid recurring expense payload");
+    }
+
+    let amountCents =
+      typeof data.amountCents === "number" ? data.amountCents : Number(data.amountCents ?? 0);
+    if (!Number.isFinite(amountCents)) {
+      amountCents = 0;
+    }
+    if (!Number.isInteger(amountCents)) {
+      amountCents = Math.round(amountCents);
+    }
+    if (amountCents < 0) {
+      amountCents = Math.abs(amountCents);
+    }
+
+    let description = typeof data.description === "string" ? data.description : String(data.description ?? "");
+    if (!description.trim()) {
+      description = "Sem descricao";
+    }
+
+    let dayOfMonth =
+      typeof data.dayOfMonth === "number" ? Math.trunc(data.dayOfMonth) : Number(data.dayOfMonth ?? 1);
+    if (!Number.isFinite(dayOfMonth) || dayOfMonth < 1) {
+      dayOfMonth = 1;
+    }
+    if (dayOfMonth > 31) {
+      dayOfMonth = 31;
+    }
+
+    const rawArchivedAt = typeof data.archivedAt === "string" ? data.archivedAt : null;
+    let archivedAt: string | null = null;
+    if (rawArchivedAt) {
+      const archivedAtDate = new Date(rawArchivedAt);
+      const hasArchivedAtTimezone = /Z$|[+-]\d{2}:\d{2}$/.test(rawArchivedAt);
+      if (!Number.isNaN(archivedAtDate.getTime())) {
+        archivedAt = !rawArchivedAt.includes("T") || !hasArchivedAtTimezone ? archivedAtDate.toISOString() : rawArchivedAt;
+      }
+    }
+
+    const rawStartMonth = typeof data.startMonth === "string" ? data.startMonth : null;
+    const startMonth = isMonthKey(rawStartMonth)
+      ? rawStartMonth
+      : toMonthKey(new Date().toISOString()) ?? "1970-01";
+
+    return {
+      id,
+      walletId,
+      accountId:
+        typeof data.accountId === "string" && this.uuidRegex.test(data.accountId) ? data.accountId : "",
+      description,
+      amountCents,
+      categoryId:
+        typeof data.categoryId === "string" && this.uuidRegex.test(data.categoryId) ? data.categoryId : null,
+      dayOfMonth,
+      startMonth,
+      archivedAt
     };
   }
 
@@ -483,23 +707,43 @@ export class SyncService {
       return;
     }
 
-    const transactions = await tx.transaction.findMany({
-      where: { walletId },
-      select: {
-        id: true,
-        walletId: true,
-        accountId: true,
-        type: true,
-        amountCents: true,
-        occurredAt: true,
-        description: true,
-        categoryId: true,
-        counterpartyAccountId: true,
-        deletedAt: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
+    const [transactions, recurringExpenses] = await Promise.all([
+      tx.transaction.findMany({
+        where: { walletId },
+        select: {
+          id: true,
+          walletId: true,
+          accountId: true,
+          type: true,
+          amountCents: true,
+          occurredAt: true,
+          description: true,
+          categoryId: true,
+          counterpartyAccountId: true,
+          recurringExpenseId: true,
+          recurringMonth: true,
+          deletedAt: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      }),
+      tx.recurringExpense.findMany({
+        where: { walletId },
+        select: {
+          id: true,
+          walletId: true,
+          accountId: true,
+          description: true,
+          amountCents: true,
+          categoryId: true,
+          dayOfMonth: true,
+          startMonth: true,
+          archivedAt: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      })
+    ]);
 
     const state = {
       transactions: transactions.map((item) => ({
@@ -512,7 +756,22 @@ export class SyncService {
         description: item.description,
         categoryId: item.categoryId ?? null,
         counterpartyAccountId: item.counterpartyAccountId ?? null,
+        recurringExpenseId: item.recurringExpenseId ?? null,
+        recurringMonth: item.recurringMonth ?? null,
         deletedAt: item.deletedAt ? item.deletedAt.toISOString() : null,
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString()
+      })),
+      recurringExpenses: recurringExpenses.map((item) => ({
+        id: item.id,
+        walletId: item.walletId,
+        accountId: item.accountId,
+        description: item.description,
+        amountCents: item.amountCents,
+        categoryId: item.categoryId ?? null,
+        dayOfMonth: item.dayOfMonth,
+        startMonth: item.startMonth,
+        archivedAt: item.archivedAt ? item.archivedAt.toISOString() : null,
         createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString()
       }))

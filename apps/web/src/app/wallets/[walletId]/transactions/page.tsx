@@ -172,6 +172,11 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
                   <p className="truncate font-medium sm:whitespace-normal">{tx.description || "Sem descricao"}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>{formatDate(tx.occurredAt)}</span>
+                    {tx.recurringExpenseId && (
+                      <span className="rounded-full border border-[rgba(79,162,255,0.25)] bg-[var(--color-info-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-info)]">
+                        Recorrente
+                      </span>
+                    )}
                     <span className="flex items-center gap-2 rounded-full border border-border px-2 py-0.5 text-[10px]">
                       {tx.categoryId && categoryMap.get(tx.categoryId) ? (
                         <>

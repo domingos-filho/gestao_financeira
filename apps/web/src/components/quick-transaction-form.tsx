@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { CategoryType, TransactionType } from "@gf/shared";
-import { createLocalTransaction } from "@/lib/sync";
+import { createLocalRecurringExpenseWithTransaction, createLocalTransaction } from "@/lib/sync";
 import { getDeviceId } from "@/lib/device";
 import { useWalletAccounts } from "@/lib/wallets";
 import { useAuth } from "@/lib/auth";
@@ -34,6 +34,8 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringDayOfMonth, setRecurringDayOfMonth] = useState(() => String(new Date().getDate()));
   const [error, setError] = useState<string | null>(null);
 
   const normalizedCategories = useMemo(() => {
@@ -87,21 +89,46 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
     }
 
     try {
-      await createLocalTransaction({
-        walletId,
-        accountId,
-        type,
-        amountCents,
-        occurredAt: new Date().toISOString(),
-        description,
-        categoryId: resolvedCategoryId ?? null,
-        counterpartyAccountId: null,
-        userId: user.id,
-        deviceId: getDeviceId()
-      });
+      const deviceId = getDeviceId();
+      if (type === TransactionType.EXPENSE && isRecurring) {
+        const dayOfMonth = Math.trunc(Number(recurringDayOfMonth));
+        if (!Number.isFinite(dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31) {
+          setError("Informe um dia valido entre 1 e 31.");
+          return;
+        }
+
+        await createLocalRecurringExpenseWithTransaction({
+          walletId,
+          accountId,
+          description,
+          amountCents,
+          categoryId: resolvedCategoryId ?? null,
+          occurredAt: new Date().toISOString(),
+          dayOfMonth,
+          userId: user.id,
+          deviceId
+        });
+      } else {
+        await createLocalTransaction({
+          walletId,
+          accountId,
+          type,
+          amountCents,
+          occurredAt: new Date().toISOString(),
+          description,
+          categoryId: resolvedCategoryId ?? null,
+          counterpartyAccountId: null,
+          recurringExpenseId: null,
+          recurringMonth: null,
+          userId: user.id,
+          deviceId
+        });
+      }
 
       setDescription("");
       setAmount("");
+      setIsRecurring(false);
+      setRecurringDayOfMonth(String(new Date().getDate()));
     } catch {
       setError("Nao foi possivel salvar.");
     }
@@ -127,7 +154,10 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
                 ? "border-[rgba(17,204,149,0.35)] bg-[var(--color-success-soft)] text-[var(--color-success)]"
                 : "border-border text-muted-foreground"
             }`}
-            onClick={() => setType(TransactionType.INCOME)}
+            onClick={() => {
+              setType(TransactionType.INCOME);
+              setIsRecurring(false);
+            }}
           >
             <span className="h-2 w-2 rounded-full border border-[rgba(17,204,149,0.7)]" />
             Receita
@@ -156,6 +186,37 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
         <Label>Valor (R$)</Label>
         <Input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" />
       </div>
+
+      {type === TransactionType.EXPENSE && (
+        <div className="space-y-3 rounded-2xl border border-border/80 bg-muted/40 p-4">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-border"
+              checked={isRecurring}
+              onChange={(event) => setIsRecurring(event.target.checked)}
+            />
+            <span className="space-y-1">
+              <span className="block text-sm font-medium text-foreground">Repetir mensalmente</span>
+              <span className="block text-xs text-muted-foreground">
+                O valor informado acima vira a base para os proximos meses.
+              </span>
+            </span>
+          </label>
+
+          {isRecurring && (
+            <div className="space-y-2">
+              <Label>Dia previsto no mes</Label>
+              <Input
+                value={recurringDayOfMonth}
+                onChange={(event) => setRecurringDayOfMonth(event.target.value)}
+                inputMode="numeric"
+                placeholder="Ex: 10"
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Categoria</Label>

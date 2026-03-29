@@ -8,7 +8,9 @@ import { Menu, RefreshCw, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { syncCategories } from "@/lib/categories";
 import { syncDebts } from "@/lib/debts";
+import { getDeviceId } from "@/lib/device";
 import { useSyncEngine } from "@/lib/sync-engine";
+import { ensureCurrentMonthRecurringTransactions } from "@/lib/sync";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand-logo";
 import { SyncIndicator } from "@/components/sync-indicator";
@@ -105,6 +107,17 @@ export function AppShell({ children, walletId }: AppShellProps) {
     syncCategories(walletId, authFetch).catch(() => null);
     syncDebts(walletId, authFetch).catch(() => null);
   }, [walletId, user, authFetch]);
+
+  useEffect(() => {
+    if (!walletId || !user) {
+      return;
+    }
+    ensureCurrentMonthRecurringTransactions({
+      walletId,
+      userId: user.id,
+      deviceId: getDeviceId()
+    }).catch(() => null);
+  }, [walletId, user]);
 
   useEffect(() => {
     setMobileMenuOpen(false);

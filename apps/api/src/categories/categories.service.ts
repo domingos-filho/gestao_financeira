@@ -158,6 +158,11 @@ export class CategoriesService {
       data: { categoryId: reassignTo ?? null }
     });
 
+    await this.prisma.recurringExpense.updateMany({
+      where: { walletId, categoryId },
+      data: { categoryId: reassignTo ?? null }
+    });
+
     return this.prisma.category.delete({ where: { id: categoryId } });
   }
 

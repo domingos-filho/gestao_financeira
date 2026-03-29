@@ -1,4 +1,7 @@
+import type { RecurringExpensePayload, TransactionPayload } from "./schemas";
 import { SyncEventType } from "./enums";
+
+export type SyncEntityPayload = TransactionPayload | RecurringExpensePayload;
 
 export type SyncEventPayload = {
   eventId: string;
@@ -6,5 +9,5 @@ export type SyncEventPayload = {
   userId: string;
   deviceId: string;
   eventType: SyncEventType;
-  payload: unknown;
+  payload: SyncEntityPayload;
 };

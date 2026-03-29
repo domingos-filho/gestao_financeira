@@ -25,9 +25,18 @@ export const viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const runtimeConfig = {
+    apiUrl: process.env.API_PUBLIC_URL ?? process.env.NEXT_PUBLIC_API_URL ?? ""
+  };
+
   return (
     <html lang="pt-BR">
       <body className={`${space.variable} ${manrope.variable} bg-background text-foreground`}>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__GF_RUNTIME_CONFIG__ = ${JSON.stringify(runtimeConfig)};`
+          }}
+        />
         <Providers>
           <SwRegister />
           {children}

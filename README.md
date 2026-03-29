@@ -65,6 +65,7 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 
 - Definir `JWT_SECRET` e `REFRESH_TOKEN_SECRET` fortes
 - Ajustar `NEXT_PUBLIC_API_URL` para a URL publica da API
+- Preferir `API_PUBLIC_URL` no container do `web` para trocar a URL da API sem rebuild
 - Garantir HTTPS no dominio do PWA
 - Verificar backups do volume `pgdata`
 - Revisar limites de rate-limit conforme carga
@@ -102,10 +103,11 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 
 ## Deploy (EasyPanel)
 
-- Use apenas o `docker-compose.yml` (sem publicar portas no host)
-- Configure as variaveis do `api` e o `NEXT_PUBLIC_API_URL` (build-time) do `web`
-- O dominio deve apontar para as portas internas: web `3000`, api `3001`
-- Remova qualquer mapeamento de porta (ex.: `3000:3000`) no servico
+- Fluxo recomendado: `postgres` gerenciado no painel + `api` e `web` como App Services separados
+- O repositorio publica imagens Docker no GHCR via `.github/workflows/publish-images.yml`
+- Configure `API_PUBLIC_URL` no `web` e `DATABASE_URL` no `api`
+- O dominio da API deve responder em `/health`
+- Guia completo: `deploy/easypanel/README.md`
 
 ## Deploy em VPS via GitHub + Docker Compose (sem EasyPanel)
 

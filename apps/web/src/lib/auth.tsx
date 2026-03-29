@@ -3,8 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { UserRole } from "@gf/shared";
 import { getDeviceId } from "./device";
+import { resolveApiUrl } from "./runtime-config";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const STORAGE_KEY = "gf.auth";
 
 type AuthUser = { id: string; email: string; name: string; role: UserRole; defaultWalletId?: string | null };
@@ -123,7 +123,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const deviceId = getDeviceId();
-    const res = await fetch(`${API_URL}/auth/login`, {
+    const apiUrl = resolveApiUrl();
+    const res = await fetch(`${apiUrl}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, deviceId })
@@ -147,7 +148,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(async (email: string, password: string) => {
     const deviceId = getDeviceId();
-    const res = await fetch(`${API_URL}/auth/register`, {
+    const apiUrl = resolveApiUrl();
+    const res = await fetch(`${apiUrl}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, deviceId })
@@ -177,7 +179,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const deviceId = getDeviceId();
-    const res = await fetch(`${API_URL}/auth/refresh`, {
+    const apiUrl = resolveApiUrl();
+    const res = await fetch(`${apiUrl}/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken, deviceId })
@@ -195,9 +198,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     const deviceId = getDeviceId();
     const accessToken = accessRef.current;
+    const apiUrl = resolveApiUrl();
 
     if (accessToken) {
-      await fetch(`${API_URL}/auth/logout`, {
+      await fetch(`${apiUrl}/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -212,6 +216,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const authFetch = useCallback(
     async (path: string, options: RequestInit = {}) => {
+      const apiUrl = resolveApiUrl();
       const accessToken = accessRef.current;
       const headers = new Headers(options.headers ?? {});
       const isFormData =
@@ -224,7 +229,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers.set("Authorization", `Bearer ${accessToken}`);
       }
 
-      const response = await fetch(`${API_URL}${path}`, {
+      const response = await fetch(`${apiUrl}${path}`, {
         ...options,
         headers
       });
@@ -248,7 +253,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      return fetch(`${API_URL}${path}`, {
+      return fetch(`${apiUrl}${path}`, {
         ...options,
         headers: retryHeaders
       });

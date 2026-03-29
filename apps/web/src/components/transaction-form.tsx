@@ -3,9 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
-import { CategoryType, TransactionType } from "@gf/shared";
+import { CategoryType, toMonthKey, TransactionType } from "@gf/shared";
 import { db, safeDexie } from "@/lib/db";
-import { createLocalTransaction, deleteLocalTransaction, updateLocalTransaction } from "@/lib/sync";
+import {
+  createLocalRecurringExpense,
+  createLocalRecurringExpenseWithTransaction,
+  createLocalTransaction,
+  deleteLocalRecurringExpense,
+  deleteLocalTransaction,
+  updateLocalRecurringExpense,
+  updateLocalTransaction
+} from "@/lib/sync";
 import { getDeviceId } from "@/lib/device";
 import { useWalletAccounts } from "@/lib/wallets";
 import { useAuth } from "@/lib/auth";
@@ -30,6 +38,14 @@ function toIsoDate(value: string) {
   return new Date(Date.UTC(year, month - 1, day, 12, 0, 0)).toISOString();
 }
 
+function toDayOfMonth(value: string) {
+  const parsed = Math.trunc(Number(value));
+  if (!Number.isFinite(parsed) || parsed < 1 || parsed > 31) {
+    return null;
+  }
+  return parsed;
+}
+
 export function TransactionForm({ walletId, transactionId }: { walletId: string; transactionId?: string }) {
   const router = useRouter();
   const { user } = useAuth();
@@ -39,6 +55,14 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     () =>
       transactionId ? safeDexie(() => db.transactions_local.get(transactionId), undefined) : undefined,
     [transactionId]
+  );
+
+  const recurringExpense = useLiveQuery(
+    () =>
+      existing?.recurringExpenseId
+        ? safeDexie(() => db.recurring_expenses_local.get(existing.recurringExpenseId ?? ""), undefined)
+        : undefined,
+    [existing?.recurringExpenseId]
   );
 
   const categories = useLiveQuery(
@@ -60,6 +84,9 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
   const [description, setDescription] = useState("");
   const [counterpartyAccountId, setCounterpartyAccountId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringAmount, setRecurringAmount] = useState("0");
+  const [recurringDayOfMonth, setRecurringDayOfMonth] = useState(() => String(new Date().getDate()));
   const [error, setError] = useState<string | null>(null);
 
   const normalizedCategories = useMemo(() => {
@@ -130,9 +157,40 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     setCategoryId(existing.categoryId ?? null);
   }, [existing]);
 
+  useEffect(() => {
+    if (!existing) {
+      setIsRecurring(false);
+      setRecurringAmount("0");
+      setRecurringDayOfMonth(String(new Date().getDate()));
+      return;
+    }
+    if (existing.recurringExpenseId && !recurringExpense) {
+      return;
+    }
+
+    const currentDay = Number(existing.occurredAt.slice(8, 10)) || new Date().getDate();
+    setIsRecurring(Boolean(existing.recurringExpenseId));
+    setRecurringAmount(((recurringExpense?.amountCents ?? existing.amountCents) / 100).toFixed(2));
+    setRecurringDayOfMonth(String(recurringExpense?.dayOfMonth ?? currentDay));
+  }, [existing, recurringExpense]);
+
   const activeAccountId = resolvedAccountId || accountId;
   const categoryValue = resolvedCategoryId ?? "";
   const isEditing = Boolean(transactionId);
+  const recurringMonthLabel = useMemo(() => {
+    const targetMonth = existing?.recurringMonth ?? toMonthKey(toIsoDate(occurredAt));
+    if (!targetMonth) {
+      return null;
+    }
+    const [year, month] = targetMonth.split("-").map(Number);
+    if (!year || !month) {
+      return null;
+    }
+    return new Date(year, month - 1, 1).toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric"
+    });
+  }, [existing?.recurringMonth, occurredAt]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -155,8 +213,82 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
     }
     const deviceId = getDeviceId();
     const occurredAtIso = toIsoDate(occurredAt);
+    const transactionMonth = toMonthKey(occurredAtIso);
+    if (!transactionMonth) {
+      setError("Nao foi possivel identificar o mes da transacao.");
+      return;
+    }
+
+    const recurringEnabled = type === TransactionType.EXPENSE && isRecurring;
+    let recurringAmountCents = 0;
+    let recurringDay = 1;
+
+    if (recurringEnabled) {
+      recurringAmountCents = Math.round(Number(recurringAmount.replace(",", ".")) * 100);
+      recurringDay = toDayOfMonth(recurringDayOfMonth) ?? 0;
+      if (!recurringAmountCents || recurringAmountCents <= 0) {
+        setError("Informe um valor base valido para a recorrencia.");
+        return;
+      }
+      if (!recurringDay) {
+        setError("Informe um dia valido entre 1 e 31.");
+        return;
+      }
+      if (existing?.recurringMonth && existing.recurringMonth !== transactionMonth) {
+        setError("Lancamentos recorrentes podem mudar o dia, mas devem continuar no mesmo mes da ocorrencia.");
+        return;
+      }
+    }
+
+    let nextRecurringExpenseId = recurringEnabled ? recurringExpense?.id ?? null : null;
 
     if (transactionId && existing) {
+      if (recurringEnabled) {
+        if (recurringExpense) {
+          await updateLocalRecurringExpense({
+            id: recurringExpense.id,
+            walletId,
+            accountId: activeAccountId,
+            description,
+            amountCents: recurringAmountCents,
+            categoryId: resolvedCategoryId ?? null,
+            dayOfMonth: recurringDay,
+            startMonth: recurringExpense.startMonth,
+            archivedAt: null,
+            userId: user.id,
+            deviceId
+          });
+          nextRecurringExpenseId = recurringExpense.id;
+        } else {
+          nextRecurringExpenseId = await createLocalRecurringExpense({
+            walletId,
+            accountId: activeAccountId,
+            description,
+            amountCents: recurringAmountCents,
+            categoryId: resolvedCategoryId ?? null,
+            dayOfMonth: recurringDay,
+            startMonth: transactionMonth,
+            archivedAt: null,
+            userId: user.id,
+            deviceId
+          });
+        }
+      } else if (recurringExpense) {
+        await deleteLocalRecurringExpense({
+          id: recurringExpense.id,
+          walletId,
+          accountId: recurringExpense.accountId,
+          description: recurringExpense.description,
+          amountCents: recurringExpense.amountCents,
+          categoryId: recurringExpense.categoryId ?? null,
+          dayOfMonth: recurringExpense.dayOfMonth,
+          startMonth: recurringExpense.startMonth,
+          archivedAt: new Date().toISOString(),
+          userId: user.id,
+          deviceId
+        });
+      }
+
       await updateLocalTransaction({
         id: existing.id,
         walletId,
@@ -167,6 +299,21 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
         description,
         categoryId: resolvedCategoryId ?? null,
         counterpartyAccountId: type === TransactionType.TRANSFER ? counterpartyAccountId : null,
+        recurringExpenseId: recurringEnabled ? nextRecurringExpenseId : null,
+        recurringMonth: recurringEnabled ? transactionMonth : null,
+        userId: user.id,
+        deviceId
+      });
+    } else if (recurringEnabled) {
+      await createLocalRecurringExpenseWithTransaction({
+        walletId,
+        accountId: activeAccountId,
+        description,
+        amountCents,
+        categoryId: resolvedCategoryId ?? null,
+        occurredAt: occurredAtIso,
+        dayOfMonth: recurringDay,
+        startMonth: transactionMonth,
         userId: user.id,
         deviceId
       });
@@ -180,6 +327,8 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
         description,
         categoryId: resolvedCategoryId ?? null,
         counterpartyAccountId: type === TransactionType.TRANSFER ? counterpartyAccountId : null,
+        recurringExpenseId: null,
+        recurringMonth: null,
         userId: user.id,
         deviceId
       });
@@ -200,6 +349,8 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
       description: existing.description,
       categoryId: existing.categoryId ?? null,
       counterpartyAccountId: existing.counterpartyAccountId ?? null,
+      recurringExpenseId: existing.recurringExpenseId ?? null,
+      recurringMonth: existing.recurringMonth ?? null,
       userId: user.id,
       deviceId: getDeviceId()
     });
@@ -233,6 +384,9 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
                   value === TransactionType.TRANSFER
                 ) {
                   setType(value);
+                  if (value !== TransactionType.EXPENSE) {
+                    setIsRecurring(false);
+                  }
                 }
               }}
             >
@@ -314,6 +468,68 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
           <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         </div>
       </div>
+
+      {type === TransactionType.EXPENSE && (
+        <div className="space-y-4 rounded-2xl border border-border/80 bg-muted/40 p-4">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-border"
+              checked={isRecurring}
+              onChange={(event) => {
+                const checked = event.target.checked;
+                setIsRecurring(checked);
+                if (checked) {
+                  setRecurringAmount((current) =>
+                    current && current !== "0" && current !== "0.00" ? current : amount
+                  );
+                  setRecurringDayOfMonth((current) =>
+                    current && current !== "0"
+                      ? current
+                      : String(Number(occurredAt.slice(8, 10)) || new Date().getDate())
+                  );
+                }
+              }}
+            />
+            <span className="space-y-1">
+              <span className="block text-sm font-medium text-foreground">Despesa recorrente mensal</span>
+              <span className="block text-xs text-muted-foreground">
+                O valor principal desta transacao representa a cobranca real do mes. A configuracao abaixo define os
+                proximos meses.
+              </span>
+            </span>
+          </label>
+
+          {isRecurring && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Valor base para os proximos meses</Label>
+                <Input
+                  value={recurringAmount}
+                  onChange={(event) => setRecurringAmount(event.target.value)}
+                  inputMode="decimal"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Dia previsto no mes</Label>
+                <Input
+                  value={recurringDayOfMonth}
+                  onChange={(event) => setRecurringDayOfMonth(event.target.value)}
+                  inputMode="numeric"
+                  placeholder="Ex: 10"
+                />
+              </div>
+            </div>
+          )}
+
+          {isRecurring && recurringMonthLabel && (
+            <p className="text-xs text-muted-foreground">
+              Ocorrencia vinculada a {recurringMonthLabel}. Alteracoes nesta secao atualizam a previsao dos meses
+              seguintes.
+            </p>
+          )}
+        </div>
+      )}
 
       {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 

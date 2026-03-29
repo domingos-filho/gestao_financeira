@@ -1,0 +1,19 @@
+import { Controller, Get } from "@nestjs/common";
+
+@Controller()
+export class AppController {
+  @Get()
+  root() {
+    return {
+      service: "gestao-financeira-api",
+      status: "ok"
+    };
+  }
+
+  @Get("health")
+  health() {
+    return {
+      status: "ok"
+    };
+  }
+}
