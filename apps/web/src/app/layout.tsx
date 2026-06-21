@@ -28,7 +28,7 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const runtimeConfig = {
-    apiUrl: process.env.API_PUBLIC_URL ?? process.env.NEXT_PUBLIC_API_URL ?? ""
+    apiUrl: "/api"
   };
 
   return (
