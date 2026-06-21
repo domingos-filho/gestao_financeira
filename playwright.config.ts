@@ -9,10 +9,10 @@ export default defineConfig({
     trace: "on-first-retry"
   },
   webServer: {
-    command: "npm run dev:web",
+    command: "npm run test:e2e:serve",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
-    timeout: 120000
+    timeout: 300000
   },
   projects: [
     {

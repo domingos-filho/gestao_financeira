@@ -35,6 +35,7 @@ npm run test:unit
 npm run test:integration
 npm run test
 npm run test:coverage
+npm run test:e2e:serve
 npm run test:e2e:install
 npm run test:e2e
 npm run test:all
@@ -42,7 +43,8 @@ npm run test:all
 
 O Playwright precisa baixar o Chromium uma vez na máquina local. O script `test:e2e:install` faz isso.
 As metas de coverage ficam travadas nos arquivos `vitest.config.ts` de cada workspace.
-O fluxo Playwright atual valida a UI do navegador com mocks de rede; para um e2e full-stack, a API real precisa estar ligada no ambiente de teste.
+O fluxo Playwright agora sobe um Postgres dedicado em Docker, executa as migrations, semeia um admin e uma carteira de teste, e então sobe a API e o web localmente.
+Para rodar esse e2e full-stack, é preciso ter o Docker Desktop instalado e ativo.
 
 ## Estrutura
 
