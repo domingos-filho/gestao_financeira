@@ -1,5 +1,14 @@
-import Dexie, { Table } from "dexie";
-import { CategoryType, SyncEventType, TransactionPayload, TransactionType, WalletRole } from "@gf/shared";
+import Dexie, {
+  Table
+} from "dexie";
+import {
+  CategoryType,
+  RecurringExpensePayload,
+  SyncEventType,
+  TransactionPayload,
+  TransactionType,
+  WalletRole
+} from "@gf/shared";
 
 export type TransactionLocal = {
   id: string;
@@ -11,6 +20,8 @@ export type TransactionLocal = {
   description: string;
   categoryId?: string | null;
   counterpartyAccountId?: string | null;
+  recurringExpenseId?: string | null;
+  recurringMonth?: string | null;
   deletedAt?: string | null;
   createdAt?: string | null;
   serverSeq?: number | null;
@@ -62,6 +73,21 @@ export type AccountLocal = {
   updatedAt: string;
 };
 
+export type RecurringExpenseLocal = {
+  id: string;
+  walletId: string;
+  accountId: string;
+  description: string;
+  amountCents: number;
+  categoryId?: string | null;
+  dayOfMonth: number;
+  startMonth: string;
+  archivedAt?: string | null;
+  createdAt?: string | null;
+  serverSeq?: number | null;
+  updatedAt: string;
+};
+
 export type SyncEventStatus = "PENDING" | "ACKED";
 
 export type SyncEventLocal = {
@@ -70,7 +96,7 @@ export type SyncEventLocal = {
   userId: string;
   deviceId: string;
   eventType: SyncEventType;
-  payload: TransactionPayload;
+  payload: TransactionPayload | RecurringExpensePayload;
   status: SyncEventStatus;
   createdAt: string;
 };
@@ -86,6 +112,7 @@ class FinanceDB extends Dexie {
   debts_local!: Table<DebtLocal, string>;
   wallets_local!: Table<WalletLocal, string>;
   accounts_local!: Table<AccountLocal, string>;
+  recurring_expenses_local!: Table<RecurringExpenseLocal, string>;
   sync_events_local!: Table<SyncEventLocal, string>;
   sync_metadata!: Table<SyncMetadata, string>;
 
@@ -132,6 +159,16 @@ class FinanceDB extends Dexie {
         tx.table("wallets_local").clear(),
         tx.table("accounts_local").clear()
       ]);
+    });
+    this.version(6).stores({
+      transactions_local: "id, walletId, occurredAt, deletedAt, recurringExpenseId, recurringMonth",
+      categories_local: "id, walletId, type, archivedAt, sortOrder, updatedAt",
+      debts_local: "id, walletId, status, startedAt",
+      wallets_local: "id, userId, role, updatedAt",
+      accounts_local: "id, userId, walletId, updatedAt",
+      recurring_expenses_local: "id, walletId, archivedAt, startMonth, updatedAt",
+      sync_events_local: "eventId, walletId, status, createdAt",
+      sync_metadata: "key"
     });
   }
 }

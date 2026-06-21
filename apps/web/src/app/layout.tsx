@@ -27,10 +27,25 @@ export const viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const runtimeConfig = {
+    apiUrl: process.env.API_PUBLIC_URL ?? process.env.NEXT_PUBLIC_API_URL ?? ""
+  };
+
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${space.variable} ${manrope.variable} bg-background text-foreground`}>
-        <Script id="theme-bootstrap" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: getThemeBootstrapScript() }} />
+        <Script
+          id="runtime-config"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `window.__GF_RUNTIME_CONFIG__ = ${JSON.stringify(runtimeConfig)};`
+          }}
+        />
+        <Script
+          id="theme-bootstrap"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: getThemeBootstrapScript() }}
+        />
         <Providers>
           <SwRegister />
           {children}

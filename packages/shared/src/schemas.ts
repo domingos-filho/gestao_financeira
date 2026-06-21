@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SyncEventType, TransactionType } from "./enums";
+import { monthKeyRegex } from "./recurring";
 
 export const TransactionPayloadSchema = z.object({
   id: z.string().uuid(),
@@ -11,7 +12,36 @@ export const TransactionPayloadSchema = z.object({
   description: z.string().min(1),
   categoryId: z.string().uuid().nullable().optional(),
   counterpartyAccountId: z.string().uuid().nullable().optional(),
-  deletedAt: z.string().datetime().nullable().optional()
+  deletedAt: z.string().datetime().nullable().optional(),
+  recurringExpenseId: z.string().uuid().nullable().optional(),
+  recurringMonth: z.string().regex(monthKeyRegex).nullable().optional()
+}).superRefine((value, ctx) => {
+  const hasRecurringExpenseId = Boolean(value.recurringExpenseId);
+  const hasRecurringMonth = Boolean(value.recurringMonth);
+  if (hasRecurringExpenseId !== hasRecurringMonth) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Recurring transaction metadata is incomplete"
+    });
+  }
+  if (hasRecurringExpenseId && value.type !== TransactionType.EXPENSE) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Recurring transactions must be expenses"
+    });
+  }
+});
+
+export const RecurringExpensePayloadSchema = z.object({
+  id: z.string().uuid(),
+  walletId: z.string().uuid(),
+  accountId: z.string().uuid(),
+  description: z.string().min(1),
+  amountCents: z.number().int().positive(),
+  categoryId: z.string().uuid().nullable().optional(),
+  dayOfMonth: z.number().int().min(1).max(31),
+  startMonth: z.string().regex(monthKeyRegex),
+  archivedAt: z.string().datetime().nullable().optional()
 });
 
 export const SyncEventSchema = z.object({
@@ -48,6 +78,7 @@ export const SyncPullResponseSchema = z.object({
 });
 
 export type TransactionPayload = z.infer<typeof TransactionPayloadSchema>;
+export type RecurringExpensePayload = z.infer<typeof RecurringExpensePayloadSchema>;
 export type SyncEventDto = z.infer<typeof SyncEventSchema>;
 export type SyncPushDto = z.infer<typeof SyncPushSchema>;
 export type SyncPullResponseDto = z.infer<typeof SyncPullResponseSchema>;

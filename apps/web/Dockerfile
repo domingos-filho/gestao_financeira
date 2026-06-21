@@ -9,7 +9,7 @@ FROM deps AS builder
 COPY tsconfig.base.json ./
 COPY apps/web ./apps/web
 COPY packages/shared ./packages/shared
-ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_API_URL=""
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm -w packages/shared run build
 RUN npm -w apps/web run build

@@ -328,6 +328,11 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
       .equals(walletId)
       .and((tx) => tx.categoryId === category.id)
       .modify({ categoryId: deleteTargetId || null, updatedAt: new Date().toISOString() });
+    await db.recurring_expenses_local
+      .where("walletId")
+      .equals(walletId)
+      .and((entry) => entry.categoryId === category.id)
+      .modify({ categoryId: deleteTargetId || null, updatedAt: new Date().toISOString() });
 
     setDeleteId(null);
     setDeleteTargetId("");

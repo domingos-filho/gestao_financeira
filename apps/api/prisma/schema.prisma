@@ -46,6 +46,9 @@ enum SyncEventType {
   TRANSACTION_CREATED
   TRANSACTION_UPDATED
   TRANSACTION_DELETED
+  RECURRING_EXPENSE_CREATED
+  RECURRING_EXPENSE_UPDATED
+  RECURRING_EXPENSE_DELETED
 }
 
 model User {
@@ -79,6 +82,7 @@ model Wallet {
   accounts    Account[]
   categories  Category[]
   transactions Transaction[]
+  recurringExpenses RecurringExpense[]
   debts       Debt[]
   syncEvents  SyncEvent[]
   snapshots   WalletSnapshot[]
@@ -108,6 +112,7 @@ model Account {
   wallet    Wallet    @relation(fields: [walletId], references: [id])
   transactions Transaction[] @relation("AccountTransactions")
   counterpartyTransactions Transaction[] @relation("CounterpartyTransactions")
+  recurringExpenses RecurringExpense[]
 }
 
 model Category {
@@ -124,8 +129,31 @@ model Category {
 
   wallet    Wallet    @relation(fields: [walletId], references: [id])
   transactions Transaction[]
+  recurringExpenses RecurringExpense[]
 
   @@index([walletId, type, sortOrder])
+}
+
+model RecurringExpense {
+  id          String      @id
+  walletId    String      @map("wallet_id")
+  accountId   String      @map("account_id")
+  description String
+  amountCents Int         @map("amount_cents")
+  categoryId  String?     @map("category_id")
+  dayOfMonth  Int         @map("day_of_month")
+  startMonth  String      @map("start_month")
+  archivedAt  DateTime?   @map("archived_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  wallet      Wallet      @relation(fields: [walletId], references: [id])
+  account     Account     @relation(fields: [accountId], references: [id])
+  category    Category?   @relation(fields: [categoryId], references: [id])
+  transactions Transaction[]
+
+  @@index([walletId, archivedAt])
+  @@index([walletId, startMonth])
 }
 
 model Transaction {
@@ -138,6 +166,8 @@ model Transaction {
   description            String
   categoryId             String?         @map("category_id")
   counterpartyAccountId  String?         @map("counterparty_account_id")
+  recurringExpenseId     String?         @map("recurring_expense_id")
+  recurringMonth         String?         @map("recurring_month")
   deletedAt              DateTime?       @map("deleted_at")
   createdAt              DateTime        @default(now()) @map("created_at")
   updatedAt              DateTime        @updatedAt @map("updated_at")
@@ -146,6 +176,10 @@ model Transaction {
   account                Account         @relation("AccountTransactions", fields: [accountId], references: [id])
   category               Category?       @relation(fields: [categoryId], references: [id])
   counterpartyAccount    Account?        @relation("CounterpartyTransactions", fields: [counterpartyAccountId], references: [id])
+  recurringExpense       RecurringExpense? @relation(fields: [recurringExpenseId], references: [id], onDelete: SetNull)
+
+  @@unique([recurringExpenseId, recurringMonth])
+  @@index([walletId, recurringMonth])
 }
 
 model SyncEvent {
