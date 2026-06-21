@@ -4,7 +4,10 @@ const path = require("node:path");
 
 const rootDir = path.resolve(__dirname, "..");
 const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
-const dockerCmd = process.platform === "win32" ? "docker.exe" : "docker";
+const dockerCmd =
+  process.platform === "win32"
+    ? path.join(process.env.ProgramFiles || "C:\\Program Files", "Docker", "Docker", "resources", "bin", "docker.exe")
+    : "docker";
 const composeProject = "gestao_financeira_e2e";
 const postgresPort = Number(process.env.E2E_POSTGRES_PORT || 5433);
 const apiPort = 3001;
@@ -17,6 +20,18 @@ let postgresStarted = false;
 let apiProcess = null;
 let webProcess = null;
 let shuttingDown = false;
+
+function resolvedDockerCmd() {
+  if (process.platform !== "win32") {
+    return dockerCmd;
+  }
+
+  if (require("node:fs").existsSync(dockerCmd)) {
+    return dockerCmd;
+  }
+
+  return "docker";
+}
 
 function composeArgs(extra = []) {
   return [
@@ -106,7 +121,8 @@ function waitForPort(port, host, timeoutMs = 180000) {
 }
 
 async function startStack() {
-  const dockerCheck = spawnSync(dockerCmd, ["--version"], {
+  const activeDockerCmd = resolvedDockerCmd();
+  const dockerCheck = spawnSync(activeDockerCmd, ["--version"], {
     cwd: rootDir,
     stdio: "ignore",
     shell: false
@@ -118,7 +134,7 @@ async function startStack() {
     );
   }
 
-  runSync(dockerCmd, composeArgs(["up", "-d", "postgres"]), {
+  runSync(activeDockerCmd, composeArgs(["up", "-d", "postgres"]), {
     env: {
       ...process.env,
       POSTGRES_USER: "postgres",
@@ -186,7 +202,7 @@ async function shutdown(exitCode = 0) {
   }
 
   if (postgresStarted) {
-    runSync(dockerCmd, composeArgs(["down", "-v"]), {
+    runSync(resolvedDockerCmd(), composeArgs(["down", "-v"]), {
       env: {
         ...process.env,
         POSTGRES_USER: "postgres",
@@ -204,7 +220,7 @@ async function main() {
   const mode = process.argv[2] || "serve";
 
   if (mode === "down") {
-    runSync(dockerCmd, composeArgs(["down", "-v"]), {
+    runSync(resolvedDockerCmd(), composeArgs(["down", "-v"]), {
       env: {
         ...process.env,
         POSTGRES_USER: "postgres",
