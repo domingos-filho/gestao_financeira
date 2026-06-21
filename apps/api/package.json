@@ -9,6 +9,9 @@
     "build": "nest build",
     "prebuild": "npm run prisma:generate",
     "lint": "eslint \"src/**/*.ts\"",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:coverage": "vitest run --coverage --config vitest.config.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy"
   },
