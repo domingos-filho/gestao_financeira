@@ -6,6 +6,7 @@ import { AccessDeniedError, useAuth } from "@/lib/auth";
 import { BrandMark } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PasswordInput } from "@/components/password-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -81,7 +82,7 @@ export default function LoginPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Senha</Label>
-                  <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+                  <PasswordInput value={password} onChange={(event) => setPassword(event.target.value)} required />
                 </div>
                 <p className="text-xs text-muted-foreground">Cadastro somente pelo administrador.</p>
                 {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}

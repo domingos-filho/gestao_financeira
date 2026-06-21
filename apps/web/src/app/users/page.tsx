@@ -9,6 +9,7 @@ import { AppShell } from "@/components/app-shell";
 import { RequireAuth } from "@/components/require-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PasswordInput } from "@/components/password-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -308,11 +309,7 @@ export default function UsersPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Senha</Label>
-                    <Input
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      type="password"
-                    />
+                    <PasswordInput value={password} onChange={(event) => setPassword(event.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Perfil</Label>
@@ -385,10 +382,9 @@ export default function UsersPage() {
                           <div className="space-y-2">
                             <Label className="text-xs">Senha</Label>
                             {isEditing ? (
-                              <Input
+                              <PasswordInput
                                 value={editPassword}
                                 onChange={(event) => setEditPassword(event.target.value)}
-                                type="password"
                                 placeholder="Nova senha"
                               />
                             ) : (
