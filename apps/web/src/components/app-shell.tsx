@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand-logo";
 import { SyncIndicator } from "@/components/sync-indicator";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type NavItem = {
   label: string;
@@ -267,6 +268,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
               <span className="sr-only">UniConta</span>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <ThemeToggle />
               <div className="relative z-50" ref={userMenuRef}>
                 <button
                   type="button"

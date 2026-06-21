@@ -1,7 +1,9 @@
 import "./globals.css";
 import { Space_Grotesk, Manrope } from "next/font/google";
+import Script from "next/script";
 import { Providers } from "./providers";
 import { SwRegister } from "./sw-register";
+import { getThemeBootstrapScript } from "@/lib/theme";
 
 const space = Space_Grotesk({
   subsets: ["latin"],
@@ -21,13 +23,14 @@ export const metadata = {
 
 export const viewport = {
   themeColor: "#22c55e",
-  colorScheme: "light"
+  colorScheme: "light dark"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${space.variable} ${manrope.variable} bg-background text-foreground`}>
+        <Script id="theme-bootstrap" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: getThemeBootstrapScript() }} />
         <Providers>
           <SwRegister />
           {children}

@@ -38,6 +38,7 @@ export type DebtLocal = {
   principalCents: number;
   interestRate: number | null;
   monthlyPaymentCents: number | null;
+  installmentCount: number | null;
   startedAt: string;
   dueAt?: string | null;
   status: DebtStatus;

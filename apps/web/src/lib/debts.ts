@@ -9,6 +9,7 @@ type DebtResponse = {
   principalCents: number;
   interestRate: number | null;
   monthlyPaymentCents: number | null;
+  installmentCount: number | null;
   startedAt: string;
   dueAt?: string | null;
   status: DebtStatus;
@@ -30,6 +31,7 @@ export async function syncDebts(walletId: string, authFetch: AuthFetch) {
     principalCents: debt.principalCents,
     interestRate: debt.interestRate ?? null,
     monthlyPaymentCents: debt.monthlyPaymentCents ?? null,
+    installmentCount: debt.installmentCount ?? null,
     startedAt: debt.startedAt,
     dueAt: debt.dueAt ?? null,
     status: debt.status,

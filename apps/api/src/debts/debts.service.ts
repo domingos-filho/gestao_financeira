@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateDebtDto } from "./dto/create-debt.dto";
 import { UpdateDebtDto } from "./dto/update-debt.dto";
+import { calculateMonthlyPaymentCents } from "@gf/shared";
 
 @Injectable()
 export class DebtsService {
@@ -15,13 +16,20 @@ export class DebtsService {
   }
 
   create(walletId: string, dto: CreateDebtDto) {
+    const installmentCount = dto.installmentCount ?? null;
+    const monthlyPaymentCents =
+      installmentCount && !dto.monthlyPaymentCents
+        ? calculateMonthlyPaymentCents(dto.principalCents, installmentCount)
+        : dto.monthlyPaymentCents ?? null;
+
     return this.prisma.debt.create({
       data: {
         walletId,
         name: dto.name.trim(),
         principalCents: dto.principalCents,
         interestRate: dto.interestRate ?? null,
-        monthlyPaymentCents: dto.monthlyPaymentCents ?? null,
+        monthlyPaymentCents,
+        installmentCount,
         startedAt: new Date(dto.startedAt),
         dueAt: dto.dueAt ? new Date(dto.dueAt) : null
       }
@@ -37,13 +45,21 @@ export class DebtsService {
       throw new NotFoundException("Debt not found");
     }
 
+    const nextPrincipalCents = dto.principalCents ?? existing.principalCents;
+    const nextInstallmentCount = dto.installmentCount ?? existing.installmentCount ?? null;
+    const monthlyPaymentCents =
+      nextInstallmentCount && !dto.monthlyPaymentCents
+        ? calculateMonthlyPaymentCents(nextPrincipalCents, nextInstallmentCount)
+        : dto.monthlyPaymentCents ?? existing.monthlyPaymentCents ?? null;
+
     return this.prisma.debt.update({
       where: { id: debtId },
       data: {
         name: dto.name?.trim() ?? undefined,
         principalCents: dto.principalCents,
         interestRate: dto.interestRate ?? undefined,
-        monthlyPaymentCents: dto.monthlyPaymentCents ?? undefined,
+        monthlyPaymentCents,
+        installmentCount: dto.installmentCount ?? undefined,
         startedAt: dto.startedAt ? new Date(dto.startedAt) : undefined,
         dueAt: dto.dueAt ? new Date(dto.dueAt) : undefined,
         status: dto.status ?? undefined

@@ -35,6 +35,11 @@ export class UpdateDebtDto {
   monthlyPaymentCents?: number;
 
   @IsOptional()
+  @IsInt()
+  @Min(1)
+  installmentCount?: number;
+
+  @IsOptional()
   @IsISO8601()
   startedAt?: string;
 
