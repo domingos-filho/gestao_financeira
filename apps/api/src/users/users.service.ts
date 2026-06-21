@@ -174,7 +174,7 @@ export class UsersService {
         data.role = enforcedRole;
       }
 
-      const targetWalletId = params.walletId ?? user.defaultWalletId ?? undefined;
+      const targetWalletId = params.walletId ?? user.defaultWalletId ?? null;
       if (params.walletId) {
         const wallet = await tx.wallet.findUnique({ where: { id: params.walletId } });
         if (!wallet) {
@@ -184,6 +184,15 @@ export class UsersService {
       }
 
       if (targetWalletId) {
+        await tx.walletMember.deleteMany({
+          where: {
+            userId,
+            walletId: {
+              not: targetWalletId
+            }
+          }
+        });
+
         const walletRole = enforcedRole === UserRole.ADMIN ? WalletRole.ADMIN : WalletRole.EDITOR;
         const existingMember = await tx.walletMember.findUnique({
           where: { walletId_userId: { walletId: targetWalletId, userId } }

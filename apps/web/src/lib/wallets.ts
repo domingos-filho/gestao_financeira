@@ -14,14 +14,15 @@ function isOnline() {
   return typeof navigator === "undefined" ? true : navigator.onLine;
 }
 
-async function persistWallets(entries: WalletEntry[]) {
-  if (entries.length === 0) {
+async function persistWallets(userId: string, entries: WalletEntry[]) {
+  if (!userId || entries.length === 0) {
     return;
   }
 
   const now = new Date().toISOString();
   const wallets = entries.map((entry) => ({
     id: entry.wallet.id,
+    userId,
     name: entry.wallet.name,
     role: entry.role,
     membersCount: entry.wallet.membersCount ?? entry.wallet.accounts?.length ?? null,
@@ -33,27 +34,31 @@ async function persistWallets(entries: WalletEntry[]) {
       .filter((account) => account && account.id && account.name)
       .map((account) => ({
         id: account.id,
+        userId,
         walletId: entry.wallet.id,
         name: account.name,
         updatedAt: now
       }))
   );
 
-  const walletIds = wallets.map((wallet) => wallet.id);
-
   await db.transaction("rw", db.wallets_local, db.accounts_local, async () => {
+    await db.wallets_local.where("userId").equals(userId).delete();
+    await db.accounts_local.where("userId").equals(userId).delete();
     await db.wallets_local.bulkPut(wallets);
-    await Promise.all(walletIds.map((walletId) => db.accounts_local.where("walletId").equals(walletId).delete()));
     if (accounts.length > 0) {
       await db.accounts_local.bulkPut(accounts);
     }
   });
 }
 
-async function readCachedWallets() {
+async function readCachedWallets(userId: string) {
+  if (!userId) {
+    return [];
+  }
+
   const [wallets, accounts] = await Promise.all([
-    safeDexie(() => db.wallets_local.toArray(), []),
-    safeDexie(() => db.accounts_local.toArray(), [])
+    safeDexie(() => db.wallets_local.where("userId").equals(userId).toArray(), []),
+    safeDexie(() => db.accounts_local.where("userId").equals(userId).toArray(), [])
   ]);
 
   if (wallets.length === 0) {
@@ -86,30 +91,35 @@ async function fetchWallets(authFetch: (path: string, options?: RequestInit) => 
   if (!res.ok) {
     throw new Error("Failed to load wallets");
   }
-  const data = (await res.json()) as WalletEntry[];
-  await persistWallets(data);
-  return data;
+  return (await res.json()) as WalletEntry[];
 }
 
 export function useWallets() {
   const { authFetch, user } = useAuth();
+  const userId = user?.id ?? null;
   return useQuery({
-    queryKey: ["wallets"],
+    queryKey: ["wallets", userId],
     queryFn: async () => {
+      if (!userId) {
+        return [];
+      }
+
       if (!isOnline()) {
-        return readCachedWallets();
+        return readCachedWallets(userId);
       }
       try {
-        return await fetchWallets(authFetch);
+        const entries = await fetchWallets(authFetch);
+        await persistWallets(userId, entries);
+        return entries;
       } catch (error) {
-        const cached = await readCachedWallets();
+        const cached = await readCachedWallets(userId);
         if (cached.length > 0) {
           return cached;
         }
         throw error;
       }
     },
-    enabled: Boolean(user)
+    enabled: Boolean(userId)
   });
 }
 

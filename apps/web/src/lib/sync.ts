@@ -168,27 +168,12 @@ async function persistLocalEvent(params: {
 }
 
 export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncParams) {
-  await sanitizePendingEvents(walletId);
+  await sanitizePendingEvents(walletId, userId, deviceId);
   const pending = await db.sync_events_local
     .where("walletId")
     .equals(walletId)
-    .and((event) => event.status === "PENDING")
+    .and((event) => event.status === "PENDING" && event.userId === userId && event.deviceId === deviceId)
     .sortBy("createdAt");
-
-  if (pending.length > 0 && pending.some((event) => event.deviceId !== deviceId)) {
-    await db.sync_events_local
-      .where("walletId")
-      .equals(walletId)
-      .and((event) => event.status === "PENDING")
-      .modify({ deviceId });
-  }
-  if (pending.length > 0 && pending.some((event) => event.userId !== userId)) {
-    await db.sync_events_local
-      .where("walletId")
-      .equals(walletId)
-      .and((event) => event.status === "PENDING")
-      .modify({ userId });
-  }
 
   if (pending.length > 0) {
     const pushRes = await authFetch("/sync/push", {
@@ -199,8 +184,8 @@ export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncPar
         events: pending.map((event) => ({
           eventId: event.eventId,
           walletId: event.walletId,
-          userId,
-          deviceId,
+          userId: event.userId,
+          deviceId: event.deviceId,
           eventType: event.eventType,
           payload: event.payload
         }))
@@ -234,13 +219,13 @@ export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncPar
   await setMetadata(`lastSyncAt:${walletId}`, new Date().toISOString());
 }
 
-async function sanitizePendingEvents(walletId: string) {
+async function sanitizePendingEvents(walletId: string, userId: string, deviceId: string) {
   const [categories, pending] = await Promise.all([
     db.categories_local.where("walletId").equals(walletId).toArray(),
     db.sync_events_local
       .where("walletId")
       .equals(walletId)
-      .and((event) => event.status === "PENDING")
+      .and((event) => event.status === "PENDING" && event.userId === userId && event.deviceId === deviceId)
       .toArray()
   ]);
 
