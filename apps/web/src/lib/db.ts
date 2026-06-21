@@ -49,6 +49,7 @@ export type DebtLocal = {
   principalCents: number;
   interestRate: number | null;
   monthlyPaymentCents: number | null;
+  installmentCount: number | null;
   startedAt: string;
   dueAt?: string | null;
   status: DebtStatus;
@@ -57,6 +58,7 @@ export type DebtLocal = {
 
 export type WalletLocal = {
   id: string;
+  userId: string;
   name: string;
   role: WalletRole;
   membersCount?: number | null;
@@ -65,6 +67,7 @@ export type WalletLocal = {
 
 export type AccountLocal = {
   id: string;
+  userId: string;
   walletId: string;
   name: string;
   updatedAt: string;
@@ -144,11 +147,25 @@ class FinanceDB extends Dexie {
       sync_metadata: "key"
     });
     this.version(5).stores({
+      transactions_local: "id, walletId, occurredAt, deletedAt",
+      categories_local: "id, walletId, type, archivedAt, sortOrder, updatedAt",
+      debts_local: "id, walletId, status, startedAt",
+      wallets_local: "id, userId, role, updatedAt",
+      accounts_local: "id, userId, walletId, updatedAt",
+      sync_events_local: "eventId, walletId, status, createdAt",
+      sync_metadata: "key"
+    }).upgrade(async (tx) => {
+      await Promise.all([
+        tx.table("wallets_local").clear(),
+        tx.table("accounts_local").clear()
+      ]);
+    });
+    this.version(6).stores({
       transactions_local: "id, walletId, occurredAt, deletedAt, recurringExpenseId, recurringMonth",
       categories_local: "id, walletId, type, archivedAt, sortOrder, updatedAt",
       debts_local: "id, walletId, status, startedAt",
-      wallets_local: "id, role, updatedAt",
-      accounts_local: "id, walletId, updatedAt",
+      wallets_local: "id, userId, role, updatedAt",
+      accounts_local: "id, userId, walletId, updatedAt",
       recurring_expenses_local: "id, walletId, archivedAt, startMonth, updatedAt",
       sync_events_local: "eventId, walletId, status, createdAt",
       sync_metadata: "key"
@@ -174,4 +191,11 @@ export async function getMetadata(key: string) {
 
 export async function setMetadata(key: string, value: string) {
   await db.sync_metadata.put({ key, value });
+}
+
+export async function clearWalletCache() {
+  await db.transaction("rw", db.wallets_local, db.accounts_local, async () => {
+    await db.wallets_local.clear();
+    await db.accounts_local.clear();
+  });
 }

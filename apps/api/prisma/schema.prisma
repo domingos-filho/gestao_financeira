@@ -239,6 +239,7 @@ model Debt {
   principalCents       Int        @map("principal_cents")
   interestRate         Float?     @map("interest_rate")
   monthlyPaymentCents  Int?       @map("monthly_payment_cents")
+  installmentCount     Int?       @map("installment_count")
   startedAt            DateTime   @map("started_at")
   dueAt                DateTime?  @map("due_at")
   status               DebtStatus @default(ACTIVE)

@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { UserRole } from "@gf/shared";
 import { getDeviceId } from "./device";
+import { clearWalletCache } from "./db";
 import { resolveApiUrl } from "./runtime-config";
 
 const STORAGE_KEY = "gf.auth";
@@ -119,6 +120,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshRef.current = next.refreshToken;
     setState((prev) => ({ ...prev, ...next, loading: false }));
     persistAuth(next);
+    if (!next.user) {
+      void clearWalletCache();
+    }
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

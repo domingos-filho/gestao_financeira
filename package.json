@@ -7,8 +7,39 @@
   ],
   "scripts": {
     "dev:web": "npm -w apps/web run dev",
-    "dev:api": "npm -w apps/api run start:dev",
-    "build": "npm -w apps/api run build && npm -w apps/web run build",
-    "lint": "npm -w apps/api run lint && npm -w apps/web run lint"
+    "dev:api": "npm -w packages/shared run build && npm -w apps/api run start:dev",
+    "build": "npm -w packages/shared run build && npm -w apps/api run build && npm -w apps/web run build",
+    "lint": "npm -w apps/api run lint && npm -w apps/web run lint",
+    "test:shared": "npm -w packages/shared run test",
+    "test:web": "npm -w apps/web run test",
+    "test:api": "npm -w apps/api run test",
+    "test:unit": "npm run test:shared && npm run test:web",
+    "test:integration": "npm run test:api",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:coverage:shared": "npm -w packages/shared run test:coverage",
+    "test:coverage:web": "npm -w apps/web run test:coverage",
+    "test:coverage:api": "npm -w apps/api run test:coverage",
+    "test:coverage": "npm run test:coverage:shared && npm run test:coverage:web && npm run test:coverage:api",
+    "test:e2e:serve": "node scripts/e2e-stack.js serve",
+    "test:e2e:seed": "node scripts/e2e-seed.js",
+    "test:e2e:down": "node scripts/e2e-stack.js down",
+    "test:e2e": "playwright test",
+    "test:all": "npm run test && npm run test:e2e",
+    "test:e2e:install": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^10.4.22",
+    "@playwright/test": "^1.61.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/supertest": "^7.2.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "@vitest/coverage-v8": "^4.1.9",
+    "jsdom": "^29.1.1",
+    "msw": "^2.14.6",
+    "supertest": "^7.2.2",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.9"
   }
 }

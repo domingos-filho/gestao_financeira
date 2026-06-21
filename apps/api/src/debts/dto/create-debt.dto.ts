@@ -20,6 +20,11 @@ export class CreateDebtDto {
   @Min(0)
   monthlyPaymentCents?: number;
 
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  installmentCount?: number;
+
   @IsISO8601()
   startedAt!: string;
 

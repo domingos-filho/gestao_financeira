@@ -6,8 +6,10 @@ import { AccessDeniedError, useAuth } from "@/lib/auth";
 import { BrandMark } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PasswordInput } from "@/components/password-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,58 +39,61 @@ export default function LoginPage() {
     }
   };
 
-  if (accessDenied) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md animate-rise">
-          <CardHeader className="space-y-3">
-            <div className="flex items-center gap-3">
-              <BrandMark className="h-12 w-auto" />
-              <div>
-                <CardTitle className="sr-only">UniConta</CardTitle>
-                <CardDescription>Acesso restrito</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p>Seu usuario nao tem permissao para acessar este aplicativo.</p>
-            <p>Entre em contato com o administrador: <strong className="text-foreground">{accessDenied}</strong></p>
-            <Button type="button" className="w-full" onClick={() => setAccessDenied(null)}>
-              Voltar
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md animate-rise">
-        <CardHeader className="space-y-3">
-          <div className="flex items-center justify-center">
-            <BrandMark className="h-[72px] w-auto" />
-            <CardTitle className="sr-only">UniConta</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label>Senha</Label>
-              <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-            </div>
-            <p className="text-xs text-muted-foreground">Cadastro somente pelo administrador.</p>
-            {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Processando" : "Entrar"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <div className="fixed right-4 top-4 z-20">
+        <ThemeToggle />
+      </div>
+      {accessDenied ? (
+        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+          <Card className="w-full max-w-md animate-rise">
+            <CardHeader className="space-y-3">
+              <div className="flex items-center gap-3">
+                <BrandMark className="h-12 w-auto" />
+                <div>
+                  <CardTitle className="sr-only">UniConta</CardTitle>
+                  <CardDescription>Acesso restrito</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-muted-foreground">
+              <p>Seu usuario nao tem permissao para acessar este aplicativo.</p>
+              <p>Entre em contato com o administrador: <strong className="text-foreground">{accessDenied}</strong></p>
+              <Button type="button" className="w-full" onClick={() => setAccessDenied(null)}>
+                Voltar
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+          <Card className="w-full max-w-md animate-rise">
+            <CardHeader className="space-y-3">
+              <div className="flex items-center justify-center">
+                <BrandMark className="h-[72px] w-auto" />
+                <CardTitle className="sr-only">UniConta</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Senha</Label>
+                  <PasswordInput value={password} onChange={(event) => setPassword(event.target.value)} required />
+                </div>
+                <p className="text-xs text-muted-foreground">Cadastro somente pelo administrador.</p>
+                {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? "Processando" : "Entrar"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </>
   );
 }

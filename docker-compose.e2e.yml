@@ -1,0 +1,4 @@
+services:
+  postgres:
+    ports:
+      - "${E2E_POSTGRES_PORT:-5433}:5432"

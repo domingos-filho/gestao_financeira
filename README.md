@@ -8,6 +8,44 @@ Aplicativo de controle financeiro compartilhado (casal) com PWA offline-first, s
 - API: NestJS, Prisma, PostgreSQL, JWT + Refresh Token
 - Infra: Docker, docker-compose, monorepo
 
+## Suite de testes
+
+O repositório já traz a base de testes versionada para poder reaproveitar em outros projetos:
+
+- `vitest`: runner de testes unitários e de integração
+- `@vitest/coverage-v8`: cobertura com V8
+- `jsdom`: ambiente DOM para componentes React
+- `@testing-library/react`: renderização e asserções de UI
+- `@testing-library/jest-dom`: matchers de DOM
+- `@testing-library/user-event`: interações de usuário
+- `@vitejs/plugin-react`: transformação de JSX/TSX nos testes do web
+- `@nestjs/testing`: criação de módulos NestJS isolados
+- `supertest`: testes HTTP da API
+- `msw`: suporte a mocks de rede em testes de UI
+- `@playwright/test`: e2e browser-driven
+- `vite-tsconfig-paths`: resolução de aliases do TypeScript dentro do Vitest
+
+Scripts disponíveis:
+
+```bash
+npm run test:shared
+npm run test:web
+npm run test:api
+npm run test:unit
+npm run test:integration
+npm run test
+npm run test:coverage
+npm run test:e2e:serve
+npm run test:e2e:install
+npm run test:e2e
+npm run test:all
+```
+
+O Playwright precisa baixar o Chromium uma vez na máquina local. O script `test:e2e:install` faz isso.
+As metas de coverage ficam travadas nos arquivos `vitest.config.ts` de cada workspace.
+O fluxo Playwright agora sobe um Postgres dedicado em Docker, executa as migrations, semeia um admin e uma carteira de teste, e então sobe a API e o web localmente.
+Para rodar esse e2e full-stack, é preciso ter o Docker Desktop instalado e ativo.
+
 ## Estrutura
 
 ```
