@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException, ConflictException, ForbiddenException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
-import * as bcrypt from "bcrypt";
+import * as bcrypt from "bcryptjs";
 import { UsersService } from "../users/users.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UserRole as SharedUserRole } from "@gf/shared";
@@ -9,6 +9,19 @@ import { UserRole as PrismaUserRole } from "@prisma/client";
 
 const ACCESS_TOKEN_TTL = "15m";
 const REFRESH_TOKEN_TTL = "7d";
+
+export type AuthSession = {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: SharedUserRole;
+    defaultWalletId: string | null;
+  };
+  accessToken: string;
+  refreshToken: string;
+  refreshTokenExpiresAt: Date;
+};
 
 @Injectable()
 export class AuthService {
@@ -66,7 +79,7 @@ export class AuthService {
     }
   }
 
-  async register(email: string, password: string, deviceId: string) {
+  async register(email: string, password: string, deviceId: string): Promise<AuthSession> {
     const normalized = this.normalizeEmail(email);
     if (normalized !== this.adminEmail) {
       throw new ForbiddenException({
@@ -85,7 +98,7 @@ export class AuthService {
     return this.issueTokens(user, deviceId);
   }
 
-  async login(email: string, password: string, deviceId: string) {
+  async login(email: string, password: string, deviceId: string): Promise<AuthSession> {
     const normalized = this.normalizeEmail(email);
     await this.assertAccessAllowed(normalized);
     const user = await this.users.findByEmail(normalized);
@@ -105,7 +118,11 @@ export class AuthService {
     return this.issueTokens(user, deviceId);
   }
 
-  async refresh(refreshToken: string, deviceId: string) {
+  async refresh(refreshToken: string | null | undefined, deviceId: string): Promise<AuthSession> {
+    if (!refreshToken) {
+      throw new UnauthorizedException("Refresh token missing");
+    }
+
     let payload: { sub: string; email: string; deviceId: string };
 
     try {
@@ -176,7 +193,7 @@ export class AuthService {
       defaultWalletId?: string | null;
     },
     deviceId: string
-  ) {
+  ): Promise<AuthSession> {
     const accessToken = await this.jwt.signAsync(
       { sub: user.id, email: user.email },
       {
@@ -215,7 +232,8 @@ export class AuthService {
         defaultWalletId: user.defaultWalletId ?? null
       },
       accessToken,
-      refreshToken
+      refreshToken,
+      refreshTokenExpiresAt: expiresAt
     };
   }
 }

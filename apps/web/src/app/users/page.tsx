@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserRole } from "@gf/shared";
 import { ChevronDown } from "lucide-react";
@@ -91,7 +91,7 @@ export default function UsersPage() {
     }
   }, [authLoading, user, isAdmin, router]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setDataLoading(true);
     try {
       const usersRes = await authFetch("/users");
@@ -134,12 +134,12 @@ export default function UsersPage() {
     } finally {
       setDataLoading(false);
     }
-  };
+  }, [authFetch]);
 
   useEffect(() => {
     if (!isAdmin) return;
     loadData();
-  }, [isAdmin, authFetch]);
+  }, [isAdmin, loadData]);
 
   useEffect(() => {
     if (wallets.length === 0) {

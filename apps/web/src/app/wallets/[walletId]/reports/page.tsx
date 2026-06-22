@@ -227,7 +227,7 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
     }));
 
     return { range, expenseRows, incomeRows, topExpenseSeries };
-  }, [transactions, categoryMap]);
+  }, [transactions]);
 
   const debtInsights = useMemo(() => {
     const list = debts ?? [];

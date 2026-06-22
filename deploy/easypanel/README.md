@@ -69,6 +69,7 @@ NEXT_PUBLIC_ADMIN_EMAIL=fadomingosf@gmail.com
 Observacao:
 
 - O navegador acessa somente o dominio do frontend. O `web` faz proxy interno de `/api` para `API_PUBLIC_URL`, entao voce nao expõe CORS para o browser.
+- O refresh token e emitido como cookie `HttpOnly`, entao o acesso ao backend precisa passar pelo proxy same-origin do frontend.
 - `API_PUBLIC_URL` e lida em runtime pelo frontend, entao voce nao precisa rebuildar a imagem para trocar o dominio da API.
 
 ## 4. Primeira subida

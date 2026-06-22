@@ -111,7 +111,8 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 
 ## Observacoes
 
-- Tokens sao armazenados no `localStorage` para permitir uso offline
+- O `accessToken` fica no `localStorage` para permitir uso offline
+- O `refreshToken` fica em cookie `HttpOnly` e rotaciona no endpoint de refresh
 - O sync usa eventos idempotentes e `server_seq` por carteira (last-write-wins)
 - Transacoes offline ficam em IndexedDB e sincronizam ao reconectar
 
