@@ -4,5 +4,7 @@ services:
       - "${API_PORT:-3001}:3001"
 
   web:
+    environment:
+      API_PUBLIC_URL: http://api:3001
     ports:
       - "${WEB_PORT:-4000}:3000"

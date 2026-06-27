@@ -102,6 +102,9 @@ npm -w apps/web run dev
 docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 ```
 
+Nessa composição, o `web` chama a API interna do Docker em `http://api:3001` via `API_PUBLIC_URL`.
+Se estiver rodando sem Docker, continue usando `NEXT_PUBLIC_API_URL=http://localhost:3001` no frontend.
+
 ## Checklist de producao
 
 - Definir `JWT_SECRET` e `REFRESH_TOKEN_SECRET` fortes
@@ -175,8 +178,8 @@ REFRESH_TOKEN_EXPIRES_IN=7d
 ADMIN_EMAIL=fadomingosf@gmail.com
 ADMIN_PASSWORD=sua_senha_admin_forte
 WEB_DOMAIN=appfinanceiro.domingos-automacoes.shop
-API_DOMAIN=api.domingos-automacoes.shop
-NEXT_PUBLIC_API_URL=https://api.domingos-automacoes.shop
+API_DOMAIN=api.domingos-automacoes.com
+NEXT_PUBLIC_API_URL=https://api.domingos-automacoes.com
 NEXT_PUBLIC_ADMIN_EMAIL=fadomingosf@gmail.com
 # API_PORT/WEB_PORT sao usados apenas no docker-compose.local.yml
 API_PORT=3001
