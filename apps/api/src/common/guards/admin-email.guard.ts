@@ -8,7 +8,7 @@ export class AdminEmailGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    const adminEmail = (this.config.get<string>("ADMIN_EMAIL") ?? "fadomingosf@gmail.com").toLowerCase();
+    const adminEmail = (this.config.get<string>("ADMIN_EMAIL")?.trim() || "fadomingosf@gmail.com").toLowerCase();
 
     if (!user?.email || user.email.toLowerCase() !== adminEmail) {
       throw new ForbiddenException("Admin access required");

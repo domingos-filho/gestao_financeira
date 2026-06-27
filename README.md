@@ -72,8 +72,11 @@ REFRESH_TOKEN_SECRET=change_me_refresh
 JWT_EXPIRES_IN=15m
 REFRESH_TOKEN_EXPIRES_IN=7d
 ADMIN_EMAIL=fadomingosf@gmail.com
+ADMIN_PASSWORD=change_me_admin_password
 PORT=3001
 ```
+
+Na subida da API, o admin com esse e-mail é criado ou atualizado com a senha de `ADMIN_PASSWORD`.
 
 No frontend, opcionalmente defina:
 
@@ -102,6 +105,7 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 ## Checklist de producao
 
 - Definir `JWT_SECRET` e `REFRESH_TOKEN_SECRET` fortes
+- Definir `ADMIN_PASSWORD` forte para o bootstrap do admin
 - Ajustar `NEXT_PUBLIC_API_URL` para a URL publica da API
 - Preferir `API_PUBLIC_URL` no container do `web` para trocar a URL da API sem rebuild
 - Garantir HTTPS no dominio do PWA
@@ -145,6 +149,7 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 - Fluxo recomendado: `postgres` gerenciado no painel + `api` e `web` como App Services separados
 - O repositorio publica imagens Docker no GHCR via `.github/workflows/publish-images.yml`
 - Configure `API_PUBLIC_URL` no `web` e `DATABASE_URL` no `api`
+- Defina `ADMIN_PASSWORD` no `api` para criar ou atualizar a senha do admin com o e-mail atual
 - O dominio da API deve responder em `/health`
 - Guia completo: `deploy/easypanel/README.md`
 
@@ -168,6 +173,7 @@ REFRESH_TOKEN_SECRET=segredo_forte_refresh
 JWT_EXPIRES_IN=15m
 REFRESH_TOKEN_EXPIRES_IN=7d
 ADMIN_EMAIL=fadomingosf@gmail.com
+ADMIN_PASSWORD=sua_senha_admin_forte
 WEB_DOMAIN=appfinanceiro.domingos-automacoes.shop
 API_DOMAIN=api.domingos-automacoes.shop
 NEXT_PUBLIC_API_URL=https://api.domingos-automacoes.shop

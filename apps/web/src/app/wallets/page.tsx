@@ -12,7 +12,7 @@ import { AppShell } from "@/components/app-shell";
 export default function HomePage() {
   const router = useRouter();
   const { authFetch, user } = useAuth();
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
   const walletsQuery = useWallets();

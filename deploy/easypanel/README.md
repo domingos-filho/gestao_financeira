@@ -40,6 +40,7 @@ PORT=3001
 DATABASE_URL=postgresql://USUARIO:SENHA@HOST:PORTA/BANCO?schema=public
 JWT_SECRET=troque-por-um-segredo-forte
 REFRESH_TOKEN_SECRET=troque-por-um-segredo-forte
+ADMIN_PASSWORD=troque-por-uma-senha-forte
 JWT_EXPIRES_IN=15m
 REFRESH_TOKEN_EXPIRES_IN=7d
 ADMIN_EMAIL=fadomingosf@gmail.com
@@ -71,6 +72,7 @@ Observacao:
 - O navegador acessa somente o dominio do frontend. O `web` faz proxy interno de `/api` para `API_PUBLIC_URL`, entao voce nao expõe CORS para o browser.
 - O refresh token e emitido como cookie `HttpOnly`, entao o acesso ao backend precisa passar pelo proxy same-origin do frontend.
 - `API_PUBLIC_URL` e lida em runtime pelo frontend, entao voce nao precisa rebuildar a imagem para trocar o dominio da API.
+- Se mudar `ADMIN_PASSWORD`, basta redeployar a API para sincronizar a senha do admin com o e-mail atual.
 
 ## 4. Primeira subida
 

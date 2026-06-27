@@ -15,7 +15,7 @@ export default function WalletManagementPage() {
   const [wallets, setWallets] = useState<Array<{ id: string; name: string }>>([]);
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
   useEffect(() => {

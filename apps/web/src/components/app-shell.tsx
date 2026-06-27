@@ -83,7 +83,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
   const pathname = usePathname();
   const { user, authFetch, logout } = useAuth();
   const [online, setOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
   const hideAdminItems = Boolean(walletId);
   const syncEngine = useSyncEngine(walletId);

@@ -81,7 +81,7 @@ export default function UsersPage() {
   const [password, setPassword] = useState("");
   const [walletId, setWalletId] = useState("");
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
   const adminEmailNormalized = useMemo(() => adminEmail.toLowerCase(), [adminEmail]);
 

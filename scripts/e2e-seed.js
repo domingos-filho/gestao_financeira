@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 const adminEmail = (process.env.ADMIN_EMAIL || "fadomingosf@gmail.com").toLowerCase();
 const walletName = process.env.E2E_WALLET_NAME || "Familia Domingos";
-const loginPassword = process.env.E2E_LOGIN_PASSWORD || "secret123";
+const loginPassword = process.env.ADMIN_PASSWORD || process.env.E2E_LOGIN_PASSWORD || "secret123";
 
 async function resetDatabase() {
   await prisma.$transaction(async (tx) => {

@@ -12,7 +12,7 @@ export class UsersService {
   ) {}
 
   private get adminEmail() {
-    return (this.config.get<string>("ADMIN_EMAIL") ?? "fadomingosf@gmail.com").toLowerCase();
+    return (this.config.get<string>("ADMIN_EMAIL")?.trim() || "fadomingosf@gmail.com").toLowerCase();
   }
 
   private normalizeEmail(email: string) {

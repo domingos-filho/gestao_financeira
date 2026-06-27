@@ -24,8 +24,10 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-gestao_financeira}?schema=public
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,6 +45,7 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+        NEXT_PUBLIC_ADMIN_EMAIL: ${NEXT_PUBLIC_ADMIN_EMAIL:-}
     restart: unless-stopped
     environment:
       API_PUBLIC_URL: ${API_PUBLIC_URL:-}

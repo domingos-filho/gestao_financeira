@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [accessDenied, setAccessDenied] = useState<string | null>(null);
-  const fallbackAdmin = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
+  const fallbackAdmin = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "fadomingosf@gmail.com";
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

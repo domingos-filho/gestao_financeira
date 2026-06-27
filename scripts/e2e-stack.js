@@ -13,6 +13,7 @@ const postgresPort = Number(process.env.E2E_POSTGRES_PORT || 5433);
 const apiPort = 3001;
 const webPort = 3000;
 const adminEmail = process.env.ADMIN_EMAIL || "fadomingosf@gmail.com";
+const adminPassword = process.env.ADMIN_PASSWORD || process.env.E2E_LOGIN_PASSWORD || "secret123";
 const databaseName = process.env.E2E_POSTGRES_DB || "gestao_financeira_e2e";
 const databaseUrl = `postgresql://postgres:postgres@127.0.0.1:${postgresPort}/${databaseName}?schema=public`;
 
@@ -150,9 +151,10 @@ async function startStack() {
   const e2eEnv = {
     ...process.env,
     ADMIN_EMAIL: adminEmail,
+    ADMIN_PASSWORD: adminPassword,
     E2E_ADMIN_EMAIL: adminEmail,
     DATABASE_URL: databaseUrl,
-    E2E_LOGIN_PASSWORD: process.env.E2E_LOGIN_PASSWORD || "secret123",
+    E2E_LOGIN_PASSWORD: adminPassword,
     E2E_WALLET_NAME: process.env.E2E_WALLET_NAME || "Familia Domingos",
     JWT_SECRET: process.env.JWT_SECRET || "e2e_access_secret",
     REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET || "e2e_refresh_secret",
