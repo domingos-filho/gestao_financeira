@@ -104,6 +104,7 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 
 Nessa composição, o `web` chama a API interna do Docker em `http://api:3001` via `API_PUBLIC_URL`.
 Se estiver rodando sem Docker, continue usando `NEXT_PUBLIC_API_URL=http://localhost:3001` no frontend.
+Se o Postgres já tiver sido inicializado, mudar `POSTGRES_PASSWORD` depois disso não altera a senha do volume existente; nesse caso, recrie o volume `pgdata` ou mantenha a senha original para o `DATABASE_URL`.
 
 ## Checklist de producao
 
@@ -153,6 +154,7 @@ Se estiver rodando sem Docker, continue usando `NEXT_PUBLIC_API_URL=http://local
 - O repositorio publica imagens Docker no GHCR via `.github/workflows/publish-images.yml`
 - Configure `API_PUBLIC_URL` no `web` e `DATABASE_URL` no `api`
 - Defina `ADMIN_PASSWORD` no `api` para criar ou atualizar a senha do admin com o e-mail atual
+- O `DATABASE_URL` precisa bater exatamente com as credenciais do serviço Postgres atual; recriar só a API não reseta senha nem volume do banco
 - O dominio da API deve responder em `/health`
 - Guia completo: `deploy/easypanel/README.md`
 

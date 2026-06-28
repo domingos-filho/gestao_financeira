@@ -73,6 +73,7 @@ Observacao:
 - O refresh token e emitido como cookie `HttpOnly`, entao o acesso ao backend precisa passar pelo proxy same-origin do frontend.
 - `API_PUBLIC_URL` e lida em runtime pelo frontend, entao voce nao precisa rebuildar a imagem para trocar o dominio da API.
 - Se mudar `ADMIN_PASSWORD`, basta redeployar a API para sincronizar a senha do admin com o e-mail atual.
+- Se o `DATABASE_URL` der `P1000`, confira se a senha do Postgres Service ainda e a mesma usada no banco atual; recriar somente a API nao troca senha nem reseta o volume do banco.
 
 ## 4. Primeira subida
 

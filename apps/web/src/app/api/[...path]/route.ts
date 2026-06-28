@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { resolveBackendApiUrl } from "@/lib/backend-api";
+import { appendSetCookieHeaders } from "@/lib/proxy-headers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,6 +44,8 @@ async function proxyRequest(request: NextRequest, context: RouteContext) {
   });
 
   const responseHeaders = new Headers(response.headers);
+  appendSetCookieHeaders(responseHeaders, response.headers);
+
   return new Response(response.body, {
     status: response.status,
     headers: responseHeaders
