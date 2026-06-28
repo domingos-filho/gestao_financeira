@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentType } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, RefreshCw, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -82,7 +83,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
   const pathname = usePathname();
   const { user, authFetch, logout } = useAuth();
   const [online, setOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
   const hideAdminItems = Boolean(walletId);
   const syncEngine = useSyncEngine(walletId);
@@ -223,7 +224,15 @@ export function AppShell({ children, walletId }: AppShellProps) {
             {nav.map((item) => {
               const Icon = item.icon;
               const iconElement = item.iconSrc ? (
-                <img src={item.iconSrc} alt="" aria-hidden="true" className="h-9 w-9" />
+                <Image
+                  src={item.iconSrc}
+                  alt=""
+                  aria-hidden="true"
+                  width={item.iconSrc === "/icons/dashboard.png" ? 920 : 500}
+                  height={item.iconSrc === "/icons/dashboard.png" ? 704 : 500}
+                  unoptimized
+                  className="h-9 w-9 object-contain"
+                />
               ) : Icon ? (
                 <Icon className="h-9 w-9" />
               ) : null;
@@ -351,7 +360,15 @@ export function AppShell({ children, walletId }: AppShellProps) {
               {nav.map((item) => {
                 const Icon = item.icon;
                 const iconElement = item.iconSrc ? (
-                  <img src={item.iconSrc} alt="" aria-hidden="true" className="h-10 w-10" />
+                  <Image
+                    src={item.iconSrc}
+                    alt=""
+                    aria-hidden="true"
+                    width={item.iconSrc === "/icons/dashboard.png" ? 920 : 500}
+                    height={item.iconSrc === "/icons/dashboard.png" ? 704 : 500}
+                    unoptimized
+                    className="h-10 w-10 object-contain"
+                  />
                 ) : Icon ? (
                   <Icon className="h-10 w-10" />
                 ) : null;

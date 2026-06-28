@@ -1,10 +1,10 @@
 import { BadRequestException } from "@nestjs/common";
 import { UserRole, WalletRole } from "@gf/shared";
-import * as bcrypt from "bcrypt";
+import * as bcrypt from "bcryptjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UsersService } from "../src/users/users.service";
 
-vi.mock("bcrypt", () => ({
+vi.mock("bcryptjs", () => ({
   hash: vi.fn().mockResolvedValue("hashed-password")
 }));
 

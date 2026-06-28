@@ -22,10 +22,5 @@ export function resolveApiUrl() {
     return runtimeValue;
   }
 
-  const buildValue = normalizeUrl(process.env.NEXT_PUBLIC_API_URL);
-  if (buildValue) {
-    return buildValue;
-  }
-
-  return "http://localhost:3001";
+  return "/api";
 }

@@ -18,7 +18,14 @@ FROM node:20-alpine AS runner
 RUN apk add --no-cache openssl
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app /app
+COPY package.json package-lock.json* ./
+COPY apps/api/package.json apps/api/package.json
+COPY packages/shared/package.json packages/shared/package.json
+RUN npm install --omit=dev
+COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
 WORKDIR /app/apps/api
+RUN npm run prisma:generate
 EXPOSE 3001
 CMD ["sh", "-c", "npm run prisma:migrate && node dist/main.js"]

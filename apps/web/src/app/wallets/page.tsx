@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "@/lib/auth";
 import { useWallets } from "@/lib/wallets";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -11,7 +12,7 @@ import { AppShell } from "@/components/app-shell";
 export default function HomePage() {
   const router = useRouter();
   const { authFetch, user } = useAuth();
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
   const walletsQuery = useWallets();
@@ -122,10 +123,13 @@ export default function HomePage() {
                     >
                       <CardContent className="flex items-center gap-4 p-5">
                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
-                          <img
+                          <Image
                             src="/icons/icone%20de%20carteiras.png"
                             alt=""
                             aria-hidden="true"
+                            width={500}
+                            height={500}
+                            unoptimized
                             className="h-8 w-8"
                           />
                         </div>

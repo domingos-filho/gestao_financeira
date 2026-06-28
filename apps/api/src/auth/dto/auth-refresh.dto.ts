@@ -1,8 +1,9 @@
-import { IsString } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 
 export class AuthRefreshDto {
+  @IsOptional()
   @IsString()
-  refreshToken!: string;
+  refreshToken?: string;
 
   @IsString()
   deviceId!: string;

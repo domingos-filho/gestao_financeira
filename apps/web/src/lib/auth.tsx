@@ -13,7 +13,6 @@ type AuthUser = { id: string; email: string; name: string; role: UserRole; defau
 type AuthState = {
   user: AuthUser | null;
   accessToken: string | null;
-  refreshToken: string | null;
   loading: boolean;
 };
 
@@ -23,6 +22,16 @@ type AuthContextValue = AuthState & {
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   authFetch: (path: string, options?: RequestInit) => Promise<Response>;
+};
+
+type StoredAuth = {
+  user: Partial<AuthUser> | null;
+  accessToken: string | null;
+};
+
+type AuthResponse = {
+  user: AuthUser;
+  accessToken: string;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -49,31 +58,31 @@ async function parseErrorPayload(response: Response) {
 
 function loadStoredAuth(): Omit<AuthState, "loading"> {
   if (typeof window === "undefined") {
-    return { user: null, accessToken: null, refreshToken: null };
+    return { user: null, accessToken: null };
   }
 
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (!raw) {
-    return { user: null, accessToken: null, refreshToken: null };
+    return { user: null, accessToken: null };
   }
 
   try {
-    const parsed = JSON.parse(raw) as { user: Partial<AuthUser>; accessToken: string; refreshToken: string };
+    const parsed = JSON.parse(raw) as StoredAuth & { refreshToken?: string | null };
+    if (!parsed.user || !parsed.accessToken) {
+      return { user: null, accessToken: null };
+    }
     return {
-      user: parsed.user
-        ? {
-            id: parsed.user.id ?? "",
-            email: parsed.user.email ?? "",
-            name: parsed.user.name ?? "",
-            role: parsed.user.role ?? UserRole.MEMBER,
-            defaultWalletId: parsed.user.defaultWalletId ?? null
-          }
-        : null,
-      accessToken: parsed.accessToken ?? null,
-      refreshToken: parsed.refreshToken ?? null
+      user: {
+        id: parsed.user.id ?? "",
+        email: parsed.user.email ?? "",
+        name: parsed.user.name ?? "",
+        role: parsed.user.role ?? UserRole.MEMBER,
+        defaultWalletId: parsed.user.defaultWalletId ?? null
+      },
+      accessToken: parsed.accessToken
     };
   } catch {
-    return { user: null, accessToken: null, refreshToken: null };
+    return { user: null, accessToken: null };
   }
 }
 
@@ -82,7 +91,7 @@ function persistAuth(state: Omit<AuthState, "loading">) {
     return;
   }
 
-  if (!state.accessToken || !state.refreshToken || !state.user) {
+  if (!state.accessToken || !state.user) {
     window.localStorage.removeItem(STORAGE_KEY);
     return;
   }
@@ -91,8 +100,7 @@ function persistAuth(state: Omit<AuthState, "loading">) {
     STORAGE_KEY,
     JSON.stringify({
       user: state.user,
-      accessToken: state.accessToken,
-      refreshToken: state.refreshToken
+      accessToken: state.accessToken
     })
   );
 }
@@ -101,23 +109,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
     accessToken: null,
-    refreshToken: null,
     loading: true
   });
 
   const accessRef = useRef<string | null>(null);
-  const refreshRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const stored = loadStoredAuth();
-    setState({ ...stored, loading: false });
-    accessRef.current = stored.accessToken;
-    refreshRef.current = stored.refreshToken;
-  }, []);
 
   const updateState = useCallback((next: Omit<AuthState, "loading">) => {
     accessRef.current = next.accessToken;
-    refreshRef.current = next.refreshToken;
     setState((prev) => ({ ...prev, ...next, loading: false }));
     persistAuth(next);
     if (!next.user) {
@@ -125,11 +123,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const refresh = useCallback(async () => {
+    try {
+      const deviceId = getDeviceId();
+      const apiUrl = resolveApiUrl();
+      const res = await fetch(`${apiUrl}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deviceId })
+      });
+
+      if (!res.ok) {
+        updateState({ user: null, accessToken: null });
+        return;
+      }
+
+      const data = (await res.json()) as AuthResponse;
+      updateState({ user: data.user, accessToken: data.accessToken });
+    } catch {
+      updateState({ user: null, accessToken: null });
+    }
+  }, [updateState]);
+
+  useEffect(() => {
+    const stored = loadStoredAuth();
+    const hasStoredSession = Boolean(stored.user && stored.accessToken);
+
+    setState({
+      user: hasStoredSession ? stored.user : null,
+      accessToken: hasStoredSession ? stored.accessToken : null,
+      loading: !hasStoredSession
+    });
+    accessRef.current = hasStoredSession ? stored.accessToken : null;
+
+    if (!hasStoredSession) {
+      void refresh();
+    }
+  }, [refresh]);
+
   const login = useCallback(async (email: string, password: string) => {
     const deviceId = getDeviceId();
     const apiUrl = resolveApiUrl();
     const res = await fetch(`${apiUrl}/auth/login`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, deviceId })
     });
@@ -145,8 +183,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(typeof payload?.message === "string" ? payload.message : "Login failed");
     }
 
-    const data = (await res.json()) as { user: AuthUser; accessToken: string; refreshToken: string };
-    updateState({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
+    const data = (await res.json()) as AuthResponse;
+    updateState({ user: data.user, accessToken: data.accessToken });
     return data.user;
   }, [updateState]);
 
@@ -155,6 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const apiUrl = resolveApiUrl();
     const res = await fetch(`${apiUrl}/auth/register`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, deviceId })
     });
@@ -170,33 +209,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(typeof payload?.message === "string" ? payload.message : "Register failed");
     }
 
-    const data = (await res.json()) as { user: AuthUser; accessToken: string; refreshToken: string };
-    updateState({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
+    const data = (await res.json()) as AuthResponse;
+    updateState({ user: data.user, accessToken: data.accessToken });
     return data.user;
-  }, [updateState]);
-
-  const refresh = useCallback(async () => {
-    const refreshToken = refreshRef.current;
-    if (!refreshToken) {
-      updateState({ user: null, accessToken: null, refreshToken: null });
-      return;
-    }
-
-    const deviceId = getDeviceId();
-    const apiUrl = resolveApiUrl();
-    const res = await fetch(`${apiUrl}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken, deviceId })
-    });
-
-    if (!res.ok) {
-      updateState({ user: null, accessToken: null, refreshToken: null });
-      return;
-    }
-
-    const data = (await res.json()) as { user: AuthUser; accessToken: string; refreshToken: string };
-    updateState({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
   }, [updateState]);
 
   const logout = useCallback(async () => {
@@ -207,6 +222,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (accessToken) {
       await fetch(`${apiUrl}/auth/logout`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`
@@ -215,7 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
-    updateState({ user: null, accessToken: null, refreshToken: null });
+    updateState({ user: null, accessToken: null });
   }, [updateState]);
 
   const authFetch = useCallback(
@@ -235,19 +251,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const response = await fetch(`${apiUrl}${path}`, {
         ...options,
+        credentials: "include",
         headers
       });
 
-      if (response.status !== 401 || !refreshRef.current || !navigator.onLine) {
+      if (response.status !== 401 || !navigator.onLine) {
         return response;
       }
 
       await refresh();
-      const retryHeaders = new Headers(options.headers ?? {});
       const nextAccess = accessRef.current;
-      if (nextAccess) {
-        retryHeaders.set("Authorization", `Bearer ${nextAccess}`);
+      if (!nextAccess) {
+        return response;
       }
+
+      const retryHeaders = new Headers(options.headers ?? {});
+      retryHeaders.set("Authorization", `Bearer ${nextAccess}`);
       if (!retryHeaders.has("Content-Type") && options.body) {
         const isRetryFormData =
           typeof FormData !== "undefined" && options.body instanceof FormData;
@@ -259,6 +278,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return fetch(`${apiUrl}${path}`, {
         ...options,
+        credentials: "include",
         headers: retryHeaders
       });
     },

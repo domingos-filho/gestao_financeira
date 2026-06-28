@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ export default function WalletManagementPage() {
   const [wallets, setWallets] = useState<Array<{ id: string; name: string }>>([]);
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "fadomingosf@gmail.com";
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "fadomingosf@gmail.com";
   const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function WalletManagementPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const loadWallets = async () => {
+  const loadWallets = useCallback(async () => {
     setDataLoading(true);
     setError(null);
     const res = await authFetch("/wallets/admin");
@@ -43,12 +43,12 @@ export default function WalletManagementPage() {
     const data = (await res.json()) as Array<{ id: string; name: string }>;
     setWallets(data);
     setDataLoading(false);
-  };
+  }, [authFetch]);
 
   useEffect(() => {
     if (!isAdmin) return;
     loadWallets();
-  }, [isAdmin, authFetch]);
+  }, [isAdmin, loadWallets]);
 
   const handleCreate = async () => {
     setMessage(null);
