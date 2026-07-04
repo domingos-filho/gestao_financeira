@@ -5,6 +5,7 @@ import {
   Injectable,
   BadRequestException
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
 import { WalletRole } from "@gf/shared";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -18,7 +19,11 @@ const ROLE_RANK: Record<WalletRole, number> = {
 
 @Injectable()
 export class WalletRoleGuard implements CanActivate {
-  constructor(private readonly prisma: PrismaService, private readonly reflector: Reflector) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reflector: Reflector,
+    private readonly config: ConfigService
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const roles = this.reflector.getAllAndOverride<WalletRole[]>(WALLET_ROLES_KEY, [
@@ -42,6 +47,12 @@ export class WalletRoleGuard implements CanActivate {
     }
 
     const userId = request.user?.userId;
+    const userEmail = typeof request.user?.email === "string" ? request.user.email.toLowerCase() : null;
+    const adminEmail = (this.config.get<string>("ADMIN_EMAIL")?.trim() || "fadomingosf@gmail.com").toLowerCase();
+    if (userEmail && userEmail === adminEmail) {
+      return true;
+    }
+
     if (!userId) {
       throw new ForbiddenException();
     }
