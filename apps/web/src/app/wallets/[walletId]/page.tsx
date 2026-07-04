@@ -201,11 +201,11 @@ export default function WalletDashboard({ params }: { params: { walletId: string
   }, [walletId, walletsQuery.data]);
 
   return (
-    <div className="grid gap-6 animate-rise">
+    <div className="grid gap-4 sm:gap-6 animate-rise">
       <div className="space-y-4">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold">Dashboard</h1>
+            <h1 className="text-xl font-semibold sm:text-2xl">Dashboard</h1>
             {walletName && (
               <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
                 Carteira: {walletName}
@@ -226,9 +226,9 @@ export default function WalletDashboard({ params }: { params: { walletId: string
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5 sm:gap-4">
         <Card>
-          <CardHeader className="space-y-2">
+          <CardHeader className="space-y-2 p-4 sm:p-5">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Receitas</span>
               <TrendingUp className="h-4 w-4 text-[var(--color-success)]" />
@@ -248,7 +248,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
           </CardHeader>
         </Card>
         <Card>
-          <CardHeader className="space-y-2">
+          <CardHeader className="space-y-2 p-4 sm:p-5">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Despesas</span>
               <TrendingDown className="h-4 w-4 text-[var(--color-danger)]" />
@@ -268,7 +268,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
           </CardHeader>
         </Card>
         <Card>
-          <CardHeader className="space-y-2">
+          <CardHeader className="space-y-2 p-4 sm:p-5">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Saldo</span>
               <Wallet className="h-4 w-4 text-primary" />
@@ -278,7 +278,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
           </CardHeader>
         </Card>
         <Card>
-          <CardHeader className="space-y-2">
+          <CardHeader className="space-y-2 p-4 sm:p-5">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Orcamento</span>
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
@@ -293,7 +293,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
           </CardHeader>
         </Card>
         <Card>
-          <CardHeader className="space-y-2">
+          <CardHeader className="space-y-2 p-4 sm:p-5">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Proximo mes</span>
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
@@ -310,8 +310,8 @@ export default function WalletDashboard({ params }: { params: { walletId: string
                 style={{ width: `${nextMonthBudget.committedPct ?? 0}%` }}
               />
             </div>
-          </CardHeader>
-          <CardContent className="space-y-2 pt-0">
+            </CardHeader>
+          <CardContent className="space-y-2 p-4 pt-0 sm:p-5 sm:pt-0">
             {nextMonthBudget.topRecurring.length === 0 ? (
               <p className="text-xs text-muted-foreground">Sem gastos recorrentes ativos.</p>
             ) : (
@@ -331,29 +331,29 @@ export default function WalletDashboard({ params }: { params: { walletId: string
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3 sm:gap-6">
         <Card className="lg:col-span-1">
-          <CardHeader>
+          <CardHeader className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <CardTitle>Nova Transacao</CardTitle>
               <Plus className="h-4 w-4 text-muted-foreground" />
             </div>
             <CardDescription>Registro rapido para o dia a dia</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
             <QuickTransactionForm walletId={walletId} />
           </CardContent>
         </Card>
 
         <Card className="lg:col-span-2">
-          <CardHeader>
+          <CardHeader className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <CardTitle>Transacoes Recentes</CardTitle>
               <List className="h-4 w-4 text-muted-foreground" />
             </div>
             <CardDescription>Ultimos registros do periodo</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
             {periodSummary.recent.length === 0 && <p className="text-sm text-muted-foreground">Sem transacoes.</p>}
             {periodSummary.recent.map((tx) => {
               const Icon =
@@ -378,7 +378,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
               return (
                 <div
                   key={tx.id}
-                  className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3"
+                  className="flex flex-col gap-3 rounded-lg border border-border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-center gap-3">
                     <span className={`flex h-10 w-10 items-center justify-center rounded-full ${badge}`}>
@@ -411,7 +411,7 @@ export default function WalletDashboard({ params }: { params: { walletId: string
             })}
 
             <div>
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" className="w-full sm:w-auto">
                 <Link href={`/wallets/${walletId}/transactions`}>Ver todas as transacoes</Link>
               </Button>
             </div>

@@ -257,35 +257,39 @@ export default function DebtsPage({ params }: { params: { walletId: string } }) 
   const selectedAccountName = safeAccounts.find((account) => account.id === accountId)?.name ?? "";
 
   return (
-    <div className="grid gap-6 animate-rise">
+    <div className="grid gap-4 sm:gap-6 animate-rise">
       <div>
-        <h1 className="text-2xl font-semibold">Dividas</h1>
+        <h1 className="text-xl font-semibold sm:text-2xl">Dividas</h1>
         <p className="text-sm text-muted-foreground">Acompanhe suas dividas e compromissos</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2 sm:gap-4">
         <Card>
-          <CardHeader>
+          <CardHeader className="p-4 sm:p-5">
             <CardTitle>Total em aberto</CardTitle>
             <CardDescription>Soma das dividas ativas</CardDescription>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">{formatBRL(totals.totalDebt)}</CardContent>
+          <CardContent className="p-4 pt-0 text-xl font-semibold sm:p-5 sm:pt-0 sm:text-2xl">
+            {formatBRL(totals.totalDebt)}
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="p-4 sm:p-5">
             <CardTitle>Compromisso mensal</CardTitle>
             <CardDescription>Pagamentos mensais previstos</CardDescription>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">{formatBRL(totals.totalMonthly)}</CardContent>
+          <CardContent className="p-4 pt-0 text-xl font-semibold sm:p-5 sm:pt-0 sm:text-2xl">
+            {formatBRL(totals.totalMonthly)}
+          </CardContent>
         </Card>
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-5">
           <CardTitle>Adicionar Divida</CardTitle>
           <CardDescription>Registre financiamentos, cartoes ou emprestimos</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
+        <CardContent className="grid gap-4 p-4 pt-0 sm:p-5 sm:pt-0 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Nome</Label>
             <Input value={name} onChange={(event) => setName(event.target.value)} />
@@ -363,8 +367,8 @@ export default function DebtsPage({ params }: { params: { walletId: string } }) 
             </div>
           ) : null}
 
-          <div className="md:col-span-2 flex flex-wrap items-center gap-3">
-            <Button variant="create" onClick={handleCreate}>
+          <div className="md:col-span-2 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <Button variant="create" onClick={handleCreate} className="w-full sm:w-auto">
               Salvar
             </Button>
             {message && <p className="text-sm text-muted-foreground">{message}</p>}
@@ -373,11 +377,11 @@ export default function DebtsPage({ params }: { params: { walletId: string } }) 
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-5">
           <CardTitle>Suas Dividas</CardTitle>
           <CardDescription>Atualize o status conforme os pagamentos</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
           {(debts ?? []).length === 0 && <p className="text-sm text-muted-foreground">Nenhuma divida cadastrada.</p>}
           {(debts ?? []).map((debt) => (
             <div

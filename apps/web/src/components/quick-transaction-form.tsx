@@ -144,12 +144,12 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <span className="text-sm font-medium text-foreground">Tipo</span>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${
+            className={`flex w-full items-center justify-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold sm:w-auto sm:py-1 ${
               type === TransactionType.INCOME
                 ? "border-[rgba(17,204,149,0.35)] bg-[var(--color-success-soft)] text-[var(--color-success)]"
                 : "border-border text-muted-foreground"
@@ -164,7 +164,7 @@ export function QuickTransactionForm({ walletId }: QuickTransactionFormProps) {
           </button>
           <button
             type="button"
-            className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${
+            className={`flex w-full items-center justify-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold sm:w-auto sm:py-1 ${
               type === TransactionType.EXPENSE
                 ? "border-[rgba(233,104,120,0.35)] bg-[var(--color-danger-soft)] text-[var(--color-danger)]"
                 : "border-border text-muted-foreground"

@@ -4,100 +4,61 @@ import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { TransactionType } from "@gf/shared";
 import { db, safeDexie } from "@/lib/db";
-import { BarPairChart, Gauge, LineChart, MultiLineChart, PieChart } from "@/components/report-charts";
+import {
+  buildReportBuckets,
+  calculatePercentChange,
+  filterTransactionsByRange,
+  getPreviousRange,
+  getRangeFromBuckets,
+  summarizeTransactions,
+  type ReportPeriod
+} from "@/lib/report-metrics";
+import {
+  BarPairChart,
+  Gauge,
+  LineChart,
+  MultiLineChart,
+  TreemapChart,
+  WaterfallChart
+} from "@/components/report-charts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-type Period = "day" | "week" | "month" | "year";
-
-type Bucket = {
-  label: string;
-  start: Date;
-  end: Date;
-};
 
 function formatBRL(amountCents: number) {
   return (amountCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+function sumBalanceBefore(
+  transactions: Array<{ type: TransactionType; amountCents: number; occurredAt: string }>,
+  start: Date
+) {
+  let balance = 0;
+  for (const transaction of transactions) {
+    const occurred = new Date(transaction.occurredAt);
+    if (occurred >= start) {
+      continue;
+    }
+    if (transaction.type === TransactionType.INCOME) {
+      balance += transaction.amountCents;
+    }
+    if (transaction.type === TransactionType.EXPENSE) {
+      balance -= transaction.amountCents;
+    }
+  }
+  return balance;
 }
 
-function addDays(date: Date, days: number) {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
-}
-
-function startOfWeek(date: Date) {
-  const day = date.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  return addDays(startOfDay(date), diff);
-}
-
-function buildBuckets(period: Period): Bucket[] {
+function formatProjectionLabels(length: number) {
   const now = new Date();
-  if (period === "day") {
-    const start = startOfDay(now);
-    return Array.from({ length: 14 }).map((_, index) => {
-      const date = addDays(start, index - 13);
-      return {
-        label: date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-        start: date,
-        end: addDays(date, 1)
-      };
-    });
-  }
-
-  if (period === "week") {
-    const start = startOfWeek(now);
-    return Array.from({ length: 12 }).map((_, index) => {
-      const date = addDays(start, (index - 11) * 7);
-      return {
-        label: date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-        start: date,
-        end: addDays(date, 7)
-      };
-    });
-  }
-
-  if (period === "year") {
-    return Array.from({ length: 5 }).map((_, index) => {
-      const year = now.getFullYear() - (4 - index);
-      const start = new Date(year, 0, 1);
-      const end = new Date(year + 1, 0, 1);
-      return { label: String(year), start, end };
-    });
-  }
-
-  return Array.from({ length: 12 }).map((_, index) => {
-    const month = new Date(now.getFullYear(), now.getMonth() - (11 - index), 1);
-    const end = new Date(month.getFullYear(), month.getMonth() + 1, 1);
-    return {
-      label: month.toLocaleDateString("pt-BR", { month: "short" }).toUpperCase(),
-      start: month,
-      end
-    };
-  });
-}
-
-function buildMonthBuckets(count: number) {
-  const now = new Date();
-  return Array.from({ length: count }).map((_, index) => {
-    const month = new Date(now.getFullYear(), now.getMonth() - (count - 1 - index), 1);
-    const end = new Date(month.getFullYear(), month.getMonth() + 1, 1);
-    return {
-      label: month.toLocaleDateString("pt-BR", { month: "short" }).toUpperCase(),
-      start: month,
-      end
-    };
+  return Array.from({ length }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() + index, 1);
+    return date.toLocaleDateString("pt-BR", { month: "short" }).toUpperCase();
   });
 }
 
 export default function ReportsPage({ params }: { params: { walletId: string } }) {
   const { walletId } = params;
-  const [period, setPeriod] = useState<Period>("month");
+  const [period, setPeriod] = useState<ReportPeriod>("month");
 
   const transactions = useLiveQuery(
     () =>
@@ -121,41 +82,28 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
     [walletId]
   );
 
-  const buckets = useMemo(() => buildBuckets(period), [period]);
+  const buckets = useMemo(() => buildReportBuckets(period), [period]);
+  const currentRange = useMemo(() => getRangeFromBuckets(buckets), [buckets]);
+  const previousRange = useMemo(() => getPreviousRange(currentRange), [currentRange]);
+  const currentTransactions = useMemo(
+    () => filterTransactionsByRange(transactions ?? [], currentRange),
+    [transactions, currentRange]
+  );
+  const previousTransactions = useMemo(
+    () => filterTransactionsByRange(transactions ?? [], previousRange),
+    [transactions, previousRange]
+  );
+  const currentTotals = useMemo(() => summarizeTransactions(currentTransactions), [currentTransactions]);
+  const previousTotals = useMemo(() => summarizeTransactions(previousTransactions), [previousTransactions]);
 
   const cashFlow = useMemo(() => {
-    const list = transactions ?? [];
-    const series = buckets.map((bucket) => {
-      let income = 0;
-      let expense = 0;
-      for (const tx of list) {
-        const occurred = new Date(tx.occurredAt);
-        if (occurred >= bucket.start && occurred < bucket.end) {
-          if (tx.type === TransactionType.INCOME) income += tx.amountCents;
-          if (tx.type === TransactionType.EXPENSE) expense += tx.amountCents;
-        }
-      }
-      return { income, expense, net: income - expense };
-    });
-
-    const totalIncome = series.reduce((sum, item) => sum + item.income, 0);
-    const totalExpense = series.reduce((sum, item) => sum + item.expense, 0);
-    const rangeStart = buckets[0]?.start;
-    let initialBalance = 0;
-
-    if (rangeStart) {
-      for (const tx of list) {
-        const occurred = new Date(tx.occurredAt);
-        if (occurred < rangeStart) {
-          if (tx.type === TransactionType.INCOME) initialBalance += tx.amountCents;
-          if (tx.type === TransactionType.EXPENSE) initialBalance -= tx.amountCents;
-        }
-      }
-    }
-
-    const finalBalance = initialBalance + totalIncome - totalExpense;
-    const variation =
-      initialBalance !== 0 ? ((finalBalance - initialBalance) / Math.abs(initialBalance)) * 100 : null;
+    const series = buckets.map((bucket) => summarizeTransactions(transactions ?? [], bucket));
+    const totalIncome = currentTotals.income;
+    const totalExpense = currentTotals.expense;
+    const previousNet = previousTotals.net;
+    const variation = calculatePercentChange(currentTotals.net, previousNet);
+    const initialBalance = sumBalanceBefore(transactions ?? [], currentRange.start);
+    const finalBalance = initialBalance + currentTotals.net;
 
     return {
       series,
@@ -165,7 +113,7 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
       finalBalance,
       variation
     };
-  }, [transactions, buckets]);
+  }, [buckets, currentRange.start, currentTotals, previousTotals, transactions]);
 
   const categoryMap = useMemo(
     () => new Map((categories ?? []).map((category) => [category.id, category.name])),
@@ -173,15 +121,9 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
   );
 
   const categoryInsights = useMemo(() => {
-    const list = transactions ?? [];
-    const range = buildMonthBuckets(6);
-    const rangeStart = range[0]?.start ?? new Date(0);
-    const rangeEnd = range[range.length - 1]?.end ?? new Date();
-
+    const list = currentTransactions;
     const sums = new Map<string, { income: number; expense: number }>();
     for (const tx of list) {
-      const occurred = new Date(tx.occurredAt);
-      if (occurred < rangeStart || occurred >= rangeEnd) continue;
       const key = tx.categoryId ?? "uncategorized";
       const current = sums.get(key) ?? { income: 0, expense: 0 };
       if (tx.type === TransactionType.INCOME) current.income += tx.amountCents;
@@ -202,7 +144,7 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
       .slice(0, 5);
 
     const buildTrend = (key: string, type: TransactionType) =>
-      range.map((bucket) => {
+      buckets.map((bucket) => {
         let total = 0;
         for (const tx of list) {
           const occurred = new Date(tx.occurredAt);
@@ -226,25 +168,15 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
         "text-[var(--color-success)]"
     }));
 
-    return { range, expenseRows, incomeRows, topExpenseSeries };
-  }, [transactions]);
+    return { expenseRows, incomeRows, topExpenseSeries };
+  }, [buckets, currentTransactions]);
 
   const debtInsights = useMemo(() => {
     const list = debts ?? [];
     const active = list.filter((debt) => debt.status === "ACTIVE");
     const totalDebt = active.reduce((sum, debt) => sum + debt.principalCents, 0);
-
-    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const monthEnd = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-    let monthIncome = 0;
-    for (const tx of transactions ?? []) {
-      const occurred = new Date(tx.occurredAt);
-      if (occurred >= monthStart && occurred < monthEnd && tx.type === TransactionType.INCOME) {
-        monthIncome += tx.amountCents;
-      }
-    }
-
-    const ratio = monthIncome > 0 ? totalDebt / monthIncome : null;
+    const periodIncome = currentTotals.income;
+    const ratio = periodIncome > 0 ? totalDebt / periodIncome : null;
 
     const amortizations = active.map((debt) => {
       const principal = debt.principalCents / 100;
@@ -290,35 +222,24 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
 
     return {
       totalDebt,
-      monthIncome,
+      periodIncome,
       ratio,
       totalInterest: Math.round(totalInterest * 100),
       series,
+      labels: formatProjectionLabels(series.length),
       amortizations
     };
-  }, [debts, transactions]);
+  }, [currentTotals.income, debts]);
 
   const profitInsights = useMemo(() => {
-    const list = transactions ?? [];
-    const range = buildMonthBuckets(6);
-    const series = range.map((bucket) => {
-      let income = 0;
-      let expense = 0;
-      for (const tx of list) {
-        const occurred = new Date(tx.occurredAt);
-        if (occurred >= bucket.start && occurred < bucket.end) {
-          if (tx.type === TransactionType.INCOME) income += tx.amountCents;
-          if (tx.type === TransactionType.EXPENSE) expense += tx.amountCents;
-        }
-      }
-      return { income, expense, net: income - expense };
-    });
-    const current = series[series.length - 1] ?? { income: 0, expense: 0, net: 0 };
+    const series = buckets.map((bucket) => summarizeTransactions(currentTransactions, bucket));
+    const current = currentTotals;
     const averageNet =
       series.length > 0 ? series.reduce((sum, item) => sum + item.net, 0) / series.length : 0;
     const margin = current.income > 0 ? (current.net / current.income) * 100 : 0;
-    return { range, series, current, averageNet, margin };
-  }, [transactions]);
+    const comparison = calculatePercentChange(current.net, previousTotals.net);
+    return { series, current, averageNet, margin, comparison };
+  }, [buckets, currentTotals, currentTransactions, previousTotals.net]);
 
   const healthScore = useMemo(() => {
     const income = profitInsights.current.income;
@@ -326,13 +247,13 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
     const savingsRate = income > 0 ? net / income : 0;
     const savingsScore = Math.min(1, Math.max(0, savingsRate / 0.3)) * 40;
     const debtScore =
-      debtInsights.monthIncome > 0 && debtInsights.ratio !== null
+      debtInsights.periodIncome > 0 && debtInsights.ratio !== null
         ? Math.max(0, 1 - debtInsights.ratio) * 30
         : 15;
     const liquidityScore = net >= 0 ? 30 : 10;
     const total = Math.round(savingsScore + debtScore + liquidityScore);
     return Math.max(0, Math.min(100, total));
-  }, [profitInsights, debtInsights]);
+  }, [debtInsights.periodIncome, debtInsights.ratio, profitInsights]);
 
   const categoryPalette = [
     "text-[var(--color-success)]",
@@ -341,7 +262,7 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
     "text-[var(--color-warning)]",
     "text-[var(--color-danger)]"
   ];
-  const categoryPie = categoryInsights.expenseRows.map((entry, index) => ({
+  const categoryTreemap = categoryInsights.expenseRows.map((entry, index) => ({
     label: entry.key,
     value: entry.total,
     className: categoryPalette[index] ?? "text-[var(--color-success)]"
@@ -353,14 +274,14 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
   };
 
   return (
-    <div className="grid gap-6 animate-rise">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="grid gap-4 sm:gap-6 animate-rise">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Relatorios Financeiros</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">Relatorios Financeiros</h1>
           <p className="text-sm text-muted-foreground">Analise detalhada das suas financas</p>
         </div>
-        <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
-          <SelectTrigger className="w-48">
+        <Select value={period} onValueChange={(value) => setPeriod(value as ReportPeriod)}>
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Periodo" />
           </SelectTrigger>
           <SelectContent>
@@ -373,40 +294,64 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-5">
           <CardTitle>Fluxo de Caixa</CardTitle>
-          <CardDescription>Entradas e saidas por periodo</CardDescription>
+          <CardDescription>Entradas, saidas e saldo liquido do periodo selecionado</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 lg:grid-cols-3">
-          <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">Saldo inicial</div>
-            <div className="text-xl font-semibold">{formatBRL(cashFlow.initialBalance)}</div>
-            <div className="text-sm text-muted-foreground">Saldo final</div>
-            <div className="text-xl font-semibold">{formatBRL(cashFlow.finalBalance)}</div>
-            <div className="text-sm text-muted-foreground">Variacao</div>
-            <div className="text-sm font-semibold">
+        <CardContent className="grid gap-4 p-4 pt-0 sm:p-5 sm:pt-0 lg:grid-cols-3 lg:gap-6">
+          <div className="grid grid-cols-2 gap-3 text-sm lg:grid-cols-1">
+            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+              <div className="text-muted-foreground">Receitas</div>
+              <div className="mt-1 text-lg font-semibold text-[var(--color-success)] sm:text-xl">
+                {formatBRL(cashFlow.totalIncome)}
+              </div>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+              <div className="text-muted-foreground">Despesas</div>
+              <div className="mt-1 text-lg font-semibold text-[var(--color-danger)] sm:text-xl">
+                {formatBRL(cashFlow.totalExpense)}
+              </div>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+              <div className="text-muted-foreground">Saldo liquido</div>
+              <div className="mt-1 text-lg font-semibold sm:text-xl">{formatBRL(currentTotals.net)}</div>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+              <div className="text-muted-foreground">Variacao vs periodo anterior</div>
+              <div className="mt-1 text-lg font-semibold">
               {cashFlow.variation === null ? "Sem comparacao" : `${cashFlow.variation.toFixed(1)}%`}
+              </div>
             </div>
           </div>
-          <div className="space-y-3 lg:col-span-2">
-            <BarPairChart
-              income={cashFlow.series.map((item) => item.income)}
-              expense={cashFlow.series.map((item) => item.expense)}
+          <div className="space-y-4 lg:col-span-2">
+            <WaterfallChart
+              steps={[
+                { label: "Saldo inicial", value: cashFlow.initialBalance, kind: "base" },
+                { label: "Receitas", value: cashFlow.totalIncome, kind: "delta" },
+                { label: "Despesas", value: -cashFlow.totalExpense, kind: "delta" },
+                { label: "Saldo final", value: cashFlow.finalBalance, kind: "total" }
+              ]}
+              formatValue={formatBRL}
             />
-            <div className="text-xs text-muted-foreground">Linha de tendencia (saldo liquido)</div>
-            <LineChart values={cashFlow.series.map((item) => item.net)} className="text-[var(--color-success)]" />
+            <div className="text-xs text-muted-foreground">Linha de tendencia do saldo liquido</div>
+            <LineChart
+              values={cashFlow.series.map((item) => item.net)}
+              labels={buckets.map((bucket) => bucket.label)}
+              className="text-[var(--color-success)]"
+              formatValue={formatBRL}
+            />
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-5">
           <CardTitle>Analise de Categorias</CardTitle>
-          <CardDescription>Top categorias e participacao no total</CardDescription>
+          <CardDescription>Top categorias e participacao no periodo</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 lg:grid-cols-3">
-          <div className="flex items-center justify-center">
-            <PieChart slices={categoryPie} />
+        <CardContent className="grid gap-4 p-4 pt-0 sm:p-5 sm:pt-0 lg:grid-cols-3 lg:gap-6">
+          <div className="flex items-center justify-center lg:justify-start">
+            <TreemapChart items={categoryTreemap} formatValue={formatBRL} />
           </div>
           <div className="space-y-4 lg:col-span-2">
             <div>
@@ -439,70 +384,111 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
             </div>
             <div>
               <h3 className="text-sm font-semibold">Evolucao por categoria</h3>
-              <MultiLineChart series={categoryInsights.topExpenseSeries} />
+              <MultiLineChart
+                series={categoryInsights.topExpenseSeries}
+                labels={buckets.map((bucket) => bucket.label)}
+                formatValue={formatBRL}
+              />
             </div>
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-5">
           <CardTitle>Analise de Dividas</CardTitle>
-          <CardDescription>Evolucao e relacao com renda</CardDescription>
+          <CardDescription>Evolucao e relacao com a renda do periodo</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 lg:grid-cols-3">
-          <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">Total de dividas</div>
-            <div className="text-xl font-semibold">{formatBRL(debtInsights.totalDebt)}</div>
-            <div className="text-sm text-muted-foreground">Juros estimados</div>
-            <div className="text-xl font-semibold">{formatBRL(debtInsights.totalInterest)}</div>
-            <div className="text-sm text-muted-foreground">Divida / renda</div>
-            <div className="text-sm font-semibold">
+        <CardContent className="grid gap-4 p-4 pt-0 sm:p-5 sm:pt-0 lg:grid-cols-3 lg:gap-6">
+          <div className="grid grid-cols-2 gap-3 text-sm lg:grid-cols-1">
+            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+              <div className="text-muted-foreground">Total de dividas</div>
+              <div className="mt-1 text-lg font-semibold sm:text-xl">{formatBRL(debtInsights.totalDebt)}</div>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+              <div className="text-muted-foreground">Juros estimados</div>
+              <div className="mt-1 text-lg font-semibold sm:text-xl">{formatBRL(debtInsights.totalInterest)}</div>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+              <div className="text-muted-foreground">Divida / renda</div>
+              <div className="mt-1 text-lg font-semibold">
               {debtInsights.ratio === null ? "Sem renda" : `${(debtInsights.ratio * 100).toFixed(1)}%`}
+              </div>
             </div>
           </div>
           <div className="space-y-3 lg:col-span-2">
-            <LineChart values={debtInsights.series} className="text-[var(--color-warning)]" />
+            <LineChart
+              values={debtInsights.series}
+              labels={debtInsights.labels}
+              className="text-[var(--color-warning)]"
+              formatValue={formatBRL}
+            />
             <p className="text-xs text-muted-foreground">Projecao de quitacao (12 meses)</p>
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Resultado Mensal</CardTitle>
-          <CardDescription>Comparativo com a media recente</CardDescription>
+        <CardHeader className="p-4 sm:p-5">
+          <CardTitle>Resultado do Periodo</CardTitle>
+          <CardDescription>Comparativo com o periodo anterior equivalente</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 lg:grid-cols-3">
-          <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">Lucro liquido</div>
-            <div className="text-xl font-semibold">{formatBRL(profitInsights.current.net)}</div>
-            <div className="text-sm text-muted-foreground">Margem de lucro</div>
-            <div className="text-xl font-semibold">{profitInsights.margin.toFixed(1)}%</div>
-            <div className="text-sm text-muted-foreground">Media 6 meses</div>
-            <div className="text-xl font-semibold">{formatBRL(Math.round(profitInsights.averageNet))}</div>
+        <CardContent className="grid gap-4 p-4 pt-0 sm:p-5 sm:pt-0 lg:grid-cols-3 lg:gap-6">
+          <div className="grid grid-cols-2 gap-3 text-sm lg:grid-cols-1">
+            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+              <div className="text-muted-foreground">Lucro liquido</div>
+              <div className="mt-1 text-lg font-semibold sm:text-xl">{formatBRL(profitInsights.current.net)}</div>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+              <div className="text-muted-foreground">Margem de lucro</div>
+              <div className="mt-1 text-lg font-semibold sm:text-xl">{profitInsights.margin.toFixed(1)}%</div>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+              <div className="text-muted-foreground">Media no periodo</div>
+              <div className="mt-1 text-lg font-semibold sm:text-xl">{formatBRL(Math.round(profitInsights.averageNet))}</div>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+              <div className="text-muted-foreground">Variacao vs periodo anterior</div>
+              <div className="mt-1 text-lg font-semibold">
+              {profitInsights.comparison === null ? "Sem comparacao" : `${profitInsights.comparison.toFixed(1)}%`}
+              </div>
+            </div>
           </div>
           <div className="lg:col-span-2">
             <BarPairChart
               income={profitInsights.series.map((item) => item.income)}
               expense={profitInsights.series.map((item) => item.expense)}
+              labels={buckets.map((bucket) => bucket.label)}
+              formatValue={formatBRL}
             />
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-5">
           <CardTitle>Saude Financeira</CardTitle>
           <CardDescription>Indice consolidado de equilibrio</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4 md:flex-row md:justify-between">
+        <CardContent className="flex flex-col items-start gap-4 p-4 pt-0 sm:p-5 sm:pt-0 md:flex-row md:items-center md:justify-between">
           <Gauge value={healthScore} />
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p>Indice de poupanca: {profitInsights.current.income > 0 ? ((profitInsights.current.net / profitInsights.current.income) * 100).toFixed(1) : "0"}%</p>
-            <p>Indice de endividamento: {debtInsights.ratio === null ? "0%" : `${(debtInsights.ratio * 100).toFixed(1)}%`}</p>
+            <p>
+              Indice de poupanca:{" "}
+              {profitInsights.current.income > 0
+                ? ((profitInsights.current.net / profitInsights.current.income) * 100).toFixed(1)
+                : "0"}
+              %
+            </p>
+            <p>
+              Indice de endividamento:{" "}
+              {debtInsights.ratio === null ? "0%" : `${(debtInsights.ratio * 100).toFixed(1)}%`}
+            </p>
             <p>Nivel de liquidez: {profitInsights.current.net >= 0 ? "Positivo" : "Negativo"}</p>
-            <p>Cumprimento de metas: {healthScore >= 70 ? "Acima do esperado" : healthScore >= 40 ? "Estavel" : "Baixo"}</p>
+            <p>
+              Cumprimento de metas:{" "}
+              {healthScore >= 70 ? "Acima do esperado" : healthScore >= 40 ? "Estavel" : "Baixo"}
+            </p>
           </div>
         </CardContent>
       </Card>

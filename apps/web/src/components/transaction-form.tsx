@@ -533,15 +533,15 @@ export function TransactionForm({ walletId, transactionId }: { walletId: string;
 
       {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
-      <div className="flex flex-wrap gap-3">
-        <Button type="submit" variant={isEditing ? "edit" : "create"}>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Button type="submit" variant={isEditing ? "edit" : "create"} className="w-full sm:w-auto">
           Salvar
         </Button>
-        <Button type="button" variant="outline" onClick={() => router.back()}>
+        <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => router.back()}>
           Cancelar
         </Button>
         {existing && (
-          <Button type="button" variant="delete" onClick={handleDelete}>
+          <Button type="button" variant="delete" className="w-full sm:w-auto" onClick={handleDelete}>
             Excluir
           </Button>
         )}
