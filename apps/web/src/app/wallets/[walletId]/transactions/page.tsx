@@ -92,10 +92,10 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
   const sorted = useMemo(() => [...filtered].sort(compareTransactions), [filtered]);
 
   return (
-    <div className="grid gap-6 animate-rise">
+    <div className="grid gap-4 sm:gap-6 animate-rise">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div>
-          <h2 className="text-2xl font-semibold">Todas as Transacoes</h2>
+          <h2 className="text-xl font-semibold sm:text-2xl">Todas as Transacoes</h2>
           <p className="text-sm text-muted-foreground">Historico completo de receitas e despesas</p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
@@ -139,10 +139,10 @@ export default function TransactionsPage({ params }: { params: { walletId: strin
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-5">
           <CardTitle>Listagem de Transacoes ({sorted.length})</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
           {sorted.length === 0 && <p className="text-sm text-muted-foreground">Sem transacoes no periodo.</p>}
           {sorted.map((tx) => (
             <Link

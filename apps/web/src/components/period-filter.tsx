@@ -39,7 +39,7 @@ export function PeriodFilterPanel({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border bg-card/80 p-4 shadow-sm backdrop-blur-sm",
+        "rounded-2xl border border-border bg-card/80 p-3 shadow-sm backdrop-blur-sm sm:p-4",
         className
       )}
     >
@@ -54,7 +54,7 @@ export function PeriodFilterPanel({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
         <div className="flex flex-col gap-1">
           <Label>Periodo</Label>
           <Input
@@ -63,7 +63,7 @@ export function PeriodFilterPanel({
             onChange={(event) =>
               onFilterChange({ month: event.target.value, from: null, to: null })
             }
-            className="min-w-[170px]"
+            className="w-full sm:min-w-[170px]"
           />
         </div>
 
@@ -71,6 +71,7 @@ export function PeriodFilterPanel({
           type="button"
           variant="outline"
           size="sm"
+          className="w-full sm:w-auto"
           onClick={() => setAdvancedOpen((prev) => !prev)}
         >
           Filtro avancado
@@ -81,7 +82,7 @@ export function PeriodFilterPanel({
         </span>
 
         {(filter.from || filter.to) && (
-          <Button type="button" variant="ghost" size="sm" onClick={onClearRange}>
+          <Button type="button" variant="ghost" size="sm" className="w-full sm:w-auto" onClick={onClearRange}>
             Limpar intervalo
           </Button>
         )}

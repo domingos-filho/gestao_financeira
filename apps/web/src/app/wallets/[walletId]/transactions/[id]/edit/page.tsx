@@ -7,16 +7,16 @@ export default function EditTransactionPage({
   params: { walletId: string; id: string };
 }) {
   return (
-    <div className="grid gap-6 animate-rise">
+    <div className="grid gap-4 sm:gap-6 animate-rise">
       <div>
-        <h2 className="text-2xl font-semibold">Editar transacao</h2>
+        <h2 className="text-xl font-semibold sm:text-2xl">Editar transacao</h2>
         <p className="text-sm text-muted-foreground">Atualize os detalhes da transacao.</p>
       </div>
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-5">
           <CardTitle>Detalhes</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
           <TransactionForm walletId={params.walletId} transactionId={params.id} />
         </CardContent>
       </Card>

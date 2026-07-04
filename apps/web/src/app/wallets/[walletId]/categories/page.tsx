@@ -355,18 +355,18 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
   };
 
   return (
-    <div className="grid gap-6 animate-rise">
+    <div className="grid gap-4 sm:gap-6 animate-rise">
       <div>
-        <h1 className="text-2xl font-semibold">Categorias</h1>
+        <h1 className="text-xl font-semibold sm:text-2xl">Categorias</h1>
         <p className="text-sm text-muted-foreground">Gerencie suas categorias de receitas e despesas</p>
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-5">
           <CardTitle>Nova Categoria</CardTitle>
           <CardDescription>Crie categorias para organizar suas transacoes</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className="grid gap-4 p-4 pt-0 sm:p-5 sm:pt-0">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Nome</Label>
@@ -435,8 +435,8 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Button variant="create" onClick={handleCreate}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <Button variant="create" onClick={handleCreate} className="w-full sm:w-auto">
               Adicionar
             </Button>
             {message && <span className="text-sm text-muted-foreground">{message}</span>}
@@ -445,11 +445,11 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-5">
           <CardTitle>Suas Categorias</CardTitle>
           <CardDescription>Organize, edite, arquive e reordene categorias</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 p-4 pt-0 sm:p-5 sm:pt-0">
           {!hasAnyCategories && (
             <div className="flex flex-col gap-3">
               <p className="text-sm text-muted-foreground">Nenhuma categoria encontrada.</p>
@@ -485,7 +485,7 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
                     return (
                       <div
                         key={category.id}
-                        className="rounded-lg border border-border bg-card px-4 py-3"
+                        className="rounded-lg border border-border bg-card p-3 sm:p-4"
                       >
                         {isEditing ? (
                           <div className="grid gap-4">
@@ -570,7 +570,7 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
                           </div>
                         ) : (
                           <>
-                            <div className="flex flex-wrap items-center justify-between gap-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                               <div className="flex items-center gap-3">
                                 <span
                                   className="flex h-10 w-10 items-center justify-center rounded-xl"
@@ -687,9 +687,9 @@ export default function CategoriesPage({ params }: { params: { walletId: string 
                     return (
                       <div
                         key={category.id}
-                        className="rounded-lg border border-border bg-card px-4 py-3"
+                        className="rounded-lg border border-border bg-card p-3 sm:p-4"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex items-center gap-3">
                             <span
                               className="flex h-10 w-10 items-center justify-center rounded-xl"

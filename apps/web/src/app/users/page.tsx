@@ -283,9 +283,9 @@ export default function UsersPage() {
   return (
     <RequireAuth>
       <AppShell>
-        <div className="space-y-6 animate-rise">
+        <div className="space-y-5 sm:space-y-6 animate-rise">
           <div>
-            <h1 className="text-2xl font-semibold">Gestao de Usuarios</h1>
+            <h1 className="text-xl font-semibold sm:text-2xl">Gestao de Usuarios</h1>
             <p className="text-sm text-muted-foreground">
               Cadastre usuarios, defina perfil e associe a carteira principal.
             </p>
@@ -294,11 +294,11 @@ export default function UsersPage() {
           {isAdmin && (
             <>
               <Card>
-                <CardHeader>
+                <CardHeader className="p-4 sm:p-5">
                   <CardTitle>Novo usuario</CardTitle>
                   <CardDescription>Usuarios criados aqui ja podem acessar o aplicativo.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-4 md:grid-cols-2">
+                <CardContent className="grid gap-4 p-4 pt-0 sm:p-5 sm:pt-0 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Nome</Label>
                     <Input value={name} onChange={(event) => setName(event.target.value)} />
@@ -322,18 +322,23 @@ export default function UsersPage() {
                       <p className="text-xs text-muted-foreground">Cadastre uma carteira antes de criar usuarios.</p>
                     )}
                   </div>
-                  <Button variant="create" onClick={handleCreate} disabled={dataLoading || wallets.length === 0}>
+                  <Button
+                    variant="create"
+                    onClick={handleCreate}
+                    disabled={dataLoading || wallets.length === 0}
+                    className="w-full md:col-span-2"
+                  >
                     Criar usuario
                   </Button>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
+                <CardHeader className="p-4 sm:p-5">
                   <CardTitle>Usuarios cadastrados</CardTitle>
                   <CardDescription>Atualize perfil, senha ou carteira principal.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
                   {dataLoading && <p className="text-sm text-muted-foreground">Carregando...</p>}
                   {!dataLoading && users.length === 0 && (
                     <p className="text-sm text-muted-foreground">Nenhum usuario cadastrado.</p>
@@ -346,9 +351,9 @@ export default function UsersPage() {
                     return (
                       <div
                         key={item.id}
-                        className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 md:flex-row md:items-center md:justify-between"
+                        className="flex flex-col gap-4 rounded-lg border border-border bg-card p-3 sm:p-4 md:flex-row md:items-center md:justify-between"
                       >
-                        <div className="grid flex-1 gap-3 md:grid-cols-4">
+                        <div className="grid flex-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                           <div className="space-y-2">
                             <Label className="text-xs">Nome</Label>
                             {isEditing ? (
@@ -392,25 +397,26 @@ export default function UsersPage() {
                             )}
                           </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                           {isEditing ? (
                             <>
-                              <Button variant="edit" onClick={handleUpdate} disabled={isBusy}>
+                              <Button variant="edit" onClick={handleUpdate} disabled={isBusy} className="w-full sm:w-auto">
                                 Salvar
                               </Button>
-                              <Button variant="outline" onClick={cancelEdit} disabled={isBusy}>
+                              <Button variant="outline" onClick={cancelEdit} disabled={isBusy} className="w-full sm:w-auto">
                                 Cancelar
                               </Button>
                             </>
                           ) : (
                             <>
-                              <Button variant="edit" onClick={() => startEdit(item)} disabled={isBusy}>
+                              <Button variant="edit" onClick={() => startEdit(item)} disabled={isBusy} className="w-full sm:w-auto">
                                 Editar
                               </Button>
                               <Button
                                 variant="delete"
                                 onClick={() => handleDelete(item.id)}
                                 disabled={isBusy || isProtected}
+                                className="w-full sm:w-auto"
                               >
                                 Excluir
                               </Button>

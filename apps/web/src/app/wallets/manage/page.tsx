@@ -137,37 +137,37 @@ export default function WalletManagementPage() {
   return (
     <RequireAuth>
       <AppShell>
-        <div className="space-y-6 animate-rise">
+        <div className="space-y-5 sm:space-y-6 animate-rise">
           <div>
-            <h1 className="text-2xl font-semibold">Gestao de Carteiras</h1>
+            <h1 className="text-xl font-semibold sm:text-2xl">Gestao de Carteiras</h1>
             <p className="text-sm text-muted-foreground">Crie, edite ou remova carteiras do aplicativo.</p>
           </div>
 
           {isAdmin && (
             <>
               <Card>
-                <CardHeader>
+                <CardHeader className="p-4 sm:p-5">
                   <CardTitle>Nova carteira</CardTitle>
                   <CardDescription>Carteiras sao criadas pelo administrador do sistema.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-3 sm:flex-row">
+                <CardContent className="flex flex-col gap-3 p-4 pt-0 sm:flex-row sm:p-5 sm:pt-0">
                   <Input
                     placeholder="Nome da carteira"
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                   />
-                  <Button variant="create" onClick={handleCreate}>
+                  <Button variant="create" onClick={handleCreate} className="w-full sm:w-auto">
                     Criar
                   </Button>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
+                <CardHeader className="p-4 sm:p-5">
                   <CardTitle>Carteiras cadastradas</CardTitle>
                   <CardDescription>Renomeie ou exclua carteiras existentes.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
                   {dataLoading && <p className="text-sm text-muted-foreground">Carregando...</p>}
                   {!dataLoading && wallets.length === 0 && (
                     <p className="text-sm text-muted-foreground">Nenhuma carteira cadastrada.</p>
@@ -179,7 +179,7 @@ export default function WalletManagementPage() {
                     return (
                       <div
                         key={wallet.id}
-                        className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 md:flex-row md:items-center md:justify-between"
+                        className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 sm:p-4 md:flex-row md:items-center md:justify-between"
                       >
                         <div className="space-y-1">
                           {isEditing ? (
@@ -189,22 +189,22 @@ export default function WalletManagementPage() {
                           )}
                           <p className="text-xs text-muted-foreground">ID: {wallet.id}</p>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                           {isEditing ? (
                             <>
-                              <Button variant="edit" onClick={() => handleUpdate(wallet.id)} disabled={isBusy}>
+                              <Button variant="edit" onClick={() => handleUpdate(wallet.id)} disabled={isBusy} className="w-full sm:w-auto">
                                 Salvar
                               </Button>
-                              <Button variant="outline" onClick={cancelEdit} disabled={isBusy}>
+                              <Button variant="outline" onClick={cancelEdit} disabled={isBusy} className="w-full sm:w-auto">
                                 Cancelar
                               </Button>
                             </>
                           ) : (
                             <>
-                              <Button variant="edit" onClick={() => startEdit(wallet.id, wallet.name)}>
+                              <Button variant="edit" onClick={() => startEdit(wallet.id, wallet.name)} className="w-full sm:w-auto">
                                 Editar
                               </Button>
-                              <Button variant="delete" onClick={() => handleDelete(wallet.id)} disabled={isBusy}>
+                              <Button variant="delete" onClick={() => handleDelete(wallet.id)} disabled={isBusy} className="w-full sm:w-auto">
                                 Excluir
                               </Button>
                             </>
