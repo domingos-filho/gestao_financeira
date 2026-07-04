@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { TransactionType } from "@gf/shared";
 import { db, safeDexie } from "@/lib/db";
@@ -22,7 +22,7 @@ import {
   WaterfallChart
 } from "@/components/report-charts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronDown } from "lucide-react";
 
 function formatBRL(amountCents: number) {
   return (amountCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -120,6 +120,11 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
     [categories]
   );
 
+  const categoryLabel = useCallback((key: string) => {
+    if (key === "uncategorized") return "Sem categoria";
+    return categoryMap.get(key) ?? "Categoria";
+  }, [categoryMap]);
+
   const categoryInsights = useMemo(() => {
     const list = currentTransactions;
     const sums = new Map<string, { income: number; expense: number }>();
@@ -161,15 +166,15 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
       });
 
     const topExpenseSeries = expenseRows.slice(0, 3).map((entry, index) => ({
-      label: entry.key,
+      label: categoryLabel(entry.key),
       values: buildTrend(entry.key, TransactionType.EXPENSE),
       className:
-        ["text-[var(--color-success)]", "text-[var(--color-info)]", "text-[var(--color-purple)]"][index] ??
-        "text-[var(--color-success)]"
+        ["var(--color-success-strong)", "var(--color-info)", "var(--color-purple)"][index] ??
+        "var(--color-success-strong)"
     }));
 
     return { expenseRows, incomeRows, topExpenseSeries };
-  }, [buckets, currentTransactions]);
+  }, [buckets, categoryLabel, currentTransactions]);
 
   const debtInsights = useMemo(() => {
     const list = debts ?? [];
@@ -256,22 +261,17 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
   }, [debtInsights.periodIncome, debtInsights.ratio, profitInsights]);
 
   const categoryPalette = [
-    "text-[var(--color-success)]",
-    "text-[var(--color-info)]",
-    "text-[var(--color-purple)]",
-    "text-[var(--color-warning)]",
-    "text-[var(--color-danger)]"
+    "var(--color-success-strong)",
+    "var(--color-info)",
+    "var(--color-purple)",
+    "var(--color-warning)",
+    "var(--color-danger-strong)"
   ];
   const categoryTreemap = categoryInsights.expenseRows.map((entry, index) => ({
-    label: entry.key,
+    label: categoryLabel(entry.key),
     value: entry.total,
-    className: categoryPalette[index] ?? "text-[var(--color-success)]"
+    className: categoryPalette[index] ?? "var(--color-success-strong)"
   }));
-
-  const categoryLabel = (key: string) => {
-    if (key === "uncategorized") return "Sem categoria";
-    return categoryMap.get(key) ?? "Categoria";
-  };
 
   return (
     <div className="grid gap-4 sm:gap-6 animate-rise">
@@ -280,17 +280,20 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
           <h1 className="text-xl font-semibold sm:text-2xl">Relatorios Financeiros</h1>
           <p className="text-sm text-muted-foreground">Analise detalhada das suas financas</p>
         </div>
-        <Select value={period} onValueChange={(value) => setPeriod(value as ReportPeriod)}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Periodo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="day">Ultimos 14 dias</SelectItem>
-            <SelectItem value="week">Ultimas 12 semanas</SelectItem>
-            <SelectItem value="month">Ultimos 12 meses</SelectItem>
-            <SelectItem value="year">Ultimos 5 anos</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="relative w-full sm:w-48">
+          <select
+            value={period}
+            onChange={(event) => setPeriod(event.target.value as ReportPeriod)}
+            className="h-10 w-full appearance-none rounded-lg border border-border bg-card px-3 pr-9 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            aria-label="Selecionar periodo"
+          >
+            <option value="day">Ultimos 14 dias</option>
+            <option value="week">Ultimas 12 semanas</option>
+            <option value="month">Ultimos 12 meses</option>
+            <option value="year">Ultimos 5 anos</option>
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        </div>
       </div>
 
       <Card>
@@ -337,7 +340,7 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
             <LineChart
               values={cashFlow.series.map((item) => item.net)}
               labels={buckets.map((bucket) => bucket.label)}
-              className="text-[var(--color-success)]"
+              color="var(--color-success)"
               formatValue={formatBRL}
             />
           </div>
@@ -420,7 +423,7 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
             <LineChart
               values={debtInsights.series}
               labels={debtInsights.labels}
-              className="text-[var(--color-warning)]"
+              color="var(--color-warning)"
               formatValue={formatBRL}
             />
             <p className="text-xs text-muted-foreground">Projecao de quitacao (12 meses)</p>
