@@ -79,7 +79,7 @@ export default function HomePage() {
 
   return (
     <RequireAuth>
-      <AppShell>
+      <AppShell syncWalletIds={displayWallets.map((wallet) => wallet.id)}>
         <div className="space-y-8 animate-rise">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>

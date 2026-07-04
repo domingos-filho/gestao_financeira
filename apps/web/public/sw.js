@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const APP_CACHE = `gf-app-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `gf-runtime-${CACHE_VERSION}`;
 const ASSETS = [
@@ -39,6 +39,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (url.pathname.startsWith("/api/")) {
+    return;
+  }
+
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
@@ -49,9 +53,7 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         })
-        .catch(() =>
-          caches.match(request).then((cached) => cached || caches.match("/offline.html"))
-        )
+        .catch(async () => (await caches.match(request)) ?? (await caches.match("/offline.html")) ?? Response.error())
     );
     return;
   }
@@ -63,11 +65,13 @@ self.addEventListener("fetch", (event) => {
       }
       return fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(APP_CACHE).then((cache) => cache.put(request, copy));
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(APP_CACHE).then((cache) => cache.put(request, copy));
+          }
           return response;
         })
-        .catch(() => cached);
+        .catch(() => Response.error());
     })
   );
 });

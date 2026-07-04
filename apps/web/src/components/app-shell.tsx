@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentType } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,7 +11,7 @@ import { syncCategories } from "@/lib/categories";
 import { syncDebts } from "@/lib/debts";
 import { getDeviceId } from "@/lib/device";
 import { useSyncEngine } from "@/lib/sync-engine";
-import { ensureCurrentMonthRecurringTransactions } from "@/lib/sync";
+import { ensureCurrentMonthRecurringTransactions, syncNow } from "@/lib/sync";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand-logo";
 import { SyncIndicator } from "@/components/sync-indicator";
@@ -77,9 +77,10 @@ const navItems: NavItem[] = [
 type AppShellProps = {
   children: React.ReactNode;
   walletId?: string;
+  syncWalletIds?: string[];
 };
 
-export function AppShell({ children, walletId }: AppShellProps) {
+export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
   const pathname = usePathname();
   const { user, authFetch, logout } = useAuth();
   const [online, setOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
@@ -109,6 +110,33 @@ export function AppShell({ children, walletId }: AppShellProps) {
     syncCategories(walletId, authFetch).catch(() => null);
     syncDebts(walletId, authFetch).catch(() => null);
   }, [walletId, user, authFetch]);
+
+  const syncVisibleWallets = useCallback(async () => {
+    if (!user || !navigator.onLine) {
+      return;
+    }
+
+    const targets = syncWalletIds ?? [];
+    if (targets.length === 0) {
+      return;
+    }
+
+    for (const targetWalletId of targets) {
+      try {
+        await syncNow({
+          walletId: targetWalletId,
+          userId: user.id,
+          deviceId: getDeviceId(),
+          authFetch
+        });
+      } catch (error) {
+        console.error("Sync failed", {
+          walletId: targetWalletId,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+  }, [authFetch, syncWalletIds, user]);
 
   useEffect(() => {
     if (!walletId || !user) {
@@ -192,12 +220,13 @@ export function AppShell({ children, walletId }: AppShellProps) {
 
   const displayName = user?.name?.trim() || "Usuario";
   const initials = (displayName[0] ?? "U").toUpperCase();
-  const syncDisabled = !walletId;
+  const syncDisabled = !user || (!walletId && (syncWalletIds?.length ?? 0) === 0);
+  const handleSync = walletId ? syncEngine.runSync : syncVisibleWallets;
   const footerStatus = walletId ? (
     <SyncIndicator
       status={syncEngine.status}
       lastSyncAt={syncEngine.lastSyncAt}
-      runSync={syncEngine.runSync}
+      runSync={handleSync}
       compact
     />
   ) : (
@@ -256,7 +285,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
 
             <button
               type="button"
-              onClick={syncEngine.runSync}
+              onClick={handleSync}
               disabled={syncDisabled}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-left transition",
@@ -401,7 +430,7 @@ export function AppShell({ children, walletId }: AppShellProps) {
               <button
                 type="button"
                 onClick={() => {
-                  syncEngine.runSync();
+                  handleSync();
                   setMobileMenuOpen(false);
                 }}
                 disabled={syncDisabled}

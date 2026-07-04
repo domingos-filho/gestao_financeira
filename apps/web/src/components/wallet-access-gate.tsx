@@ -17,9 +17,11 @@ export function WalletAccessGate({
   const router = useRouter();
   const { user, loading } = useAuth();
   const walletsQuery = useWallets();
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "fadomingosf@gmail.com";
+  const isAdmin = user?.email?.toLowerCase() === adminEmail.toLowerCase();
   const hasAccess = useMemo(
-    () => walletsQuery.data?.some((entry) => entry.wallet.id === walletId) ?? false,
-    [walletsQuery.data, walletId]
+    () => isAdmin || (walletsQuery.data?.some((entry) => entry.wallet.id === walletId) ?? false),
+    [isAdmin, walletsQuery.data, walletId]
   );
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export function WalletAccessGate({
     );
   }
 
-  if (walletsQuery.isLoading) {
+  if (!isAdmin && walletsQuery.isLoading) {
     return (
       <RequireAuth>
         <AppShell walletId={walletId}>
