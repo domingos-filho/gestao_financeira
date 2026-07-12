@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./auth";
 import { getDeviceId } from "./device";
-import { getLastSyncAt, syncNow } from "./sync";
+import { getLastSyncAt, getLastSyncResult, syncNow, type SyncOutcome } from "./sync";
 
 export type SyncStatus = "idle" | "syncing" | "error";
 
@@ -11,6 +11,7 @@ export function useSyncEngine(walletId?: string) {
   const { user, authFetch } = useAuth();
   const [status, setStatus] = useState<SyncStatus>("idle");
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+  const [lastSyncResult, setLastSyncResult] = useState<SyncOutcome | null>(null);
   const syncingRef = useRef(false);
   const walletRef = useRef(walletId);
   const userRef = useRef(user);
@@ -27,6 +28,41 @@ export function useSyncEngine(walletId?: string) {
   useEffect(() => {
     authFetchRef.current = authFetch;
   }, [authFetch]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!walletId) {
+      setStatus("idle");
+      setLastSyncAt(null);
+      setLastSyncResult(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setStatus("idle");
+    setLastSyncAt(null);
+    setLastSyncResult(null);
+
+    void (async () => {
+      const [latestAt, latestResult] = await Promise.all([
+        getLastSyncAt(walletId),
+        getLastSyncResult(walletId)
+      ]);
+
+      if (cancelled) {
+        return;
+      }
+
+      setLastSyncAt(latestAt);
+      setLastSyncResult(latestResult ?? (latestAt ? "success" : null));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [walletId]);
 
   const runSync = useCallback(async () => {
     const activeWalletId = walletRef.current;
@@ -45,7 +81,7 @@ export function useSyncEngine(walletId?: string) {
       return;
     }
     syncingRef.current = true;
-    setStatus((prev) => (prev === "syncing" ? prev : "syncing"));
+    setStatus("syncing");
     try {
       await syncNow({
         walletId: activeWalletId,
@@ -53,10 +89,17 @@ export function useSyncEngine(walletId?: string) {
         deviceId: getDeviceId(),
         authFetch: activeAuthFetch
       });
-      const latest = await getLastSyncAt(activeWalletId);
-      setLastSyncAt(latest);
+      const [latestAt, latestResult] = await Promise.all([
+        getLastSyncAt(activeWalletId),
+        getLastSyncResult(activeWalletId)
+      ]);
+      setLastSyncAt(latestAt);
+      setLastSyncResult(latestResult ?? (latestAt ? "success" : null));
       setStatus("idle");
     } catch {
+      const failedAt = new Date().toISOString();
+      setLastSyncAt(failedAt);
+      setLastSyncResult("error");
       setStatus("error");
     } finally {
       syncingRef.current = false;
@@ -80,5 +123,5 @@ export function useSyncEngine(walletId?: string) {
     };
   }, [walletId, user?.id, runSync]);
 
-  return { status, lastSyncAt, runSync };
+  return { status, lastSyncAt, lastSyncResult, runSync };
 }

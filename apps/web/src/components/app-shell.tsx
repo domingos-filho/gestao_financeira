@@ -114,6 +114,8 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
   const syncEngine = useSyncEngine(walletId);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [syncActionRunning, setSyncActionRunning] = useState(false);
+  const syncActionRunningRef = useRef(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -246,11 +248,27 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
   const displayName = user?.name?.trim() || "Usuario";
   const initials = (displayName[0] ?? "U").toUpperCase();
   const syncDisabled = !user || (!walletId && (syncWalletIds?.length ?? 0) === 0);
-  const handleSync = walletId ? syncEngine.runSync : syncVisibleWallets;
+  const syncAction = walletId ? syncEngine.runSync : syncVisibleWallets;
+  const isSyncing = syncEngine.status === "syncing" || syncActionRunning;
+  const handleSync = useCallback(async () => {
+    if (syncDisabled || isSyncing || syncActionRunningRef.current) {
+      return;
+    }
+
+    syncActionRunningRef.current = true;
+    setSyncActionRunning(true);
+    try {
+      await syncAction();
+    } finally {
+      syncActionRunningRef.current = false;
+      setSyncActionRunning(false);
+    }
+  }, [isSyncing, syncAction, syncDisabled]);
   const footerStatus = walletId ? (
     <SyncIndicator
       status={syncEngine.status}
       lastSyncAt={syncEngine.lastSyncAt}
+      lastSyncResult={syncEngine.lastSyncResult}
       runSync={handleSync}
       compact
     />
@@ -288,7 +306,7 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
                   className={cn(
                     "flex items-center gap-3 rounded-2xl px-3 py-3 transition",
                     item.active
-                      ? "bg-muted/80 text-foreground shadow-sm"
+                      ? "border border-primary/20 bg-[linear-gradient(135deg,rgba(95,141,255,0.18),rgba(239,111,125,0.12))] text-foreground shadow-[0_10px_25px_rgba(79,162,255,0.12)] ring-1 ring-primary/10"
                       : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                   )}
                 >
@@ -300,16 +318,16 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
 
             <button
               type="button"
-              onClick={handleSync}
-              disabled={syncDisabled}
+              onClick={() => {
+                void handleSync();
+              }}
+              disabled={syncDisabled || isSyncing}
               className={cn(
-                "mt-2 flex items-center gap-3 rounded-2xl border border-transparent px-3 py-3 text-left transition",
-                syncDisabled
-                  ? "cursor-not-allowed text-muted-foreground/50"
-                  : "bg-[linear-gradient(135deg,rgba(95,141,255,0.12),rgba(239,111,125,0.14))] text-muted-foreground hover:text-foreground"
+                "mt-2 flex items-center gap-3 rounded-2xl border border-border/70 bg-card/80 px-3 py-3 text-left text-muted-foreground shadow-sm transition hover:border-border hover:bg-muted/70 hover:text-foreground",
+                syncDisabled || isSyncing ? "cursor-not-allowed opacity-60 hover:bg-card/80 hover:text-muted-foreground" : ""
               )}
             >
-              <RefreshCw className="h-6 w-6" />
+              <RefreshCw className={cn("h-6 w-6", isSyncing && "animate-spin")} />
               Sincronizar
             </button>
           </nav>
@@ -370,16 +388,16 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-card/90 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden">
         <div className="grid grid-cols-5 gap-1 px-3 py-2">
           {mobileQuickNav.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={cn(
-                "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition",
-                item.active
-                  ? "bg-muted/80 text-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-              )}
-            >
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={cn(
+                    "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition",
+                    item.active
+                      ? "border border-primary/20 bg-[linear-gradient(135deg,rgba(95,141,255,0.18),rgba(239,111,125,0.12))] text-foreground shadow-[0_10px_25px_rgba(79,162,255,0.12)] ring-1 ring-primary/10"
+                      : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                  )}
+                >
               {renderNavIcon(item, "h-5 w-5 object-contain")}
               <span className="w-full truncate text-center leading-none">{item.label}</span>
             </Link>
@@ -388,17 +406,17 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
           <button
             type="button"
             onClick={() => {
-              handleSync();
+              void handleSync();
             }}
-            disabled={syncDisabled}
+            disabled={syncDisabled || isSyncing}
             className={cn(
               "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition",
-              syncDisabled
+              syncDisabled || isSyncing
                 ? "cursor-not-allowed text-muted-foreground/40"
                 : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
             )}
           >
-            <RefreshCw className="h-5 w-5" />
+            <RefreshCw className={cn("h-5 w-5", isSyncing && "animate-spin")} />
             <span className="w-full truncate text-center leading-none">Sincronizar</span>
           </button>
 
@@ -456,7 +474,7 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
                   className={cn(
                     "flex items-center gap-4 rounded-2xl border border-transparent px-4 py-3 text-base font-semibold transition",
                     item.active
-                      ? "border-primary/15 bg-muted/80 text-foreground shadow-sm"
+                      ? "border-primary/20 bg-[linear-gradient(135deg,rgba(95,141,255,0.18),rgba(239,111,125,0.12))] text-foreground shadow-[0_10px_25px_rgba(79,162,255,0.12)] ring-1 ring-primary/10"
                       : "bg-muted/35 text-muted-foreground hover:border-border/70 hover:bg-muted/70 hover:text-foreground"
                   )}
                 >
@@ -478,19 +496,19 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
               <button
                 type="button"
                 onClick={() => {
-                  handleSync();
+                  void handleSync();
                   setMobileMenuOpen(false);
                 }}
-                disabled={syncDisabled}
+                disabled={syncDisabled || isSyncing}
                 className={cn(
                   "mt-2 flex items-center gap-4 rounded-2xl border px-4 py-3 text-base font-semibold transition",
-                  syncDisabled
+                  syncDisabled || isSyncing
                     ? "cursor-not-allowed border-transparent text-muted-foreground/40"
-                    : "border-transparent bg-[linear-gradient(135deg,rgba(95,141,255,0.14),rgba(239,111,125,0.14))] text-muted-foreground hover:text-foreground"
+                    : "border-transparent bg-card/80 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
                 )}
               >
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-background/80">
-                  <RefreshCw className="h-6 w-6" />
+                  <RefreshCw className={cn("h-6 w-6", isSyncing && "animate-spin")} />
                 </span>
                 <span className="flex-1">Sincronizar</span>
               </button>

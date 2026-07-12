@@ -36,6 +36,8 @@ type SyncParams = {
   authFetch: AuthFetch;
 };
 
+export type SyncOutcome = "success" | "error";
+
 type TransactionMutationParams = {
   id?: string;
   walletId: string;
@@ -446,73 +448,90 @@ export async function ensureCurrentMonthRecurringTransactions(params: {
 }
 
 export async function syncNow({ walletId, userId, deviceId, authFetch }: SyncParams) {
-  await sanitizePendingEvents(walletId);
-  await ensureCurrentMonthRecurringTransactions({ walletId, userId, deviceId });
+  try {
+    await sanitizePendingEvents(walletId);
+    await ensureCurrentMonthRecurringTransactions({ walletId, userId, deviceId });
 
-  const pending = await db.sync_events_local
-    .where("walletId")
-    .equals(walletId)
-    .and((event) => event.status === "PENDING")
-    .sortBy("createdAt");
-
-  if (pending.length > 0 && pending.some((event) => event.deviceId !== deviceId)) {
-    await db.sync_events_local
+    const pending = await db.sync_events_local
       .where("walletId")
       .equals(walletId)
       .and((event) => event.status === "PENDING")
-      .modify({ deviceId });
-  }
-  if (pending.length > 0 && pending.some((event) => event.userId !== userId)) {
-    await db.sync_events_local
-      .where("walletId")
-      .equals(walletId)
-      .and((event) => event.status === "PENDING")
-      .modify({ userId });
-  }
+      .sortBy("createdAt");
 
-  if (pending.length > 0) {
-    const pushRes = await authFetch("/sync/push", {
-      method: "POST",
-      body: JSON.stringify({
-        deviceId,
-        walletId,
-        events: pending.map((event) => ({
-          eventId: event.eventId,
-          walletId: event.walletId,
-          userId,
-          deviceId,
-          eventType: event.eventType,
-          payload: event.payload
-        }))
-      })
-    });
-
-    if (!pushRes.ok) {
-      const details = await pushRes.text().catch(() => "");
-      console.error("Sync push failed", details);
-      throw new Error(details || "Push failed");
+    if (pending.length > 0 && pending.some((event) => event.deviceId !== deviceId)) {
+      await db.sync_events_local
+        .where("walletId")
+        .equals(walletId)
+        .and((event) => event.status === "PENDING")
+        .modify({ deviceId });
+    }
+    if (pending.length > 0 && pending.some((event) => event.userId !== userId)) {
+      await db.sync_events_local
+        .where("walletId")
+        .equals(walletId)
+        .and((event) => event.status === "PENDING")
+        .modify({ userId });
     }
 
-    await Promise.all(
-      pending.map((event) => db.sync_events_local.update(event.eventId, { status: "ACKED" }))
-    );
+    if (pending.length > 0) {
+      const pushRes = await authFetch("/sync/push", {
+        method: "POST",
+        body: JSON.stringify({
+          deviceId,
+          walletId,
+          events: pending.map((event) => ({
+            eventId: event.eventId,
+            walletId: event.walletId,
+            userId,
+            deviceId,
+            eventType: event.eventType,
+            payload: event.payload
+          }))
+        })
+      });
+
+      if (!pushRes.ok) {
+        const details = await pushRes.text().catch(() => "");
+        console.error("Sync push failed", details);
+        throw new Error(details || "Push failed");
+      }
+
+      await Promise.all(
+        pending.map((event) => db.sync_events_local.update(event.eventId, { status: "ACKED" }))
+      );
+    }
+
+    const lastSeq = await getLastSeq(walletId);
+    const pullRes = await authFetch(`/sync/pull?walletId=${walletId}&sinceSeq=${lastSeq}`);
+    if (!pullRes.ok) {
+      throw new Error("Pull failed");
+    }
+
+    const data = (await pullRes.json()) as { nextSeq: number; events: SyncEventServer[] };
+
+    if (data.events.length > 0) {
+      await applyRemoteEvents(data.events);
+      await ensureCurrentMonthRecurringTransactions({ walletId, userId, deviceId });
+    }
+
+    const completedAt = new Date().toISOString();
+    try {
+      await Promise.all([
+        setMetadata(`lastSeq:${walletId}`, String(data.nextSeq)),
+        setMetadata(`lastSyncAt:${walletId}`, completedAt),
+        setMetadata(`lastSyncResult:${walletId}`, "success")
+      ]);
+    } catch (persistError) {
+      console.warn("Failed to persist sync metadata", persistError);
+    }
+  } catch (error) {
+    const failedAt = new Date().toISOString();
+    await Promise.all([
+      setMetadata(`lastSyncAt:${walletId}`, failedAt),
+      setMetadata(`lastSyncResult:${walletId}`, "error")
+    ]).catch(() => null);
+    throw error;
   }
-
-  const lastSeq = await getLastSeq(walletId);
-  const pullRes = await authFetch(`/sync/pull?walletId=${walletId}&sinceSeq=${lastSeq}`);
-  if (!pullRes.ok) {
-    throw new Error("Pull failed");
-  }
-
-  const data = (await pullRes.json()) as { nextSeq: number; events: SyncEventServer[] };
-
-  if (data.events.length > 0) {
-    await applyRemoteEvents(data.events);
-    await ensureCurrentMonthRecurringTransactions({ walletId, userId, deviceId });
-  }
-
-  await setMetadata(`lastSeq:${walletId}`, String(data.nextSeq));
-  await setMetadata(`lastSyncAt:${walletId}`, new Date().toISOString());
 }
 
 async function sanitizePendingEvents(walletId: string) {
@@ -850,4 +869,9 @@ export async function getLastSeq(walletId: string) {
 export async function getLastSyncAt(walletId: string) {
   const value = await getMetadata(`lastSyncAt:${walletId}`);
   return value ?? null;
+}
+
+export async function getLastSyncResult(walletId: string) {
+  const value = await getMetadata(`lastSyncResult:${walletId}`);
+  return value === "success" || value === "error" ? value : null;
 }
