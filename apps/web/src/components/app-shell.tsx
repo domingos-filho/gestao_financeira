@@ -29,6 +29,30 @@ type NavItem = {
 
 type ResolvedNavItem = Omit<NavItem, "href"> & { href: string; active: boolean };
 
+function renderNavIcon(item: Pick<NavItem, "icon" | "iconSrc">, className: string) {
+  const Icon = item.icon;
+
+  if (item.iconSrc) {
+    return (
+      <Image
+        src={item.iconSrc}
+        alt=""
+        aria-hidden="true"
+        width={item.iconSrc === "/icons/dashboard.png" ? 920 : 500}
+        height={item.iconSrc === "/icons/dashboard.png" ? 704 : 500}
+        unoptimized
+        className={className}
+      />
+    );
+  }
+
+  if (Icon) {
+    return <Icon className={className} />;
+  }
+
+  return null;
+}
+
 const navItems: NavItem[] = [
   {
     label: "Home",
@@ -217,6 +241,7 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
         .filter((item): item is ResolvedNavItem => item !== null),
     [walletId, pathname, isAdmin, hideAdminItems]
   );
+  const mobileQuickNav = nav.slice(0, 3);
 
   const displayName = user?.name?.trim() || "Usuario";
   const initials = (displayName[0] ?? "U").toUpperCase();
@@ -243,38 +268,28 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <div className="flex min-h-screen">
-        <aside className="hidden w-64 flex-col border-r border-border bg-card px-5 py-6 md:flex">
-          <Link href="/wallets" className="flex items-center gap-3 text-lg font-semibold text-primary">
+        <aside className="hidden w-72 flex-col border-r border-border/70 bg-card/85 px-4 py-5 shadow-[8px_0_30px_rgba(15,23,42,0.04)] backdrop-blur-xl md:flex">
+          <Link
+            href="/wallets"
+            className="flex items-center gap-3 rounded-3xl border border-border/70 bg-muted/40 px-3 py-2 text-lg font-semibold text-primary shadow-sm transition hover:bg-muted/70"
+          >
             <BrandMark className="h-10 w-auto" />
             <span className="sr-only">UniConta</span>
           </Link>
 
           <nav className="mt-8 flex flex-1 flex-col gap-1 text-sm">
             {nav.map((item) => {
-              const Icon = item.icon;
-              const iconElement = item.iconSrc ? (
-                <Image
-                  src={item.iconSrc}
-                  alt=""
-                  aria-hidden="true"
-                  width={item.iconSrc === "/icons/dashboard.png" ? 920 : 500}
-                  height={item.iconSrc === "/icons/dashboard.png" ? 704 : 500}
-                  unoptimized
-                  className="h-9 w-9 object-contain"
-                />
-              ) : Icon ? (
-                <Icon className="h-9 w-9" />
-              ) : null;
+              const iconElement = renderNavIcon(item, "h-8 w-8 object-contain");
 
               return (
                 <Link
                   key={item.label}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 transition",
+                    "flex items-center gap-3 rounded-2xl px-3 py-3 transition",
                     item.active
-                      ? "bg-muted text-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-muted"
+                      ? "bg-muted/80 text-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                   )}
                 >
                   {iconElement}
@@ -288,10 +303,10 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
               onClick={handleSync}
               disabled={syncDisabled}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-left transition",
+                "mt-2 flex items-center gap-3 rounded-2xl border border-transparent px-3 py-3 text-left transition",
                 syncDisabled
                   ? "cursor-not-allowed text-muted-foreground/50"
-                  : "text-muted-foreground hover:bg-muted"
+                  : "bg-[linear-gradient(135deg,rgba(95,141,255,0.12),rgba(239,111,125,0.14))] text-muted-foreground hover:text-foreground"
               )}
             >
               <RefreshCw className="h-6 w-6" />
@@ -299,17 +314,17 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
             </button>
           </nav>
 
-          <div className="mt-auto flex items-center gap-2 text-xs text-muted-foreground">
-            {footerStatus}
+          <div className="mt-auto rounded-2xl border border-border/70 bg-muted/40 px-3 py-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">{footerStatus}</div>
           </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="relative z-40 flex items-center justify-between border-b border-border bg-card px-4 py-4 md:px-6">
+          <header className="relative z-40 flex items-center justify-between border-b border-border/70 bg-card/80 px-4 py-4 backdrop-blur-xl md:px-6">
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted text-foreground shadow-sm transition hover:bg-muted/70 md:hidden"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-foreground shadow-sm transition hover:bg-muted/80 md:hidden"
                 aria-label="Abrir menu"
                 onClick={() => setMobileMenuOpen(true)}
               >
@@ -346,9 +361,55 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
             </div>
           </header>
 
-          <main className="flex-1 bg-background px-4 py-6 md:px-6 md:py-8">
-            <div className="mx-auto w-full max-w-5xl min-w-0">{children}</div>
+          <main className="flex-1 bg-background px-4 py-6 pb-28 md:px-6 md:py-8 md:pb-8">
+            <div className="mx-auto w-full max-w-6xl min-w-0">{children}</div>
           </main>
+        </div>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-card/90 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden">
+        <div className="grid grid-cols-5 gap-1 px-3 py-2">
+          {mobileQuickNav.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={cn(
+                "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition",
+                item.active
+                  ? "bg-muted/80 text-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+              )}
+            >
+              {renderNavIcon(item, "h-5 w-5 object-contain")}
+              <span className="w-full truncate text-center leading-none">{item.label}</span>
+            </Link>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => {
+              handleSync();
+            }}
+            disabled={syncDisabled}
+            className={cn(
+              "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition",
+              syncDisabled
+                ? "cursor-not-allowed text-muted-foreground/40"
+                : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+            )}
+          >
+            <RefreshCw className="h-5 w-5" />
+            <span className="w-full truncate text-center leading-none">Sincronizar</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+          >
+            <Menu className="h-5 w-5" />
+            <span className="w-full truncate text-center leading-none">Mais</span>
+          </button>
         </div>
       </div>
 
@@ -362,21 +423,22 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
       >
         <div
           className={cn(
-            "flex h-full w-full flex-col bg-card/95 pt-6 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
-            mobileMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
+            "mt-auto max-h-[86vh] w-full rounded-t-[2rem] border border-border/70 bg-card/95 px-4 pb-4 pt-3 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
+            mobileMenuOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
           )}
           role="dialog"
           aria-modal="true"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-6 pb-6">
+          <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-border/70" />
+          <div className="flex items-center justify-between px-1 pb-4">
             <div className="flex items-center gap-3">
               <BrandMark className="h-9 w-auto" />
               <span className="text-base font-semibold text-foreground">Menu</span>
             </div>
             <button
               type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted text-foreground transition hover:bg-muted/70"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-foreground transition hover:bg-muted/80"
               aria-label="Fechar menu"
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -384,48 +446,34 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
             </button>
           </div>
 
-          <nav className="flex-1 overflow-y-auto px-6 pb-6">
+          <nav className="max-h-[52vh] overflow-y-auto pr-1">
             <div className="grid gap-2">
-              {nav.map((item) => {
-                const Icon = item.icon;
-                const iconElement = item.iconSrc ? (
-                  <Image
-                    src={item.iconSrc}
-                    alt=""
-                    aria-hidden="true"
-                    width={item.iconSrc === "/icons/dashboard.png" ? 920 : 500}
-                    height={item.iconSrc === "/icons/dashboard.png" ? 704 : 500}
-                    unoptimized
-                    className="h-10 w-10 object-contain"
-                  />
-                ) : Icon ? (
-                  <Icon className="h-10 w-10" />
-                ) : null;
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
+              {nav.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-4 rounded-2xl border border-transparent px-4 py-3 text-base font-semibold transition",
+                    item.active
+                      ? "border-primary/15 bg-muted/80 text-foreground shadow-sm"
+                      : "bg-muted/35 text-muted-foreground hover:border-border/70 hover:bg-muted/70 hover:text-foreground"
+                  )}
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-background/80">
+                    {renderNavIcon(item, "h-6 w-6 object-contain")}
+                  </span>
+                  <span className="flex-1">{item.label}</span>
+                  <span
                     className={cn(
-                      "flex items-center gap-4 rounded-2xl border border-transparent px-4 py-3 text-base font-semibold transition",
-                      item.active
-                        ? "border-primary/20 bg-muted text-foreground shadow-sm"
-                        : "text-muted-foreground hover:border-border hover:bg-muted"
+                      "text-xs uppercase tracking-[0.2em]",
+                      item.active ? "text-primary" : "text-muted-foreground/60"
                     )}
                   >
-                    {iconElement}
-                    <span className="flex-1">{item.label}</span>
-                    <span
-                      className={cn(
-                        "text-xs uppercase tracking-[0.2em]",
-                        item.active ? "text-primary" : "text-muted-foreground/60"
-                      )}
-                    >
-                      {item.active ? "Atual" : ""}
-                    </span>
-                  </Link>
-                );
-              })}
+                    {item.active ? "Atual" : ""}
+                  </span>
+                </Link>
+              ))}
 
               <button
                 type="button"
@@ -435,19 +483,21 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
                 }}
                 disabled={syncDisabled}
                 className={cn(
-                  "flex items-center gap-4 rounded-2xl border border-transparent px-4 py-3 text-base font-semibold transition",
+                  "mt-2 flex items-center gap-4 rounded-2xl border px-4 py-3 text-base font-semibold transition",
                   syncDisabled
-                    ? "cursor-not-allowed text-muted-foreground/50"
-                    : "text-muted-foreground hover:border-border hover:bg-muted"
+                    ? "cursor-not-allowed border-transparent text-muted-foreground/40"
+                    : "border-transparent bg-[linear-gradient(135deg,rgba(95,141,255,0.14),rgba(239,111,125,0.14))] text-muted-foreground hover:text-foreground"
                 )}
               >
-                <RefreshCw className="h-7 w-7" />
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-background/80">
+                  <RefreshCw className="h-6 w-6" />
+                </span>
                 <span className="flex-1">Sincronizar</span>
               </button>
             </div>
           </nav>
 
-          <div className="border-t border-border px-6 py-4 text-xs text-muted-foreground">
+          <div className="mt-4 rounded-2xl border border-border/70 bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">{footerStatus}</div>
           </div>
         </div>

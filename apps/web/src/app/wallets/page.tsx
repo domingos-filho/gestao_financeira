@@ -72,10 +72,15 @@ export default function HomePage() {
       membersCount: entry.wallet.membersCount ?? entry.wallet.accounts?.length ?? 0
     }));
   }, [isAdmin, adminWallets, walletsQuery.data]);
+  const totalMembers = useMemo(
+    () => displayWallets.reduce((sum, wallet) => sum + wallet.membersCount, 0),
+    [displayWallets]
+  );
 
   const isLoading = isAdmin ? adminLoading : walletsQuery.isLoading;
   const hasError = isAdmin ? adminError : Boolean(walletsQuery.error);
   const showEmpty = !isLoading && displayWallets.length === 0;
+  const syncState = isLoading ? "Atualizando" : hasError ? "Falha" : "Pronto";
 
   return (
     <RequireAuth>
@@ -92,15 +97,29 @@ export default function HomePage() {
             <Card className="relative overflow-hidden border-0 bg-[linear-gradient(135deg,#4fa2ff,#e96878)] text-white shadow-lg">
               <div className="pointer-events-none absolute -right-20 -top-16 h-48 w-48 rounded-full bg-white/25 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-white/15 blur-3xl" />
-              <CardContent className="relative space-y-3 p-4 sm:space-y-4 sm:p-6">
+              <CardContent className="relative space-y-4 p-4 sm:space-y-5 sm:p-6">
                 <p className="text-xs uppercase tracking-[0.4em] text-white/70">UniConta</p>
-                <p className="text-xl font-semibold leading-snug sm:text-2xl">
+                <p className="max-w-xl text-xl font-semibold leading-snug sm:text-2xl">
                   Com o UniConta, voce e sua familia cuidam do dinheiro juntos.
                 </p>
-                <p className="text-sm leading-relaxed text-white/85 sm:text-base">
+                <p className="max-w-2xl text-sm leading-relaxed text-white/85 sm:text-base">
                   Crie carteiras compartilhadas, registre despesas e receitas, acompanhe saldos em tempo real e mantenha tudo
                   sincronizado entre os usuarios - mesmo offline.
                 </p>
+                <div className="grid gap-2 pt-2 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-white/10 bg-white/12 px-3 py-3 backdrop-blur-sm">
+                    <div className="text-[11px] uppercase tracking-[0.24em] text-white/65">Carteiras</div>
+                    <div className="mt-1 text-base font-semibold">{displayWallets.length}</div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/12 px-3 py-3 backdrop-blur-sm">
+                    <div className="text-[11px] uppercase tracking-[0.24em] text-white/65">Usuarios</div>
+                    <div className="mt-1 text-base font-semibold">{totalMembers}</div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/12 px-3 py-3 backdrop-blur-sm">
+                    <div className="text-[11px] uppercase tracking-[0.24em] text-white/65">Sincronizacao</div>
+                    <div className="mt-1 text-base font-semibold">{syncState}</div>
+                  </div>
+                </div>
                 <p className="text-sm font-semibold sm:text-base">UniConta: uma conta, varias pessoas.</p>
               </CardContent>
             </Card>

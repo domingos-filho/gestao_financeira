@@ -4,68 +4,68 @@
 
 :root {
   color-scheme: light;
-  --color-bg: #fbf7f9;
-  --color-fg: #1f1d2b;
+  --color-bg: #f8f9fd;
+  --color-fg: #151826;
   --color-card: #ffffff;
-  --color-primary: #4fa2ff;
+  --color-primary: #4f7dff;
   --color-primary-fg: #ffffff;
   --color-navy: #1b2a57;
-  --color-accent: #fca55a;
-  --color-accent-fg: #1f1d2b;
-  --color-muted: #f1f2fa;
-  --color-muted-fg: #6b6a7e;
-  --color-border: #e6e2ef;
-  --color-success: #11cc95;
-  --color-success-soft: rgba(17, 204, 149, 0.12);
-  --color-success-strong: rgba(17, 204, 149, 0.85);
-  --color-danger: #e96878;
-  --color-danger-soft: rgba(233, 104, 120, 0.12);
-  --color-danger-strong: rgba(233, 104, 120, 0.75);
-  --color-warning: #ffd348;
-  --color-warning-soft: rgba(255, 211, 72, 0.18);
-  --color-info: #4fa2ff;
-  --color-info-soft: rgba(79, 162, 255, 0.12);
-  --color-purple: #6b5b95;
-  --page-gradient-1: rgba(233, 104, 120, 0.25);
-  --page-gradient-2: rgba(79, 162, 255, 0.22);
-  --page-gradient-3: rgba(255, 211, 72, 0.2);
-  --page-gradient-start: #fbf7f9;
-  --page-gradient-mid: #ffffff;
-  --page-gradient-end: #f2f5ff;
-  --selection-bg: rgba(79, 162, 255, 0.25);
+  --color-accent: #f59e68;
+  --color-accent-fg: #151826;
+  --color-muted: #edf1fb;
+  --color-muted-fg: #667085;
+  --color-border: #dbe3f2;
+  --color-success: #12c48b;
+  --color-success-soft: rgba(18, 196, 139, 0.12);
+  --color-success-strong: rgba(18, 196, 139, 0.88);
+  --color-danger: #ef6f7d;
+  --color-danger-soft: rgba(239, 111, 125, 0.12);
+  --color-danger-strong: rgba(239, 111, 125, 0.82);
+  --color-warning: #f4c64f;
+  --color-warning-soft: rgba(244, 198, 79, 0.16);
+  --color-info: #5f8dff;
+  --color-info-soft: rgba(95, 141, 255, 0.12);
+  --color-purple: #8b7cf6;
+  --page-gradient-1: rgba(95, 141, 255, 0.16);
+  --page-gradient-2: rgba(239, 111, 125, 0.12);
+  --page-gradient-3: rgba(18, 196, 139, 0.1);
+  --page-gradient-start: #fefeff;
+  --page-gradient-mid: #f7faff;
+  --page-gradient-end: #edf2ff;
+  --selection-bg: rgba(95, 141, 255, 0.22);
 }
 
 .dark {
   color-scheme: dark;
-  --color-bg: #0b1020;
-  --color-fg: #f3f6ff;
-  --color-card: #10182d;
-  --color-primary: #7fb5ff;
-  --color-primary-fg: #08111d;
-  --color-navy: #273a70;
+  --color-bg: #07101f;
+  --color-fg: #f5f7ff;
+  --color-card: #0f182c;
+  --color-primary: #7fb0ff;
+  --color-primary-fg: #07101f;
+  --color-navy: #27385f;
   --color-accent: #f0a15d;
   --color-accent-fg: #111827;
-  --color-muted: #171f35;
-  --color-muted-fg: #a6b0c9;
-  --color-border: #223050;
-  --color-success: #34d399;
-  --color-success-soft: rgba(52, 211, 153, 0.12);
-  --color-success-strong: rgba(52, 211, 153, 0.82);
-  --color-danger: #ff7f8f;
-  --color-danger-soft: rgba(255, 127, 143, 0.14);
-  --color-danger-strong: rgba(255, 127, 143, 0.76);
+  --color-muted: #18233b;
+  --color-muted-fg: #a6b3d4;
+  --color-border: #233250;
+  --color-success: #35d39b;
+  --color-success-soft: rgba(53, 211, 155, 0.12);
+  --color-success-strong: rgba(53, 211, 155, 0.86);
+  --color-danger: #ff8797;
+  --color-danger-soft: rgba(255, 135, 151, 0.14);
+  --color-danger-strong: rgba(255, 135, 151, 0.82);
   --color-warning: #ffd76a;
   --color-warning-soft: rgba(255, 215, 106, 0.18);
-  --color-info: #7fb5ff;
-  --color-info-soft: rgba(127, 181, 255, 0.14);
+  --color-info: #7fb0ff;
+  --color-info-soft: rgba(127, 176, 255, 0.14);
   --color-purple: #a88cff;
-  --page-gradient-1: rgba(255, 127, 143, 0.14);
-  --page-gradient-2: rgba(127, 181, 255, 0.14);
-  --page-gradient-3: rgba(52, 211, 153, 0.08);
-  --page-gradient-start: #0b1020;
-  --page-gradient-mid: #11182a;
-  --page-gradient-end: #0c1325;
-  --selection-bg: rgba(127, 181, 255, 0.24);
+  --page-gradient-1: rgba(127, 176, 255, 0.16);
+  --page-gradient-2: rgba(255, 135, 151, 0.12);
+  --page-gradient-3: rgba(53, 211, 155, 0.08);
+  --page-gradient-start: #07101f;
+  --page-gradient-mid: #0d1630;
+  --page-gradient-end: #091225;
+  --selection-bg: rgba(127, 176, 255, 0.24);
 }
 
 * {
@@ -82,6 +82,7 @@ body {
     radial-gradient(900px circle at 100% -10%, var(--page-gradient-2), transparent 55%),
     radial-gradient(800px circle at 15% 100%, var(--page-gradient-3), transparent 55%),
     linear-gradient(180deg, var(--page-gradient-start) 0%, var(--page-gradient-mid) 45%, var(--page-gradient-end) 100%);
+  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
 }
 

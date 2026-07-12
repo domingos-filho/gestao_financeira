@@ -284,7 +284,7 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
           <select
             value={period}
             onChange={(event) => setPeriod(event.target.value as ReportPeriod)}
-            className="h-10 w-full appearance-none rounded-lg border border-border bg-card px-3 pr-9 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-11 w-full appearance-none rounded-2xl border border-border/70 bg-card/95 px-4 pr-10 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
             aria-label="Selecionar periodo"
           >
             <option value="day">Ultimos 14 dias</option>
@@ -303,23 +303,23 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
         </CardHeader>
         <CardContent className="grid gap-4 p-4 pt-0 sm:p-5 sm:pt-0 lg:grid-cols-3 lg:gap-6">
           <div className="grid grid-cols-2 gap-3 text-sm lg:grid-cols-1">
-            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+            <div className="rounded-2xl border border-border/70 bg-card/55 p-4 shadow-sm">
               <div className="text-muted-foreground">Receitas</div>
               <div className="mt-1 text-lg font-semibold text-[var(--color-success)] sm:text-xl">
                 {formatBRL(cashFlow.totalIncome)}
               </div>
             </div>
-            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+            <div className="rounded-2xl border border-border/70 bg-card/55 p-4 shadow-sm">
               <div className="text-muted-foreground">Despesas</div>
               <div className="mt-1 text-lg font-semibold text-[var(--color-danger)] sm:text-xl">
                 {formatBRL(cashFlow.totalExpense)}
               </div>
             </div>
-            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+            <div className="rounded-2xl border border-border/70 bg-card/55 p-4 shadow-sm">
               <div className="text-muted-foreground">Saldo liquido</div>
               <div className="mt-1 text-lg font-semibold sm:text-xl">{formatBRL(currentTotals.net)}</div>
             </div>
-            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+            <div className="rounded-2xl border border-border/70 bg-card/55 p-4 shadow-sm">
               <div className="text-muted-foreground">Variacao vs periodo anterior</div>
               <div className="mt-1 text-lg font-semibold">
               {cashFlow.variation === null ? "Sem comparacao" : `${cashFlow.variation.toFixed(1)}%`}
@@ -404,15 +404,15 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
         </CardHeader>
         <CardContent className="grid gap-4 p-4 pt-0 sm:p-5 sm:pt-0 lg:grid-cols-3 lg:gap-6">
           <div className="grid grid-cols-2 gap-3 text-sm lg:grid-cols-1">
-            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+            <div className="rounded-2xl border border-border/70 bg-card/55 p-4 shadow-sm">
               <div className="text-muted-foreground">Total de dividas</div>
               <div className="mt-1 text-lg font-semibold sm:text-xl">{formatBRL(debtInsights.totalDebt)}</div>
             </div>
-            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+            <div className="rounded-2xl border border-border/70 bg-card/55 p-4 shadow-sm">
               <div className="text-muted-foreground">Juros estimados</div>
               <div className="mt-1 text-lg font-semibold sm:text-xl">{formatBRL(debtInsights.totalInterest)}</div>
             </div>
-            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+            <div className="rounded-2xl border border-border/70 bg-card/55 p-4 shadow-sm">
               <div className="text-muted-foreground">Divida / renda</div>
               <div className="mt-1 text-lg font-semibold">
               {debtInsights.ratio === null ? "Sem renda" : `${(debtInsights.ratio * 100).toFixed(1)}%`}
@@ -438,19 +438,19 @@ export default function ReportsPage({ params }: { params: { walletId: string } }
         </CardHeader>
         <CardContent className="grid gap-4 p-4 pt-0 sm:p-5 sm:pt-0 lg:grid-cols-3 lg:gap-6">
           <div className="grid grid-cols-2 gap-3 text-sm lg:grid-cols-1">
-            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+            <div className="rounded-2xl border border-border/70 bg-card/55 p-4 shadow-sm">
               <div className="text-muted-foreground">Lucro liquido</div>
               <div className="mt-1 text-lg font-semibold sm:text-xl">{formatBRL(profitInsights.current.net)}</div>
             </div>
-            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+            <div className="rounded-2xl border border-border/70 bg-card/55 p-4 shadow-sm">
               <div className="text-muted-foreground">Margem de lucro</div>
               <div className="mt-1 text-lg font-semibold sm:text-xl">{profitInsights.margin.toFixed(1)}%</div>
             </div>
-            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+            <div className="rounded-2xl border border-border/70 bg-card/55 p-4 shadow-sm">
               <div className="text-muted-foreground">Media no periodo</div>
               <div className="mt-1 text-lg font-semibold sm:text-xl">{formatBRL(Math.round(profitInsights.averageNet))}</div>
             </div>
-            <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+            <div className="rounded-2xl border border-border/70 bg-card/55 p-4 shadow-sm">
               <div className="text-muted-foreground">Variacao vs periodo anterior</div>
               <div className="mt-1 text-lg font-semibold">
               {profitInsights.comparison === null ? "Sem comparacao" : `${profitInsights.comparison.toFixed(1)}%`}
