@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { WalletCards } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useWallets } from "@/lib/wallets";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -141,16 +141,8 @@ export default function HomePage() {
                       onClick={() => router.push(`/wallets/${wallet.id}`)}
                     >
                       <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted sm:h-12 sm:w-12">
-                          <Image
-                            src="/icons/icone%20de%20carteiras.png"
-                            alt=""
-                            aria-hidden="true"
-                            width={500}
-                            height={500}
-                            unoptimized
-                            className="h-7 w-7 sm:h-8 sm:w-8"
-                          />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(95,141,255,0.16),rgba(18,196,139,0.14))] text-primary shadow-sm sm:h-12 sm:w-12">
+                          <WalletCards className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={1.75} aria-hidden="true" />
                         </div>
                         <div className="space-y-1">
                           <CardTitle className="text-sm sm:text-base">{wallet.name}</CardTitle>

@@ -1,11 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ComponentType } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, RefreshCw, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  ArrowLeftRight,
+  BarChart3,
+  HandCoins,
+  LayoutDashboard,
+  Menu,
+  RefreshCw,
+  Tags,
+  UsersRound,
+  Wallet,
+  WalletCards,
+  X
+} from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { syncCategories } from "@/lib/categories";
 import { syncDebts } from "@/lib/debts";
@@ -21,8 +32,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 type NavItem = {
   label: string;
-  icon?: ComponentType<{ className?: string }>;
-  iconSrc?: string;
+  icon: LucideIcon;
   href?: (walletId?: string) => string | undefined;
   disabled?: boolean;
   adminOnly?: boolean;
@@ -30,71 +40,52 @@ type NavItem = {
 
 type ResolvedNavItem = Omit<NavItem, "href"> & { href: string; active: boolean };
 
-function renderNavIcon(item: Pick<NavItem, "icon" | "iconSrc">, className: string) {
+function renderNavIcon(item: Pick<NavItem, "icon">, className: string) {
   const Icon = item.icon;
-
-  if (item.iconSrc) {
-    return (
-      <Image
-        src={item.iconSrc}
-        alt=""
-        aria-hidden="true"
-        width={item.iconSrc === "/icons/dashboard.png" ? 920 : 500}
-        height={item.iconSrc === "/icons/dashboard.png" ? 704 : 500}
-        unoptimized
-        className={className}
-      />
-    );
-  }
-
-  if (Icon) {
-    return <Icon className={className} />;
-  }
-
-  return null;
+  return <Icon className={className} strokeWidth={1.75} aria-hidden="true" />;
 }
 
 const navItems: NavItem[] = [
   {
     label: "Home",
-    iconSrc: "/icons/icone%20de%20carteiras.png",
+    icon: WalletCards,
     href: () => "/wallets"
   },
   {
     label: "Dashboard",
-    iconSrc: "/icons/dashboard.png",
+    icon: LayoutDashboard,
     href: (walletId) => (walletId ? `/wallets/${walletId}` : undefined)
   },
   {
     label: "Gestao de carteiras",
-    iconSrc: "/icons/carteira.png",
+    icon: Wallet,
     href: () => "/wallets/manage",
     adminOnly: true
   },
   {
     label: "Usuarios",
-    iconSrc: "/icons/usuarios.png",
+    icon: UsersRound,
     href: () => "/users",
     adminOnly: true
   },
   {
     label: "Transacoes",
-    iconSrc: "/icons/transacoes.png",
+    icon: ArrowLeftRight,
     href: (walletId) => (walletId ? `/wallets/${walletId}/transactions` : undefined)
   },
   {
     label: "Dividas",
-    iconSrc: "/icons/dividas.png",
+    icon: HandCoins,
     href: (walletId) => (walletId ? `/wallets/${walletId}/debts` : undefined)
   },
   {
     label: "Categorias",
-    iconSrc: "/icons/categoria.png",
+    icon: Tags,
     href: (walletId) => (walletId ? `/wallets/${walletId}/categories` : undefined)
   },
   {
     label: "Relatorios",
-    iconSrc: "/icons/relatorios.png",
+    icon: BarChart3,
     href: (walletId) => (walletId ? `/wallets/${walletId}/reports` : undefined)
   }
 ];
@@ -297,7 +288,7 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
 
           <nav className="mt-8 flex flex-1 flex-col gap-1 text-sm">
             {nav.map((item) => {
-              const iconElement = renderNavIcon(item, "h-8 w-8 object-contain");
+              const iconElement = renderNavIcon(item, "h-7 w-7 shrink-0");
 
               return (
                 <Link
@@ -389,17 +380,17 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-card/90 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden">
         <div className="grid grid-cols-5 gap-1 px-3 py-2">
           {mobileQuickNav.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={cn(
-                    "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition",
-                    item.active
-                      ? "border border-primary/20 bg-[linear-gradient(135deg,rgba(95,141,255,0.18),rgba(239,111,125,0.12))] text-foreground shadow-[0_10px_25px_rgba(79,162,255,0.12)] ring-1 ring-primary/10"
-                      : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-                  )}
-                >
-              {renderNavIcon(item, "h-5 w-5 object-contain")}
+            <Link
+              key={item.label}
+              href={item.href}
+              className={cn(
+                "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition",
+                item.active
+                  ? "border border-primary/20 bg-[linear-gradient(135deg,rgba(95,141,255,0.18),rgba(239,111,125,0.12))] text-foreground shadow-[0_10px_25px_rgba(79,162,255,0.12)] ring-1 ring-primary/10"
+                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+              )}
+            >
+              {renderNavIcon(item, "h-5 w-5 shrink-0")}
               <span className="w-full truncate text-center leading-none">{item.label}</span>
             </Link>
           ))}
@@ -481,7 +472,7 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
                   )}
                 >
                   <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-background/80">
-                    {renderNavIcon(item, "h-6 w-6 object-contain")}
+                    {renderNavIcon(item, "h-6 w-6 shrink-0")}
                   </span>
                   <span className="flex-1">{item.label}</span>
                   <span
