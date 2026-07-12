@@ -12,7 +12,7 @@ const buttonVariants = cva(
         create: "bg-[var(--color-navy)] text-white shadow-sm hover:bg-[var(--color-navy)]/90",
         edit: "bg-primary text-primaryForeground shadow-sm hover:bg-primary/90",
         delete: "bg-[var(--color-danger)] text-white shadow-sm hover:bg-[var(--color-danger)]/90",
-        outline: "border border-border bg-card text-foreground hover:bg-muted",
+        outline: "border border-border/60 bg-card text-foreground hover:bg-muted",
         ghost: "bg-transparent text-foreground hover:bg-muted"
       },
       size: {
