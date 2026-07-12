@@ -12,6 +12,7 @@ import { syncDebts } from "@/lib/debts";
 import { getDeviceId } from "@/lib/device";
 import { useSyncEngine } from "@/lib/sync-engine";
 import { ensureCurrentMonthRecurringTransactions, syncNow } from "@/lib/sync";
+import { isRouteActive } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand-logo";
 import { SyncIndicator } from "@/components/sync-indicator";
@@ -236,8 +237,7 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
           if (!href || item.disabled) {
             return null;
           }
-          const active =
-            pathname === href || (href !== "/wallets" && pathname.startsWith(`${href}/`));
+          const active = isRouteActive(pathname, href);
           return { ...item, href, active };
         })
         .filter((item): item is ResolvedNavItem => item !== null),
@@ -284,9 +284,9 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      <div className="flex min-h-screen">
-        <aside className="hidden w-72 flex-col border-r border-border/70 bg-card/85 px-4 py-5 shadow-[8px_0_30px_rgba(15,23,42,0.04)] backdrop-blur-xl md:flex">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden md:h-screen md:overflow-hidden">
+      <div className="flex min-h-screen md:h-screen md:min-h-0">
+        <aside className="hidden w-72 flex-col border-r border-border/70 bg-card/85 px-4 py-5 shadow-[8px_0_30px_rgba(15,23,42,0.04)] backdrop-blur-xl md:flex md:h-full md:min-h-0">
           <Link
             href="/wallets"
             className="flex items-center gap-3 rounded-3xl border border-border/70 bg-muted/40 px-3 py-2 text-lg font-semibold text-primary shadow-sm transition hover:bg-muted/70"
@@ -303,6 +303,7 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
                 <Link
                   key={item.label}
                   href={item.href}
+                  aria-current={item.active ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-3 rounded-2xl px-3 py-3 transition",
                     item.active
@@ -323,8 +324,8 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
               }}
               disabled={syncDisabled || isSyncing}
               className={cn(
-                "mt-2 flex items-center gap-3 rounded-2xl border border-border/70 bg-card/80 px-3 py-3 text-left text-muted-foreground shadow-sm transition hover:border-border hover:bg-muted/70 hover:text-foreground",
-                syncDisabled || isSyncing ? "cursor-not-allowed opacity-60 hover:bg-card/80 hover:text-muted-foreground" : ""
+                "mt-2 flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-muted-foreground transition hover:bg-muted/70 hover:text-foreground",
+                syncDisabled || isSyncing ? "cursor-not-allowed opacity-60 hover:bg-transparent hover:text-muted-foreground" : ""
               )}
             >
               <RefreshCw className={cn("h-6 w-6", isSyncing && "animate-spin")} />
@@ -379,7 +380,7 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
             </div>
           </header>
 
-          <main className="flex-1 bg-background px-4 py-6 pb-28 md:px-6 md:py-8 md:pb-8">
+          <main className="flex-1 bg-background px-4 py-6 pb-28 md:min-h-0 md:overflow-y-auto md:px-6 md:py-8 md:pb-8">
             <div className="mx-auto w-full max-w-6xl min-w-0">{children}</div>
           </main>
         </div>
@@ -471,6 +472,7 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
                   key={item.label}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
+                  aria-current={item.active ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-4 rounded-2xl border border-transparent px-4 py-3 text-base font-semibold transition",
                     item.active
@@ -501,10 +503,10 @@ export function AppShell({ children, walletId, syncWalletIds }: AppShellProps) {
                 }}
                 disabled={syncDisabled || isSyncing}
                 className={cn(
-                  "mt-2 flex items-center gap-4 rounded-2xl border px-4 py-3 text-base font-semibold transition",
+                  "mt-2 flex items-center gap-4 rounded-2xl px-4 py-3 text-base font-semibold transition",
                   syncDisabled || isSyncing
-                    ? "cursor-not-allowed border-transparent text-muted-foreground/40"
-                    : "border-transparent bg-card/80 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                    ? "cursor-not-allowed text-muted-foreground/40"
+                    : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
                 )}
               >
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-background/80">
