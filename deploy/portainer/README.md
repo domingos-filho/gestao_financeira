@@ -67,12 +67,14 @@ CLOUDFLARE_TUNNEL_TOKEN=cole_o_token_aqui
 ```text
 Hostname: appfinanceiro.seu-dominio.com
 Service type: HTTP
-URL: http://127.0.0.1:3000
+URL: http://127.0.0.1:4000
 ```
 
 Nao crie um hostname publico separado para a API. Todas as chamadas do navegador devem continuar chegando ao frontend em `/api`.
 
 O token do Tunnel concede acesso para executar o conector. Mantenha-o somente nas variaveis protegidas do Portainer e rotacione-o se for exposto.
+
+No Umbrel, o `cloudflared` usa a rede do host para evitar falhas do DNS interno do Docker (`127.0.0.11`) e conecta via HTTP/2. Se `WEB_PORT` for alterada, atualize tambem a porta da URL do servico na rota da Cloudflare.
 
 ## Atualizacoes
 

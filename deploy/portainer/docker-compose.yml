@@ -82,11 +82,13 @@ services:
     profiles:
       - tunnel
     restart: unless-stopped
+    environment:
+      TUNNEL_TRANSPORT_PROTOCOL: http2
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:-}
     depends_on:
       web:
         condition: service_healthy
-    network_mode: "service:postgres"
+    network_mode: host
 
 volumes:
   pgdata:
