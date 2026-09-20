@@ -13,8 +13,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    networks:
-      - backend
+      start_period: 30s
 
   api:
     image: ghcr.io/domingos-filho/gestao-financeira-api:${IMAGE_TAG:-latest}
@@ -33,6 +32,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        attempt=0
+        until node -e "const net = require('net'); const socket = net.createConnection({ host: 'postgres', port: 5432 }, () => { socket.end(); process.exit(0); }); socket.on('error', () => process.exit(1)); socket.setTimeout(2000, () => { socket.destroy(); process.exit(1); });"; do
+          attempt=$$((attempt + 1))
+          if [ "$$attempt" -ge 60 ]; then
+            echo "PostgreSQL indisponivel em postgres:5432 apos 120 segundos."
+            exit 1
+          fi
+          echo "Aguardando PostgreSQL em postgres:5432... tentativa $$attempt/60"
+          sleep 2
+        done
+        npm run prisma:migrate
+        exec node dist/main.js
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3001/health', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1));"]
       interval: 10s
@@ -40,8 +55,6 @@ services:
       retries: 10
     expose:
       - "3001"
-    networks:
-      - backend
 
   web:
     image: ghcr.io/domingos-filho/gestao-financeira-web:${IMAGE_TAG:-latest}
@@ -62,9 +75,6 @@ services:
       retries: 10
     ports:
       - "${WEB_PORT:-4000}:3000"
-    networks:
-      - backend
-      - edge
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -75,13 +85,6 @@ services:
     depends_on:
       web:
         condition: service_healthy
-    networks:
-      - edge
 
 volumes:
   pgdata:
-
-networks:
-  backend:
-    internal: true
-  edge:

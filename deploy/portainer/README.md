@@ -47,7 +47,7 @@ Depois do deploy, valide na rede local:
 http://IP_DO_UMBREL:4000
 ```
 
-A API nao e publicada no host. O frontend acessa `http://api:3001` pela rede privada do stack e oferece a API ao navegador pelo proxy same-origin `/api`.
+A API e o banco nao publicam portas no host. Os servicos usam a rede padrao privada do stack e se encontram pelos nomes `api` e `postgres`. O frontend acessa `http://api:3001` e oferece a API ao navegador pelo proxy same-origin `/api`.
 
 ## Publicar com Cloudflare Tunnel
 
@@ -85,4 +85,5 @@ Ative **GitOps updates** e **Re-pull image** no Portainer, ou use **Pull and red
 - `manifest unknown` ou `unauthorized`: aguarde o GitHub Actions e torne os pacotes GHCR publicos ou autentique o registry.
 - `no matching manifest`: confira `uname -m`; o workflow publica `linux/amd64` e `linux/arm64`.
 - API reiniciando: confira primeiro `DATABASE_URL`/senha do Postgres e depois os logs de migracao Prisma.
+- `P1001` em `postgres:5432`: confirme que `postgres` e `api` aparecem na mesma rede `<nome-do-stack>_default`. A API aguarda a porta do banco por ate 120 segundos e registra cada tentativa no log.
 - Login funciona e depois perde a sessao na LAN: acesse pelo hostname HTTPS do Cloudflare Tunnel; o cookie de refresh e `Secure` em producao.
