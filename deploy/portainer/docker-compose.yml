@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:15-alpine
     restart: unless-stopped
+    command: ["postgres", "-c", "listen_addresses=*"]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no Portainer}
@@ -9,11 +10,13 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-gestao_financeira}"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-gestao_financeira}"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 30s
+    expose:
+      - "5432"
 
   api:
     image: ghcr.io/domingos-filho/gestao-financeira-api:${IMAGE_TAG:-latest}
@@ -37,7 +40,7 @@ services:
       - -c
       - |
         attempt=0
-        until node -e "const net = require('net'); const socket = net.createConnection({ host: 'postgres', port: 5432 }, () => { socket.end(); process.exit(0); }); socket.on('error', () => process.exit(1)); socket.setTimeout(2000, () => { socket.destroy(); process.exit(1); });"; do
+        until node -e "const dns = require('dns'); const net = require('net'); dns.lookup('postgres', (dnsError, address) => { if (dnsError) { console.error('Falha DNS para postgres: ' + dnsError.code + ' - ' + dnsError.message); process.exit(1); } const socket = net.createConnection({ host: address, port: 5432 }, () => { console.log('PostgreSQL acessivel em ' + address + ':5432'); socket.end(); process.exit(0); }); socket.on('error', (error) => { console.error('Falha TCP em ' + address + ':5432: ' + error.code + ' - ' + error.message); process.exit(1); }); socket.setTimeout(2000, () => { console.error('Timeout TCP em ' + address + ':5432'); socket.destroy(); process.exit(1); }); });"; do
           attempt=$$((attempt + 1))
           if [ "$$attempt" -ge 60 ]; then
             echo "PostgreSQL indisponivel em postgres:5432 apos 120 segundos."
