@@ -15,8 +15,8 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
-    expose:
-      - "5432"
+    ports:
+      - "${WEB_PORT:-4000}:3000"
 
   api:
     image: ghcr.io/domingos-filho/gestao-financeira-api:${IMAGE_TAG:-latest}
@@ -25,7 +25,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gestao_financeira}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@127.0.0.1:5432/${POSTGRES_DB:-gestao_financeira}?schema=public
       JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET no Portainer}
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:?Defina REFRESH_TOKEN_SECRET no Portainer}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-fadomingosf@gmail.com}
@@ -35,18 +35,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    network_mode: "service:postgres"
     command:
       - sh
       - -c
       - |
         attempt=0
-        until node -e "const dns = require('dns'); const net = require('net'); dns.lookup('postgres', (dnsError, address) => { if (dnsError) { console.error('Falha DNS para postgres: ' + dnsError.code + ' - ' + dnsError.message); process.exit(1); } const socket = net.createConnection({ host: address, port: 5432 }, () => { console.log('PostgreSQL acessivel em ' + address + ':5432'); socket.end(); process.exit(0); }); socket.on('error', (error) => { console.error('Falha TCP em ' + address + ':5432: ' + error.code + ' - ' + error.message); process.exit(1); }); socket.setTimeout(2000, () => { console.error('Timeout TCP em ' + address + ':5432'); socket.destroy(); process.exit(1); }); });"; do
+        until node -e "const net = require('net'); const socket = net.createConnection({ host: '127.0.0.1', port: 5432 }, () => { console.log('PostgreSQL acessivel em 127.0.0.1:5432'); socket.end(); process.exit(0); }); socket.on('error', (error) => { console.error('Falha TCP em 127.0.0.1:5432: ' + error.code + ' - ' + error.message); process.exit(1); }); socket.setTimeout(2000, () => { console.error('Timeout TCP em 127.0.0.1:5432'); socket.destroy(); process.exit(1); });"; do
           attempt=$$((attempt + 1))
           if [ "$$attempt" -ge 60 ]; then
-            echo "PostgreSQL indisponivel em postgres:5432 apos 120 segundos."
+            echo "PostgreSQL indisponivel em 127.0.0.1:5432 apos 120 segundos."
             exit 1
           fi
-          echo "Aguardando PostgreSQL em postgres:5432... tentativa $$attempt/60"
+          echo "Aguardando PostgreSQL em 127.0.0.1:5432... tentativa $$attempt/60"
           sleep 2
         done
         npm run prisma:migrate
@@ -56,8 +57,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    expose:
-      - "3001"
 
   web:
     image: ghcr.io/domingos-filho/gestao-financeira-web:${IMAGE_TAG:-latest}
@@ -65,19 +64,18 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      API_PUBLIC_URL: http://api:3001
+      API_PUBLIC_URL: http://127.0.0.1:3001
       PORT: 3000
       HOSTNAME: 0.0.0.0
     depends_on:
       api:
         condition: service_healthy
+    network_mode: "service:postgres"
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1));"]
       interval: 10s
       timeout: 5s
       retries: 10
-    ports:
-      - "${WEB_PORT:-4000}:3000"
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -88,6 +86,7 @@ services:
     depends_on:
       web:
         condition: service_healthy
+    network_mode: "service:postgres"
 
 volumes:
   pgdata:
