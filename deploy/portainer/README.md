@@ -47,7 +47,7 @@ Depois do deploy, valide na rede local:
 http://IP_DO_UMBREL:4000
 ```
 
-A API e o banco nao publicam portas no host. Os servicos usam a rede padrao privada do stack e se encontram pelos nomes `api` e `postgres`. O frontend acessa `http://api:3001` e oferece a API ao navegador pelo proxy same-origin `/api`.
+A API e o banco nao publicam portas no host. Para contornar ambientes Umbrel que bloqueiam trafego entre containers na bridge, API, web e cloudflared compartilham o namespace de rede do Postgres e se comunicam apenas por `127.0.0.1`. A unica porta publicada no host e a do frontend (`WEB_PORT`, padrao `4000`).
 
 ## Publicar com Cloudflare Tunnel
 
@@ -67,7 +67,7 @@ CLOUDFLARE_TUNNEL_TOKEN=cole_o_token_aqui
 ```text
 Hostname: appfinanceiro.seu-dominio.com
 Service type: HTTP
-URL: web:3000
+URL: http://127.0.0.1:3000
 ```
 
 Nao crie um hostname publico separado para a API. Todas as chamadas do navegador devem continuar chegando ao frontend em `/api`.
@@ -85,5 +85,5 @@ Ative **GitOps updates** e **Re-pull image** no Portainer, ou use **Pull and red
 - `manifest unknown` ou `unauthorized`: aguarde o GitHub Actions e torne os pacotes GHCR publicos ou autentique o registry.
 - `no matching manifest`: confira `uname -m`; o workflow publica `linux/amd64` e `linux/arm64`.
 - API reiniciando: confira primeiro `DATABASE_URL`/senha do Postgres e depois os logs de migracao Prisma.
-- `P1001` em `postgres:5432`: confirme que `postgres` e `api` aparecem na mesma rede `<nome-do-stack>_default`. O PostgreSQL e iniciado aceitando TCP em todas as interfaces do container, e seu healthcheck valida especificamente `127.0.0.1:5432`. A API aguarda a porta por ate 120 segundos e registra separadamente erros de DNS, conexao recusada, rota e timeout.
+- `P1001` ou timeout em `postgres:5432`: algumas instalacoes Umbrel bloqueiam trafego entre containers na bridge. Neste manifesto, os servicos compartilham o namespace de rede do Postgres e usam `127.0.0.1`; banco e API continuam sem portas publicadas no host.
 - Login funciona e depois perde a sessao na LAN: acesse pelo hostname HTTPS do Cloudflare Tunnel; o cookie de refresh e `Secure` em producao.
