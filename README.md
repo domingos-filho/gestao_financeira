@@ -158,6 +158,13 @@ Se o Postgres já tiver sido inicializado, mudar `POSTGRES_PASSWORD` depois diss
 - O dominio da API deve responder em `/health`
 - Guia completo: `deploy/easypanel/README.md`
 
+## Deploy (Umbrel + Portainer)
+
+- Use o stack baseado nas imagens prontas do GHCR; nao e necessario compilar o projeto no home lab.
+- O frontend e publicado na LAN e a API permanece somente na rede interna do Docker.
+- Para acesso externo e HTTPS, o stack oferece um profile opcional para Cloudflare Tunnel.
+- Guia completo: `deploy/portainer/README.md`
+
 ## Deploy em VPS via GitHub + Docker Compose (sem EasyPanel)
 
 1) No servidor, clone o repositorio:
