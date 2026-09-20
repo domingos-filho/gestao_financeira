@@ -85,5 +85,5 @@ Ative **GitOps updates** e **Re-pull image** no Portainer, ou use **Pull and red
 - `manifest unknown` ou `unauthorized`: aguarde o GitHub Actions e torne os pacotes GHCR publicos ou autentique o registry.
 - `no matching manifest`: confira `uname -m`; o workflow publica `linux/amd64` e `linux/arm64`.
 - API reiniciando: confira primeiro `DATABASE_URL`/senha do Postgres e depois os logs de migracao Prisma.
-- `P1001` em `postgres:5432`: confirme que `postgres` e `api` aparecem na mesma rede `<nome-do-stack>_default`. A API aguarda a porta do banco por ate 120 segundos e registra cada tentativa no log.
+- `P1001` em `postgres:5432`: confirme que `postgres` e `api` aparecem na mesma rede `<nome-do-stack>_default`. O PostgreSQL e iniciado aceitando TCP em todas as interfaces do container, e seu healthcheck valida especificamente `127.0.0.1:5432`. A API aguarda a porta por ate 120 segundos e registra separadamente erros de DNS, conexao recusada, rota e timeout.
 - Login funciona e depois perde a sessao na LAN: acesse pelo hostname HTTPS do Cloudflare Tunnel; o cookie de refresh e `Secure` em producao.
